@@ -1,0 +1,235 @@
+# ============================================================
+# AEGIS - Git Ignore
+# ============================================================
+
+# -----------------------------
+# Python
+# -----------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Python virtual environments
+.venv/
+venv/
+env/
+ENV/
+.env/
+.python-version-local
+
+# Packaging / build
+build/
+dist/
+*.egg-info/
+.eggs/
+pip-wheel-metadata/
+
+# -----------------------------
+# uv
+# -----------------------------
+# Keep uv.lock committed.
+# Do NOT ignore uv.lock.
+
+# -----------------------------
+# Testing / Coverage
+# -----------------------------
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.pytest_cache/
+.tox/
+.nox/
+
+# -----------------------------
+# Type checking / linting
+# -----------------------------
+.mypy_cache/
+.ruff_cache/
+.pytype/
+.pyre/
+
+# -----------------------------
+# Jupyter
+# -----------------------------
+.ipynb_checkpoints/
+
+# -----------------------------
+# Environment / Secrets
+# -----------------------------
+.env
+.env.*
+!.env.example
+!.env.template
+
+*.pem
+*.key
+*.crt
+*.cer
+*.p12
+*.pfx
+
+# AWS credentials
+.aws/
+credentials
+config
+
+# -----------------------------
+# Secret / credential files
+# -----------------------------
+secrets/
+secret/
+credentials/
+*.secret
+*.secrets
+*credentials*
+*password*
+*passwd*
+*.token
+*.tokens
+
+# -----------------------------
+# Databases / local state
+# -----------------------------
+*.db
+*.sqlite
+*.sqlite3
+*.db-journal
+
+# -----------------------------
+# Logs
+# -----------------------------
+*.log
+logs/
+log/
+*.out
+
+# -----------------------------
+# Cache / temporary files
+# -----------------------------
+.cache/
+tmp/
+temp/
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+
+# -----------------------------
+# Docker
+# -----------------------------
+docker-data/
+docker-volumes/
+
+# -----------------------------
+# IDEs / Editors
+# -----------------------------
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+
+.idea/
+*.iml
+
+# -----------------------------
+# OS files
+# -----------------------------
+.DS_Store
+.DS_Store?
+Thumbs.db
+desktop.ini
+
+# -----------------------------
+# Binary files
+# -----------------------------
+*.exe
+*.dll
+*.so
+*.dylib
+*.bin
+*.iso
+*.img
+*.dmg
+*.msi
+*.deb
+*.rpm
+*.app
+*.AppImage
+
+# Archives
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.7z
+*.rar
+*.gz
+
+# -----------------------------
+# Large ML / AI artifacts
+# -----------------------------
+*.pt
+*.pth
+*.ckpt
+*.safetensors
+*.onnx
+*.gguf
+*.ggml
+*.h5
+*.hdf5
+*.pkl
+*.pickle
+*.joblib
+
+models/
+checkpoints/
+artifacts/
+
+# -----------------------------
+# Frontend
+# -----------------------------
+node_modules/
+.npm/
+.yarn/
+.pnpm-store/
+dist/
+.next/
+.nuxt/
+.cache/
+
+# -----------------------------
+# Generated reports
+# -----------------------------
+reports/generated/
+evaluation/results/
+evaluation/output/
+
+# -----------------------------
+# Local AWS / CDK generated data
+# -----------------------------
+.cdk.staging/
+cdk.out/
+
+# -----------------------------
+# Terraform (if added later)
+# -----------------------------
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
+!*.tfvars.template
+
+# -----------------------------
+# Coverage / reports
+# -----------------------------
+coverage/
+*.html
+
+# -----------------------------
+# Misc
+# -----------------------------
+.DS_Store
+Thumbs.db
+desktop.ini
