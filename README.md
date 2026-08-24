@@ -2,294 +2,452 @@
 
 **Autonomous Engineering & Incident Response System**
 
-A platform for AI-assisted incident investigation, evidence-backed root cause analysis, and controlled engineering remediation.
+[![Python](https://img.shields.io/badge/python-3.12-blue.svg)](https://www.python.org/downloads/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688.svg)](https://fastapi.tiangolo.com/)
+[![License](https://img.shields.io/badge/license-TBD-lightgrey.svg)](#license)
 
-| | |
-|---|---|
-| **Status** | Bootstrap / foundation (`v0.1.0`) |
-| **Python** | 3.12 |
-| **Package manager** | [uv](https://docs.astral.sh/uv/) |
-| **Repository** | [github.com/alihassan186/aegis-ai-engineering-platform](https://github.com/alihassan186/aegis-ai-engineering-platform) |
+AEGIS is a production-oriented AI platform for investigating production incidents, synthesizing multi-source evidence, producing grounded root cause analysis, and supporting controlled engineering remediation under explicit policy and human oversight.
 
 ---
 
-## Overview
+## Table of contents
 
-AEGIS is designed to help engineering teams investigate production incidents by correlating evidence from logs, metrics, traces, deployments, source code, and operational knowledge. The long-term goal is a system that can:
-
-1. Detect and ingest incident signals
-2. Collect and correlate multi-source evidence
-3. Produce grounded root cause analysis (RCA)
-4. Recommend remediation under policy and human-in-the-loop controls
-5. Verify outcomes and capture institutional learning
-
-**Current scope is intentionally minimal.** The repository establishes project structure, tooling, and a thin FastAPI foundation. Agents, RAG, AWS integrations, and production workflows are planned—not yet implemented.
+- [About](#about)
+- [Problem](#problem)
+- [How AEGIS works](#how-aegis-works)
+- [Core capabilities](#core-capabilities)
+- [Architecture](#architecture)
+- [Agent model](#agent-model)
+- [Technology stack](#technology-stack)
+- [Repository layout](#repository-layout)
+- [Getting started](#getting-started)
+- [Configuration](#configuration)
+- [Development](#development)
+- [Testing & quality](#testing--quality)
+- [Documentation](#documentation)
+- [Security](#security)
+- [Contributing](#contributing)
+- [License](#license)
 
 ---
 
-## Architecture direction
+## About
 
-AEGIS is evolving as a **modular monolith with clear boundaries**, moving toward event-driven, agent-assisted workflows only when complexity is justified.
+Modern production systems generate vast amounts of operational data — logs, metrics, traces, deployment events, code changes, and runbooks — yet incident response still depends heavily on manual correlation across disconnected tools.
+
+AEGIS addresses this by providing an AI-native investigation layer that:
+
+- Ingests incident signals from observability and deployment systems
+- Retrieves and correlates evidence across operational and engineering sources
+- Produces evidence-backed root cause analysis with citations
+- Recommends remediation actions classified by risk
+- Enforces policy, authorization, and human approval before any write action
+- Verifies outcomes and captures learnings for future incidents
+
+The platform is built for teams who need **production-grade reliability, security, and auditability** — not ad-hoc LLM experimentation.
+
+---
+
+## Problem
+
+During a production incident, engineers typically must:
+
+1. Triage alerts across monitoring dashboards
+2. Search logs and traces manually
+3. Inspect recent deployments and configuration changes
+4. Search code and documentation for relevant context
+5. Correlate findings into a root cause hypothesis
+6. Propose and execute remediation — often under time pressure
+
+This process is slow, error-prone, and heavily dependent on institutional knowledge. Critical context is scattered, reasoning is rarely captured, and similar incidents are often re-investigated from scratch.
+
+AEGIS is designed to compress investigation time while increasing the rigor, traceability, and safety of every step.
+
+---
+
+## How AEGIS works
 
 ```text
-Incident / Alert
+Production System
        │
        ▼
-┌──────────────────────────────────────────────────┐
-│                     AEGIS                        │
-│  ┌─────────────┐  ┌──────────┐  ┌─────────────┐  │
-│  │ Observability│  │   Code   │  │  Knowledge  │  │
-│  │   evidence   │  │  search  │  │  retrieval  │  │
-│  └──────┬───────┘  └────┬─────┘  └──────┬──────┘  │
-│         └───────────────┼───────────────┘        │
-│                         ▼                        │
-│              Evidence synthesis & RCA            │
-│                         │                        │
-│                         ▼                        │
-│         Policy / approval / remediation          │
-└──────────────────────────────────────────────────┘
+ Incident / Alert
        │
        ▼
-Resolution, verification, and incident learning
+┌──────────────────────────────────────────────────────────────┐
+│                            AEGIS                             │
+│                                                              │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────────┐   │
+│  │ Observability │  │     Code     │  │    Knowledge     │   │
+│  │   evidence    │  │   analysis   │  │    retrieval     │   │
+│  └──────┬───────┘  └──────┬───────┘  └────────┬─────────┘   │
+│         └─────────────────┼───────────────────┘              │
+│                           ▼                                  │
+│                 Evidence collection                          │
+│                           │                                  │
+│                           ▼                                  │
+│              Root cause analysis (RCA)                       │
+│                           │                                  │
+│                           ▼                                  │
+│              Remediation recommendation                      │
+│                           │                                  │
+│                           ▼                                  │
+│         Policy evaluation / human approval                   │
+│                           │                                  │
+│              ┌────────────┴────────────┐                     │
+│              ▼                         ▼                     │
+│         Controlled action         Audit & learning           │
+└──────────────────────────────────────────────────────────────┘
+       │
+       ▼
+ Incident resolution & knowledge retention
 ```
 
-### Target capabilities (roadmap)
-
-| Area | Planned technologies |
-|---|---|
-| API & domain logic | FastAPI, Pydantic, SQLAlchemy, PostgreSQL, Alembic, Redis |
-| AI & agents | Amazon Bedrock, RAG, LangGraph, MCP, structured outputs, guardrails |
-| Cloud & ops | AWS (ECS/Fargate, SQS, EventBridge, RDS, OpenSearch, CloudWatch), AWS CDK |
-| Observability | OpenTelemetry, structured logging, metrics, distributed tracing |
-| Quality & safety | pytest, evaluation benchmarks, security tests, human approval gates |
-| Delivery | Docker, GitHub Actions, IaC |
+Each stage produces structured, auditable output. Agents operate through governed tools — never with unrestricted infrastructure access.
 
 ---
 
-## What exists today
+## Core capabilities
 
-| Component | State |
-|---|---|
-| FastAPI application with `/health` | Implemented |
-| Environment-aware settings (`AEGIS_*`) | Implemented |
-| `src/` package layout with domain layers scaffolded | Scaffolded |
-| pytest, ruff, mypy tooling | Configured |
-| Repository directory structure (agents, services, docs, infra) | Scaffolded (placeholders) |
-| PostgreSQL, Redis, Bedrock, agents, RAG, MCP, AWS deployment | Not implemented |
+### Incident investigation
+
+Correlate signals from logs, metrics, traces, alarms, and service health checks to build a structured evidence graph for each incident.
+
+### Retrieval-augmented analysis (RAG)
+
+Search across engineering documentation, runbooks, architecture records, historical incidents, and source code to ground analysis in verifiable context.
+
+### Multi-agent orchestration
+
+Specialized agents collaborate under an orchestration layer — planning investigations, delegating evidence collection, synthesizing findings, and proposing next steps.
+
+### Policy-enforced remediation
+
+Actions are classified by risk. Read operations are broadly permitted; write operations require authorization; destructive operations are denied by default.
+
+### Evaluation & benchmarking
+
+Investigation quality is measured against golden incident datasets — covering RCA accuracy, evidence precision, retrieval recall, tool selection, latency, and cost.
+
+### Observability
+
+Structured logging, metrics, distributed tracing, and agent execution telemetry provide full visibility into platform behavior in production.
 
 ---
 
-## Repository structure
+## Architecture
+
+AEGIS follows a **modular monolith** architecture with explicit domain boundaries, evolving toward event-driven processing as scale demands.
+
+```text
+┌─────────────────────────────────────────────────────────────────┐
+│                         API Layer (FastAPI)                     │
+├─────────────────────────────────────────────────────────────────┤
+│  Application Layer   │  Use cases, workflows, orchestration     │
+├─────────────────────────────────────────────────────────────────┤
+│  Domain Layer        │  Incidents, evidence, RCA, remediation   │
+├─────────────────────────────────────────────────────────────────┤
+│  Infrastructure      │  PostgreSQL, Redis, Bedrock, OpenSearch  │
+├─────────────────────────────────────────────────────────────────┤
+│  Tool Gateway        │  MCP tools, policy enforcement, audit    │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Event-driven processing
+
+Incident workflows are designed to run asynchronously via message queues and event routing:
+
+```text
+Incident Detected → EventBridge → SQS → Investigation Workflow → Agents
+```
+
+This model supports retries, dead-letter queues, idempotent processing, and horizontal scaling under load.
+
+### Production simulator
+
+AEGIS includes a simulated production environment — a multi-service application ecosystem that generates realistic logs, metrics, traces, deployments, and failure scenarios for development and evaluation.
+
+---
+
+## Agent model
+
+AEGIS uses specialized agents, each responsible for a bounded domain:
+
+| Agent | Responsibility |
+|---|---|
+| **Incident Commander** | Orchestrates investigation planning and agent coordination |
+| **Observability Agent** | Queries logs, metrics, traces, and alarms |
+| **Code Agent** | Searches repositories, inspects diffs, reviews deployment history |
+| **Knowledge Agent** | Retrieves runbooks, ADRs, architecture docs, and past incidents |
+| **RCA Agent** | Synthesizes evidence into grounded root cause analysis |
+| **Remediation Agent** | Proposes safe, policy-compliant remediation steps |
+| **Deployment Agent** | Manages controlled deployment actions |
+| **Verification Agent** | Confirms whether remediation resolved the incident |
+
+Agents invoke tools through a **gateway layer** that enforces authorization, rate limits, and audit logging before any action reaches external systems.
+
+---
+
+## Technology stack
+
+| Layer | Technologies |
+|---|---|
+| **Language & runtime** | Python 3.12, AsyncIO |
+| **API framework** | FastAPI, Pydantic, Uvicorn |
+| **Data & persistence** | PostgreSQL, SQLAlchemy, Alembic, Redis |
+| **Search & retrieval** | OpenSearch, hybrid retrieval, reranking |
+| **AI & agents** | Amazon Bedrock, LangGraph, MCP, structured outputs, guardrails |
+| **Cloud infrastructure** | AWS (ECS/Fargate, RDS, S3, SQS, EventBridge, CloudWatch, KMS) |
+| **Infrastructure as code** | AWS CDK |
+| **Observability** | OpenTelemetry, structured logging, CloudWatch |
+| **Containerization** | Docker |
+| **CI/CD** | GitHub Actions |
+| **Quality** | pytest, ruff, mypy, security tests, GenAI evaluation benchmarks |
+
+---
+
+## Repository layout
 
 ```text
 aegis-ai-engineering-platform/
-├── src/aegis/                 # Core application package
-│   ├── main.py                # FastAPI entry point
-│   ├── config/                # Settings and configuration
-│   ├── domain/                # Domain models and business rules (planned)
-│   ├── application/           # Use cases / orchestration (planned)
-│   ├── infrastructure/        # DB, AWS, external integrations (planned)
-│   ├── core/                  # Shared primitives (planned)
-│   └── shared/                # Cross-cutting utilities (planned)
-├── agents/                    # Specialized agent implementations (planned)
-├── apps/                      # API, frontend, simulator apps (planned)
-├── services/                  # Incident, investigation, deployment services (planned)
-├── mcp/                       # MCP tool servers and gateways (planned)
-├── evaluation/                # Benchmarks, datasets, metrics (planned)
-├── infrastructure/cdk/        # AWS CDK stacks (planned)
-├── docs/                      # ADRs, architecture, runbooks, threat model
-├── tests/                     # Unit, integration, contract, e2e, security tests
-├── config/                    # Environment configuration examples
-├── scripts/                   # Operational and developer scripts (planned)
-└── docker/                    # Container definitions (planned)
+├── src/aegis/                  # Core application package
+│   ├── main.py                 # FastAPI entry point
+│   ├── config/                 # Application settings
+│   ├── domain/                 # Domain models and business rules
+│   ├── application/            # Use cases and orchestration
+│   ├── infrastructure/         # External system integrations
+│   ├── core/                   # Shared primitives
+│   └── shared/                 # Cross-cutting utilities
+├── agents/                     # Specialized agent implementations
+│   ├── incident_commander/
+│   ├── observability/
+│   ├── code/
+│   ├── knowledge/
+│   ├── rca/
+│   └── remediation/
+├── apps/                       # Application services
+│   ├── api/                    # HTTP API service
+│   ├── frontend/               # Web interface
+│   └── simulator/              # Production environment simulator
+├── services/                   # Domain microservices
+│   ├── incident/
+│   ├── investigation/
+│   ├── approval/
+│   └── deployment/
+├── mcp/                        # MCP tool servers and gateway
+├── tools/                      # Agent tool implementations
+├── evaluation/                 # Benchmarks, datasets, and metrics
+├── infrastructure/cdk/         # AWS CDK infrastructure definitions
+├── docs/                       # Architecture docs, ADRs, runbooks
+├── tests/                      # Unit, integration, contract, e2e, security
+├── config/                     # Environment configuration
+├── scripts/                    # Developer and operational scripts
+└── docker/                     # Container definitions
 ```
 
 ---
 
-## Prerequisites
+## Getting started
 
-- **Python 3.12** (see `.python-version`)
-- **[uv](https://docs.astral.sh/uv/getting-started/installation/)** for dependency and environment management
-- **Git**
+### Prerequisites
 
-Optional for later phases: Docker, AWS CLI, PostgreSQL, Redis.
+| Requirement | Version |
+|---|---|
+| Python | 3.12 |
+| [uv](https://docs.astral.sh/uv/getting-started/installation/) | Latest |
+| Git | 2.x+ |
 
----
-
-## Quick start
-
-### 1. Clone the repository
+### Installation
 
 ```bash
 git clone git@github.com:alihassan186/aegis-ai-engineering-platform.git
 cd aegis-ai-engineering-platform
-```
-
-### 2. Install dependencies
-
-```bash
 uv sync --group dev
 ```
 
-This creates `.venv/` and installs runtime and development dependencies from `uv.lock`.
-
-### 3. Configure environment (optional)
-
-Copy the example configuration and adjust for local development:
+### Configuration
 
 ```bash
 cp config/.env.example .env
 ```
 
-Supported variables today:
+See [Configuration](#configuration) for the full reference.
 
-| Variable | Default | Description |
-|---|---|---|
-| `AEGIS_ENV` | `development` | Runtime environment (`development`, `test`, `production`) |
-| `AEGIS_DEBUG` | `false` | Enable debug mode and auto-reload |
-| `AEGIS_APP_NAME` | `aegis` | Application display name |
-| `AEGIS_LOG_LEVEL` | `INFO` | Log level |
-
-> **Note:** Root `.env.example` documents future integration settings (database, AWS, Bedrock, etc.). Only `AEGIS_*` variables are active in the current bootstrap.
-
-### 4. Run the API
+### Run the API
 
 ```bash
 uv run uvicorn aegis.main:app --reload
 ```
 
-Verify the service:
+| Endpoint | URL |
+|---|---|
+| Health check | [http://127.0.0.1:8000/health](http://127.0.0.1:8000/health) |
+| OpenAPI docs | [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs) |
+| ReDoc | [http://127.0.0.1:8000/redoc](http://127.0.0.1:8000/redoc) |
+
+Verify:
 
 ```bash
 curl http://127.0.0.1:8000/health
-# {"status":"ok"}
 ```
 
-Interactive API docs: [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
+---
+
+## Configuration
+
+Environment variables are loaded from `.env` or the process environment.
+
+### Application
+
+| Variable | Default | Description |
+|---|---|---|
+| `AEGIS_ENV` | `development` | Runtime environment: `development`, `test`, `production` |
+| `AEGIS_DEBUG` | `false` | Enable debug mode and auto-reload |
+| `AEGIS_APP_NAME` | `aegis` | Application display name |
+| `AEGIS_LOG_LEVEL` | `INFO` | Logging verbosity |
+
+### Integrations
+
+Integration settings for database, cache, AWS, Bedrock, authentication, and observability are documented in [`.env.example`](.env.example). Copy and populate values as services are configured for your environment.
+
+> Never commit `.env` files or credentials to version control.
 
 ---
 
 ## Development
 
-All commands run through `uv` to ensure a reproducible environment.
+All development commands use `uv` to ensure a reproducible environment locked by `uv.lock`.
 
-### Run tests
-
-```bash
-uv run pytest
-```
-
-With verbose output:
+### Activate the virtual environment
 
 ```bash
-uv run pytest -v
+source .venv/bin/activate
 ```
 
-### Lint
+### Code quality
 
 ```bash
-uv run ruff check .
+uv run ruff check .          # Lint
+uv run ruff format .         # Format
+uv run mypy src tests        # Type check
 ```
 
-### Format
+### Pre-commit check
 
-```bash
-uv run ruff format .
-```
-
-### Type check
-
-```bash
-uv run mypy src tests
-```
-
-### Recommended pre-commit workflow
+Run the full quality gate before opening a pull request:
 
 ```bash
 uv run ruff check . && uv run ruff format . && uv run mypy src tests && uv run pytest
 ```
 
----
-
-## Design principles
-
-1. **Incremental delivery** — Build foundation first; add complexity only when a real problem requires it.
-2. **Evidence over speculation** — RCA and recommendations must be grounded in retrievable evidence.
-3. **Least privilege** — Agents and tools operate through gated, auditable interfaces—not raw infrastructure credentials.
-4. **Human in the loop** — High-risk actions require explicit approval.
-5. **Observable by default** — Logs, metrics, traces, and evaluation metrics are first-class concerns.
-6. **Testable AI behavior** — Retrieval quality, RCA accuracy, and safety are measured—not assumed.
-
-Architectural decisions will be recorded as ADRs under `docs/adr/`.
-
----
-
-## Roadmap
-
-| Version | Focus |
-|---|---|
-| **v0.1** *(current)* | Foundation: project structure, FastAPI bootstrap, tooling |
-| **v0.2** | Core backend: domain model, PostgreSQL, authentication |
-| **v0.3** | Production simulator: synthetic logs, metrics, traces, failures |
-| **v0.4** | RAG platform: ingestion, retrieval, citations, evaluation |
-| **v0.5** | Multi-agent investigation workflows |
-| **v0.6** | MCP tools and policy-enforced action gateway |
-| **v0.7** | AWS production deployment (CDK, ECS, RDS, OpenSearch) |
-| **v0.8** | Observability, benchmarks, and GenAI evaluation |
-| **v0.9** | Controlled remediation with approval and verification |
-| **v1.0** | Production-ready platform |
-
----
-
-## Git workflow
-
-Use conventional commits on feature branches:
+### Branch naming
 
 ```text
 main
-├── feature/*
-├── fix/*
-├── refactor/*
-├── docs/*
-└── chore/*
+├── feature/*      # New features
+├── fix/*          # Bug fixes
+├── refactor/*     # Code restructuring
+├── docs/*         # Documentation
+└── chore/*        # Tooling and maintenance
 ```
 
-Examples:
+### Commit messages
+
+Follow [Conventional Commits](https://www.conventionalcommits.org/):
 
 ```text
 feat: add incident management API
 fix: handle duplicate incident events
-test: add health endpoint contract tests
-docs: document RAG architecture
+test: add RCA workflow integration tests
+docs: document RAG retrieval architecture
+refactor: separate domain and infrastructure layers
 chore: configure project tooling
 ```
 
 ---
 
+## Testing & quality
+
+AEGIS maintains a layered testing strategy:
+
+| Layer | Purpose |
+|---|---|
+| **Unit** | Business logic and isolated components |
+| **Integration** | Database, cache, and external service interactions |
+| **Contract** | API and tool interface contracts |
+| **End-to-end** | Full incident investigation workflows |
+| **Security** | Authorization, prompt injection, tool abuse |
+| **Evaluation** | GenAI quality — RCA accuracy, retrieval recall, grounding |
+
+```bash
+uv run pytest                  # Run all tests
+uv run pytest -v               # Verbose output
+uv run pytest tests/unit       # Unit tests only
+uv run pytest tests/integration  # Integration tests only
+```
+
+---
+
+## Documentation
+
+| Document | Location |
+|---|---|
+| Architecture decisions (ADRs) | [`docs/adr/`](docs/adr/) |
+| System architecture | [`docs/architecture/`](docs/architecture/) |
+| API reference | [`docs/api/`](docs/api/) |
+| Operational runbooks | [`docs/runbooks/`](docs/runbooks/) |
+| Threat model | [`docs/threat-model/`](docs/threat-model/) |
+
+Architectural decisions follow the ADR format: context, problem, decision, alternatives, trade-offs, and consequences.
+
+---
+
 ## Security
 
-- **Never commit secrets.** Use `.env` locally; reference `config/.env.example` for safe defaults.
-- Do not commit `.env`, credentials, private keys, or local database files.
-- Future agent tooling will enforce read/write action classification and audit logging.
+Security is a first-class architectural concern across every layer of AEGIS.
 
-Report security concerns privately to the repository maintainer.
+### Principles
+
+- **Least privilege** — Agents and services operate with minimal required permissions
+- **No credential exposure** — LLMs never receive raw AWS credentials or unrestricted production access
+- **Action classification** — Operations are categorized as read, low-risk write, high-risk write, or destructive
+- **Human approval** — High-risk and destructive actions require explicit authorization
+- **Audit logging** — All agent actions and tool invocations are recorded
+- **Defense in depth** — Guardrails, input validation, and policy enforcement at the tool gateway
+
+### Action policy
+
+```text
+READ              → Permitted
+LOW-RISK WRITE    → Controlled (logged, rate-limited)
+HIGH-RISK WRITE   → Requires human approval
+DESTRUCTIVE       → Denied by default
+```
+
+### Reporting
+
+Do not open public issues for security vulnerabilities. Report concerns privately to the repository maintainer.
 
 ---
 
 ## Contributing
 
-This is an active engineering learning project. When contributing:
+Contributions are welcome. Please follow these guidelines:
 
-1. Keep changes scoped to a single, well-defined problem.
-2. Match existing code style and project structure.
-3. Add or update tests for behavior changes.
-4. Run lint, type check, and tests before opening a pull request.
-5. Document non-obvious architectural decisions in `docs/adr/`.
+1. **Scope** — One clearly defined problem per pull request
+2. **Style** — Match existing conventions; run lint, format, and type checks
+3. **Tests** — Add or update tests for all behavior changes
+4. **Documentation** — Record non-obvious architectural decisions as ADRs in `docs/adr/`
+5. **Review** — Ensure CI checks pass before requesting review
 
 ---
 
 ## License
 
-License to be determined.
+License pending. See [LICENSE](LICENSE) for details once published.
 
 ---
+
+<p align="center">
+  <sub>AEGIS — Autonomous Engineering & Incident Response System</sub>
+</p>
