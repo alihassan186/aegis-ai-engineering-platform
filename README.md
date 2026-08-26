@@ -392,11 +392,13 @@ uv run pytest tests/integration  # Integration tests only
 
 | Document | Location |
 |---|---|
+| **Platform overview (diagrams)** | [`docs/architecture/platform-overview.md`](docs/architecture/platform-overview.md) |
 | Architecture decisions (ADRs) | [`docs/adr/`](docs/adr/) |
 | System architecture | [`docs/architecture/`](docs/architecture/) |
+| Requirements | [`docs/requirements/`](docs/requirements/) |
 | API reference | [`docs/api/`](docs/api/) |
 | Operational runbooks | [`docs/runbooks/`](docs/runbooks/) |
-| Threat model | [`docs/threat-model/`](docs/threat-model/) |
+| Threat model | [`docs/security/threat-model.md`](docs/security/threat-model.md) |
 
 Architectural decisions follow the ADR format: context, problem, decision, alternatives, trade-offs, and consequences.
 

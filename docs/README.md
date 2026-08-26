@@ -15,7 +15,8 @@ This documentation defines the **product intent, requirements, architecture, sec
 | | [Non-functional requirements](requirements/non-functional-requirements.md) | Reliability, security, performance, and operability constraints |
 | | [SLOs and SLIs](requirements/slos-and-slis.md) | Service level objectives and indicators |
 | | [Risk register](requirements/risk-register.md) | Product, technical, and operational risks |
-| **Architecture** | [System context](architecture/context.md) | C4 Level 1 — actors, external systems, and boundaries |
+| **Architecture** | [Platform overview (diagrams)](architecture/platform-overview.md) | **Start here** — full visual map: services, data flows, agents, AWS |
+| | [System context](architecture/context.md) | C4 Level 1 — actors, external systems, and boundaries |
 | | [System boundaries](architecture/system-boundaries.md) | In-scope vs out-of-scope, trust zones, data flows |
 | | [Incident flow](architecture/incident-flow.md) | End-to-end investigation and remediation lifecycle |
 | **Security** | [Threat model](security/threat-model.md) | Threat actors, attack surfaces, mitigations, and residual risk |
