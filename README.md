@@ -256,6 +256,7 @@ aegis-ai-engineering-platform/
 | Python | 3.12 |
 | [uv](https://docs.astral.sh/uv/getting-started/installation/) | Latest |
 | Git | 2.x+ |
+| Docker | 24+ (local PostgreSQL) |
 
 ### Installation
 
@@ -272,6 +273,31 @@ cp config/.env.example .env
 ```
 
 See [Configuration](#configuration) for the full reference.
+
+### Local PostgreSQL
+
+Port **5434** is used on the host so AEGIS does not collide with other local Postgres containers on 5432/5433.
+
+```bash
+cp docker/.env.example docker/.env
+sudo docker-compose -f docker/docker-compose.yml --project-directory docker up -d
+sudo docker-compose -f docker/docker-compose.yml --project-directory docker ps
+```
+
+If you see `Permission denied` on `/var/run/docker.sock`, either keep using `sudo` or add your user to the `docker` group and log out/in:
+
+```bash
+sudo usermod -aG docker "$USER"
+```
+
+If you see `KeyError: 'ContainerConfig'`, Compose 1.29 is trying to recreate a leftover container on a newer Docker Engine. Remove the leftover, then start clean:
+
+```bash
+sudo docker rm -f aegis-postgres 18b535f8440a_aegis-postgres
+sudo docker-compose -f docker/docker-compose.yml --project-directory docker up -d
+```
+
+The API URL is `postgresql+asyncpg://aegis:aegis@127.0.0.1:5434/aegis`.
 
 ### Run the API
 
@@ -305,6 +331,7 @@ Environment variables are loaded from `.env` or the process environment.
 | `AEGIS_DEBUG` | `false` | Enable debug mode and auto-reload |
 | `AEGIS_APP_NAME` | `aegis` | Application display name |
 | `AEGIS_LOG_LEVEL` | `INFO` | Logging verbosity |
+| `AEGIS_DATABASE_URL` | empty | PostgreSQL URL using `postgresql+asyncpg://` (required in production) |
 
 ### Integrations
 
