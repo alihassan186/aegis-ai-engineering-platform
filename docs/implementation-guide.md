@@ -327,9 +327,9 @@ uv run pytest tests/unit/test_settings.py
 
 **Done checklist:**
 
-- [ ] `DATABASE_URL` documented in `.env.example`
-- [ ] Settings dataclass includes database URL
-- [ ] Unit tests pass
+- [x] `DATABASE_URL` documented in `.env.example`
+- [x] Settings dataclass includes database URL
+- [x] Unit tests pass
 
 ---
 
@@ -378,7 +378,7 @@ docker compose -f docker/docker-compose.yml ps   # postgres healthy
 
 **Done checklist:**
 
-- [ ] Postgres container starts and is healthy
+- [x] Postgres container starts and is healthy
 - [ ] Can connect with `psql` or GUI tool
 
 ---

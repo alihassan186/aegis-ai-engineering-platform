@@ -280,24 +280,26 @@ Port **5434** is used on the host so AEGIS does not collide with other local Pos
 
 ```bash
 cp docker/.env.example docker/.env
-sudo docker-compose -f docker/docker-compose.yml --project-directory docker up -d
-sudo docker-compose -f docker/docker-compose.yml --project-directory docker ps
+sudo bash scripts/docker-up.sh
 ```
 
-If you see `Permission denied` on `/var/run/docker.sock`, either keep using `sudo` or add your user to the `docker` group and log out/in:
+That script deletes leftover AEGIS containers first. **docker-compose 1.29 + Docker 29 cannot recreate containers** (`KeyError: 'ContainerConfig'`). Never run `up -d` against existing AEGIS containers after a compose change; remove them first.
+
+Manual equivalent:
 
 ```bash
-sudo usermod -aG docker "$USER"
-```
-
-If you see `KeyError: 'ContainerConfig'`, Compose 1.29 is trying to recreate a leftover container on a newer Docker Engine. Remove the leftover, then start clean:
-
-```bash
-sudo docker rm -f aegis-postgres 18b535f8440a_aegis-postgres
+sudo docker rm -f aegis-postgres aegis-pgadmin
+sudo docker ps -aq --filter name=aegis-postgres --filter name=aegis-pgadmin | xargs -r sudo docker rm -f
+sudo docker volume rm docker_aegis_pgadmin_data
 sudo docker-compose -f docker/docker-compose.yml --project-directory docker up -d
 ```
+
+`Permission denied` on the Docker socket: keep using `sudo`, or `sudo usermod -aG docker "$USER"` and log out/in.
 
 The API URL is `postgresql+asyncpg://aegis:aegis@127.0.0.1:5434/aegis`.
+
+pgAdmin: [http://127.0.0.1:5051](http://127.0.0.1:5051) — login `admin@example.com` / `admin`.  
+Register a server with host `postgres`, port `5432`, database/user/password `aegis`. Do not use `127.0.0.1` as the host inside pgAdmin.
 
 ### Run the API
 
