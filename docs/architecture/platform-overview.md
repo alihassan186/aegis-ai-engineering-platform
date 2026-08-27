@@ -220,7 +220,7 @@ Repository structure mapped to runtime responsibilities.
 flowchart LR
     subgraph repo["Repository Modules"]
         direction TB
-        SRC["aegis/<br/>domain · application · infrastructure"]
+        SRC["src/aegis/<br/>domain · application · infrastructure"]
         AG["agents/<br/>incident_commander · observability<br/>code · knowledge · rca · remediation"]
         SVC["services/<br/>incident · investigation<br/>approval · deployment"]
         TOOLS["tools/<br/>cloudwatch · github · database · deployment"]

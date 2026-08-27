@@ -93,11 +93,11 @@ Use this table to know **which document answers which question** while coding.
 
 | Component | Status | Location |
 |---|---|---|
-| FastAPI app + `/health` | Implemented | `aegis/main.py` |
-| Settings | Implemented | `aegis/config/settings.py` |
-| Domain layer | Empty (`.gitkeep`) | `aegis/domain/` |
-| Application layer | Empty | `aegis/application/` |
-| Infrastructure layer | Empty | `aegis/infrastructure/` |
+| FastAPI app + `/health` | Implemented | `src/aegis/main.py` |
+| Settings | Implemented | `src/aegis/config/settings.py` |
+| Domain layer | Empty (`.gitkeep`) | `src/aegis/domain/` |
+| Application layer | Empty | `src/aegis/application/` |
+| Infrastructure layer | Empty | `src/aegis/infrastructure/` |
 | PostgreSQL | Not implemented | — |
 | Authentication | Not implemented | — |
 | Incident API | Not implemented | — |
@@ -165,7 +165,7 @@ main.py + routes → HTTP interface (thin — delegates to application layer)
 uv sync --group dev
 uv run pytest
 uv run ruff check .
-uv run mypy aegis tests
+uv run mypy src tests
 uv run uvicorn aegis.main:app --reload
 curl http://127.0.0.1:8000/health
 ```
@@ -197,13 +197,13 @@ curl http://127.0.0.1:8000/health
 **Files to create:**
 
 ```text
-aegis/domain/__init__.py
-aegis/application/__init__.py
-aegis/infrastructure/__init__.py
-aegis/shared/__init__.py
-aegis/shared/exceptions.py          # DomainError, NotFoundError, ValidationError
-aegis/core/__init__.py
-aegis/core/protocols.py             # Repository interfaces (Protocols)
+src/aegis/domain/__init__.py
+src/aegis/application/__init__.py
+src/aegis/infrastructure/__init__.py
+src/aegis/shared/__init__.py
+src/aegis/shared/exceptions.py          # DomainError, NotFoundError, ValidationError
+src/aegis/core/__init__.py
+src/aegis/core/protocols.py             # Repository interfaces (Protocols)
 ```
 
 **What to build:**
@@ -226,7 +226,7 @@ aegis/core/protocols.py             # Repository interfaces (Protocols)
 
 ```bash
 uv run pytest tests/unit/test_package_imports.py
-uv run mypy aegis
+uv run mypy src
 ```
 
 **Done checklist:**
@@ -249,7 +249,7 @@ uv run mypy aegis
 **Files to modify:**
 
 ```text
-aegis/config/settings.py
+src/aegis/config/settings.py
 config/.env.example
 .env.example                            # add DATABASE_URL if missing
 ```
@@ -337,12 +337,12 @@ docker compose -f docker/docker-compose.yml ps   # postgres healthy
 
 ```text
 pyproject.toml                          # add sqlalchemy[asyncio], asyncpg, alembic
-aegis/infrastructure/database/session.py
-aegis/infrastructure/database/base.py
+src/aegis/infrastructure/database/session.py
+src/aegis/infrastructure/database/base.py
 alembic.ini
 alembic/env.py
 alembic/versions/                       # first migration (empty or extensions)
-aegis/main.py                       # lifespan: connect/disconnect pool
+src/aegis/main.py                       # lifespan: connect/disconnect pool
 ```
 
 **What to build:**
@@ -389,11 +389,11 @@ uv run pytest tests/integration/test_database_connection.py
 **Files to create:**
 
 ```text
-aegis/domain/incidents/__init__.py
-aegis/domain/incidents/enums.py         # IncidentState, Severity
-aegis/domain/incidents/entity.py       # Incident dataclass or class
-aegis/domain/incidents/transitions.py  # valid state transition rules
-aegis/domain/incidents/exceptions.py   # InvalidTransitionError
+src/aegis/domain/incidents/__init__.py
+src/aegis/domain/incidents/enums.py         # IncidentState, Severity
+src/aegis/domain/incidents/entity.py       # Incident dataclass or class
+src/aegis/domain/incidents/transitions.py  # valid state transition rules
+src/aegis/domain/incidents/exceptions.py   # InvalidTransitionError
 ```
 
 **What to build:**
@@ -443,7 +443,7 @@ tests/unit/domain/incidents/test_transitions.py
 
 ```bash
 uv run pytest tests/unit/domain/ -v
-uv run mypy aegis/domain
+uv run mypy src/aegis/domain
 ```
 
 **Done checklist:**
@@ -467,10 +467,10 @@ uv run mypy aegis/domain
 **Files to create:**
 
 ```text
-aegis/infrastructure/database/models/incident.py    # SQLAlchemy ORM model
-aegis/infrastructure/database/models/state_history.py
-aegis/infrastructure/repositories/incident_repository.py
-aegis/infrastructure/repositories/mappers.py        # ORM ↔ domain entity
+src/aegis/infrastructure/database/models/incident.py    # SQLAlchemy ORM model
+src/aegis/infrastructure/database/models/state_history.py
+src/aegis/infrastructure/repositories/incident_repository.py
+src/aegis/infrastructure/repositories/mappers.py        # ORM ↔ domain entity
 alembic/versions/xxxx_create_incidents_table.py
 ```
 
@@ -530,12 +530,12 @@ uv run pytest tests/integration/repositories/ -v
 **Files to create:**
 
 ```text
-aegis/application/incidents/__init__.py
-aegis/application/incidents/create_incident.py
-aegis/application/incidents/get_incident.py
-aegis/application/incidents/list_incidents.py
-aegis/application/incidents/transition_incident.py
-aegis/application/incidents/dto.py              # request/response DTOs
+src/aegis/application/incidents/__init__.py
+src/aegis/application/incidents/create_incident.py
+src/aegis/application/incidents/get_incident.py
+src/aegis/application/incidents/list_incidents.py
+src/aegis/application/incidents/transition_incident.py
+src/aegis/application/incidents/dto.py              # request/response DTOs
 ```
 
 **Use cases:**
@@ -580,13 +580,13 @@ uv run pytest tests/unit/application/ -v
 **Files to create:**
 
 ```text
-aegis/api/__init__.py
-aegis/api/router.py
-aegis/api/incidents/router.py
-aegis/api/incidents/schemas.py          # Pydantic request/response models
-aegis/api/dependencies.py               # get_db, get_repositories
-aegis/api/errors.py                     # exception handlers
-aegis/main.py                           # include router
+src/aegis/api/__init__.py
+src/aegis/api/router.py
+src/aegis/api/incidents/router.py
+src/aegis/api/incidents/schemas.py          # Pydantic request/response models
+src/aegis/api/dependencies.py               # get_db, get_repositories
+src/aegis/api/errors.py                     # exception handlers
+src/aegis/main.py                           # include router
 ```
 
 **Endpoints:**
@@ -643,10 +643,10 @@ uv run pytest tests/integration/api/ tests/contract/ -v
 **Files to create:**
 
 ```text
-aegis/domain/auth/enums.py              # Role: viewer, engineer, approver, admin
-aegis/infrastructure/auth/jwt.py        # token create/verify
-aegis/api/dependencies.py               # get_current_user, require_role
-aegis/api/auth/router.py                # POST /api/v1/auth/token (dev login)
+src/aegis/domain/auth/enums.py              # Role: viewer, engineer, approver, admin
+src/aegis/infrastructure/auth/jwt.py        # token create/verify
+src/aegis/api/dependencies.py               # get_current_user, require_role
+src/aegis/api/auth/router.py                # POST /api/v1/auth/token (dev login)
 ```
 
 **Role permissions (v0.2):**
@@ -697,7 +697,7 @@ uv run pytest tests/integration/api/test_auth.py tests/security/ -v
 ```bash
 uv run ruff check .
 uv run ruff format --check .
-uv run mypy aegis tests
+uv run mypy src tests
 uv run pytest -v
 ```
 
@@ -860,7 +860,7 @@ Architecture decision (ADR-xxx)
     ↓
 Threat/risk (THR-xxx / RISK-xxx)
     ↓
-Code location (aegis/...)
+Code location (src/aegis/...)
     ↓
 Test location (tests/...)
 ```

@@ -90,7 +90,7 @@ Each workflow step as a Lambda function orchestrated by Step Functions.
 
 - Faster iteration in v0.1–v0.5 without infrastructure overhead
 - Domain layer can be tested in isolation from day one
-- Repository structure (`aegis/domain/`, `application/`, `infrastructure/`) enforces boundaries in code
+- Repository structure (`src/aegis/domain/`, `application/`, `infrastructure/`) enforces boundaries in code
 - ADR-gated path to service extraction when justified
 
 ### Negative

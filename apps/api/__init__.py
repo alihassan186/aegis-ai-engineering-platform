@@ -1,4 +1,4 @@
-"""HTTP API application (presentation layer)."""
+"""HTTP API application (presentation process)."""
 
 from aegis.main import app
 
