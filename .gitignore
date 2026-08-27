@@ -71,8 +71,8 @@ htmlcov/
 
 # AWS credentials
 .aws/
-credentials
-config
+.aws/credentials
+.aws/config
 
 # -----------------------------
 # Secret / credential files

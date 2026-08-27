@@ -210,7 +210,7 @@ Agents invoke tools through a **gateway layer** that enforces authorization, rat
 
 ```text
 aegis-ai-engineering-platform/
-├── src/aegis/                  # Core application package
+├── aegis/                      # Core application package
 │   ├── main.py                 # FastAPI entry point
 │   ├── config/                 # Application settings
 │   ├── domain/                 # Domain models and business rules
@@ -329,7 +329,7 @@ source .venv/bin/activate
 ```bash
 uv run ruff check .          # Lint
 uv run ruff format .         # Format
-uv run mypy src tests        # Type check
+uv run mypy aegis tests        # Type check
 ```
 
 ### Pre-commit check
@@ -337,7 +337,7 @@ uv run mypy src tests        # Type check
 Run the full quality gate before opening a pull request:
 
 ```bash
-uv run ruff check . && uv run ruff format . && uv run mypy src tests && uv run pytest
+uv run ruff check . && uv run ruff format . && uv run mypy aegis tests && uv run pytest
 ```
 
 ### Branch naming
@@ -392,6 +392,7 @@ uv run pytest tests/integration  # Integration tests only
 
 | Document | Location |
 |---|---|
+| **Implementation guide (start coding)** | [`docs/implementation-guide.md`](docs/implementation-guide.md) |
 | **Platform overview (diagrams)** | [`docs/architecture/platform-overview.md`](docs/architecture/platform-overview.md) |
 | Architecture decisions (ADRs) | [`docs/adr/`](docs/adr/) |
 | System architecture | [`docs/architecture/`](docs/architecture/) |

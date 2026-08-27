@@ -31,7 +31,10 @@ target-version = "py312"
 [tool.ruff.lint]
 select = ["E", "F", "I", "B"]
 
+[tool.hatch.build.targets.wheel]
+packages = ["aegis"]
+
 [tool.mypy]
 python_version = "3.12"
-files = ["src", "tests"]
+files = ["aegis", "tests"]
 warn_unused_configs = true

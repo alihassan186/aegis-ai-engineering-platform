@@ -93,17 +93,17 @@ Dependencies point **inward only**:
 
 | Repository path             | Layer          | Boundary                                                        |
 | --------------------------- | -------------- | --------------------------------------------------------------- |
-| `src/aegis/domain/`         | Domain         | Pure business logic, entities, value objects, domain services   |
-| `src/aegis/application/`    | Application    | Use cases, orchestration, workflow handlers                     |
-| `src/aegis/infrastructure/` | Infrastructure | DB repos, Bedrock client, OpenSearch client, SQS publishers     |
-| `src/aegis/config/`         | Cross-cutting  | Settings, environment configuration                             |
-| `src/aegis/shared/`         | Cross-cutting  | Shared types, exceptions, utilities                             |
-| `src/aegis/core/`           | Cross-cutting  | Base classes, interfaces, protocols                             |
+| `aegis/domain/`             | Domain         | Pure business logic, entities, value objects, domain services   |
+| `aegis/application/`        | Application    | Use cases, orchestration, workflow handlers                     |
+| `aegis/infrastructure/`     | Infrastructure | DB repos, Bedrock client, OpenSearch client, SQS publishers     |
+| `aegis/config/`             | Cross-cutting  | Settings, environment configuration                             |
+| `aegis/shared/`             | Cross-cutting  | Shared types, exceptions, utilities                             |
+| `aegis/core/`               | Cross-cutting  | Base classes, interfaces, protocols                             |
 | `agents/`                   | Application    | Agent implementations (one package per agent role)              |
 | `mcp/`                      | Infrastructure | MCP server definitions and tool gateway                         |
 | `tools/`                    | Infrastructure | Concrete tool implementations behind gateway                    |
 | `services/`                 | Application    | Domain-specific service modules (incident, investigation, etc.) |
-| `apps/api/`                 | Presentation   | API service entry point (may wrap `src/aegis/main.py`)          |
+| `apps/api/`                 | Presentation   | API service entry point (wraps `aegis.main`)                    |
 | `apps/simulator/`           | Infrastructure | Production environment simulator                                |
 | `evaluation/`               | Application    | Benchmark runners, datasets, metrics                            |
 

@@ -10,6 +10,7 @@ This documentation defines the **product intent, requirements, architecture, sec
 
 | Area | Document | Purpose |
 |---|---|---|
+| **Implementation** | [**Implementation guide**](implementation-guide.md) | **Start coding here** — step-by-step build plan linked to all docs |
 | **Product** | [Product vision](product/product-vision.md) | Mission, users, value proposition, scope, and success criteria |
 | **Requirements** | [Functional requirements](requirements/functional-requirements.md) | Capabilities the system must deliver |
 | | [Non-functional requirements](requirements/non-functional-requirements.md) | Reliability, security, performance, and operability constraints |
@@ -38,7 +39,8 @@ This documentation defines the **product intent, requirements, architecture, sec
 ## How to read this documentation
 
 1. Start with **product vision** to understand the problem and intended outcomes.
-2. Review **functional and non-functional requirements** to understand constraints.
+2. Follow the **[implementation guide](implementation-guide.md)** for step-by-step coding order.
+3. Review **functional and non-functional requirements** to understand constraints.
 3. Read **architecture** documents for system structure and data flows.
 4. Review the **threat model** before designing agents, tools, or integrations.
 5. Consult **ADRs** when making or reviewing technical decisions.
