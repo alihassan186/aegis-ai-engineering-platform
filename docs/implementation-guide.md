@@ -114,13 +114,14 @@ Use this table to know **which document answers which question** while coding.
 | Application layer       | Empty              | `src/aegis/application/`             |
 | Database session        | Implemented        | `src/aegis/infrastructure/database/` |
 | PostgreSQL (Docker)     | Implemented        | `docker/` · `scripts/docker-up.sh`   |
-| Alembic migrations      | Implemented        | `alembic/` (empty baseline)          |
+| Alembic migrations      | Implemented        | `alembic/` (incidents schema)        |
+| Incident repository     | Implemented        | `src/aegis/infrastructure/repositories/` |
 | Authentication          | Not implemented    | —                                    |
 | Incident API            | Not implemented    | —                                    |
 | Agents, RAG, AWS        | Not implemented    | —                                    |
 
 
-**You are here:** Step 1.5 complete → next [Step 1.6 — PostgreSQL schema and repository](#step-16--postgresql-schema-and-repository).
+**You are here:** Step 1.6 complete → next [Step 1.7 — Application use cases](#step-17--application-use-cases).
 
 ---
 
@@ -601,10 +602,10 @@ uv run pytest tests/integration/repositories/ -v
 
 **Done checklist:**
 
-- [ ] Migration creates tables with indexes on `state`, `affected_service`, `created_at`
-- [ ] Repository CRUD works
-- [ ] State history persisted on transitions
-- [ ] Integration tests pass against Docker Postgres
+- [x] Migration creates tables with indexes on `state`, `affected_service`, `created_at`
+- [x] Repository CRUD works
+- [x] State history persisted on transitions
+- [x] Integration tests pass against Docker Postgres
 
 ---
 

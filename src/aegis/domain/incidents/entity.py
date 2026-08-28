@@ -1,16 +1,8 @@
-"""
-This module defines the core structure, validation, and state management for incidents in the Aegis system.
+"""Incident aggregate — identity, validation, and lifecycle rules (FR-002–FR-005).
 
-Key concepts covered:
-- Incident "aggregate" (the root representation of a real-world incident in the domain).
-- How each incident has identity (unique ID), textual details (title, description), state (where in the lifecycle it is), impact severity, and related service.
-- Enforces domain rules for incident creation, allowed state transitions, and data validation.
-
-Related functional requirements from the specification:
-- FR-002: Every incident must have a unique identity.
-- FR-003: Incident lifecycles follow strict state transition rules.
-- FR-004: All state changes are recorded with timestamps.
-- FR-005: Incidents have classified severity levels (e.g., critical, high, medium, low).
+The incident is the domain root. It has a unique id, textual details, a
+lifecycle state, severity, and an affected service. State may change only
+through allowed transitions; each change is timestamped.
 """
 
 from __future__ import annotations

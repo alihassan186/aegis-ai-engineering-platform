@@ -18,18 +18,22 @@ from aegis.config.settings import Settings
 # POOL_SIZE controls the number of persistent connections kept open at all times.
 # MAX_OVERFLOW allows this many extra temporary connections if all pool slots are busy.
 
-POOL_SIZE = 2        # Default: 2 connections always kept alive (good for small/tiny deployments/tests).
-MAX_OVERFLOW = 3     # Default: up to 5 additional "overflow" connections during spikes.
+POOL_SIZE = 2  # Persistent connections kept alive (small/dev default).
+MAX_OVERFLOW = 3  # Extra connections allowed when the pool is busy.
 
 # If you set both POOL_SIZE = 1 and MAX_OVERFLOW = 1:
 # - At most 2 concurrent DB connections can exist: 1 pooled + 1 transient.
 # - Benefits:
-#   - Lower resource usage: reduces load on Postgres, useful for memory-limited or dev environments.
+#   - Lower resource usage: reduces load on Postgres, useful for memory-limited
+#     or dev environments.
 #   - Useful in CI/test scenarios where concurrency isn't needed.
 # - Downsides:
-#   - Increased chance of pool exhaustion ("too many connections") under concurrent requests.
-#   - App performance could suffer if DB queries accumulate: only 2 can run at a time.
-# Use 1/1 only for dev/test or when strictly limiting DB impact; for production, higher values prevent stalls.
+#   - Increased chance of pool exhaustion ("too many connections") under
+#     concurrent requests.
+#   - App performance could suffer if DB queries accumulate: only 2 can run
+#     at a time.
+# Use 1/1 only for dev/test or when strictly limiting DB impact; for
+# production, higher values prevent stalls.
 
 
 def create_db_engine(settings: Settings) -> AsyncEngine:
