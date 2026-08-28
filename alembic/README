@@ -1,0 +1,8 @@
+AEGIS Alembic migrations (NFR-061).
+
+```bash
+uv run alembic upgrade head
+uv run alembic revision --autogenerate -m "describe the change"
+```
+
+URL resolution order: `AEGIS_DATABASE_URL` → `sqlalchemy.url` in `alembic.ini`.

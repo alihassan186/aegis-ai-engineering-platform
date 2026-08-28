@@ -2,7 +2,7 @@
 
 **Document owner:** Engineering  
 **Status:** Active  
-**Last updated:** 2026-08-26
+**Last updated:** 2026-08-27
 
 This is the **master step-by-step guide** for turning AEGIS documentation into working code. Every implementation step links back to the requirement, architecture decision, or design document that justifies it.
 
@@ -112,14 +112,15 @@ Use this table to know **which document answers which question** while coding.
 | Settings                | Implemented        | `src/aegis/config/settings.py` |
 | Domain layer            | Empty (`.gitkeep`) | `src/aegis/domain/`            |
 | Application layer       | Empty              | `src/aegis/application/`       |
-| Infrastructure layer    | Empty              | `src/aegis/infrastructure/`    |
-| PostgreSQL              | Not implemented    | —                              |
+| Database session        | Implemented        | `src/aegis/infrastructure/database/` |
+| PostgreSQL (Docker)     | Implemented        | `docker/` · `scripts/docker-up.sh` |
+| Alembic migrations      | Implemented        | `alembic/` (empty baseline)    |
 | Authentication          | Not implemented    | —                              |
 | Incident API            | Not implemented    | —                              |
 | Agents, RAG, AWS        | Not implemented    | —                              |
 
 
-**You are here:** End of v0.1 → Start [Phase 1 (v0.2)](#phase-1--v02-core-backend).
+**You are here:** Step 1.4 complete → next [Step 1.5 — Incident domain model](#step-15--implement-incident-domain-model).
 
 ---
 
@@ -439,9 +440,9 @@ uv run pytest tests/integration/test_database_connection.py
 
 **Done checklist:**
 
-- [ ] Dependencies added to `pyproject.toml` and `uv.lock`
-- [ ] Alembic runs successfully
-- [ ] Integration test connects to Postgres
+- [x] Dependencies added to `pyproject.toml` and `uv.lock`
+- [x] Alembic runs successfully
+- [x] Integration test connects to Postgres
 
 ---
 

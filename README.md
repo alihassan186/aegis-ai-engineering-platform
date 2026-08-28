@@ -301,6 +301,17 @@ The API URL is `postgresql+asyncpg://aegis:aegis@127.0.0.1:5434/aegis`.
 pgAdmin: [http://127.0.0.1:5051](http://127.0.0.1:5051) — login `admin@example.com` / `admin`.  
 Register a server with host `postgres`, port `5432`, database/user/password `aegis`. Do not use `127.0.0.1` as the host inside pgAdmin.
 
+### Database migrations
+
+Schema changes go through Alembic (NFR-061). The first revision is an empty baseline; incident tables arrive in Step 1.6.
+
+```bash
+uv run alembic upgrade head
+uv run alembic current
+```
+
+`AEGIS_DATABASE_URL` overrides the local URL in `alembic.ini`.
+
 ### Run the API
 
 ```bash
