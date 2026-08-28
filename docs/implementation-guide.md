@@ -106,22 +106,22 @@ Use this table to know **which document answers which question** while coding.
 ## 3. Current codebase state
 
 
-| Component               | Status             | Location                             |
-| ----------------------- | ------------------ | ------------------------------------ |
-| FastAPI app + `/health` | Implemented        | `src/aegis/main.py`                  |
-| Settings                | Implemented        | `src/aegis/config/settings.py`       |
-| Domain layer            | Implemented        | `src/aegis/domain/incidents/`        |
-| Application layer       | Empty              | `src/aegis/application/`             |
-| Database session        | Implemented        | `src/aegis/infrastructure/database/` |
-| PostgreSQL (Docker)     | Implemented        | `docker/` · `scripts/docker-up.sh`   |
-| Alembic migrations      | Implemented        | `alembic/` (incidents schema)        |
-| Incident repository     | Implemented        | `src/aegis/infrastructure/repositories/` |
-| Authentication          | Not implemented    | —                                    |
-| Incident API            | Not implemented    | —                                    |
-| Agents, RAG, AWS        | Not implemented    | —                                    |
+| Component               | Status          | Location                                 |
+| ----------------------- | --------------- | ---------------------------------------- |
+| FastAPI app + `/health` | Implemented     | `src/aegis/main.py`                      |
+| Settings                | Implemented     | `src/aegis/config/settings.py`           |
+| Domain layer            | Implemented     | `src/aegis/domain/incidents/`            |
+| Application layer       | Implemented     | `src/aegis/application/incidents/`       |
+| Database session        | Implemented     | `src/aegis/infrastructure/database/`     |
+| PostgreSQL (Docker)     | Implemented     | `docker/` · `scripts/docker-up.sh`       |
+| Alembic migrations      | Implemented     | `alembic/` (incidents schema)            |
+| Incident repository     | Implemented     | `src/aegis/infrastructure/repositories/` |
+| Authentication          | Not implemented | —                                        |
+| Incident API            | Not implemented | —                                        |
+| Agents, RAG, AWS        | Not implemented | —                                        |
 
 
-**You are here:** Step 1.6 complete → next [Step 1.7 — Application use cases](#step-17--application-use-cases).
+**You are here:** Step 1.7 complete → next [Step 1.8 — REST API routes](#step-18--rest-api-routes).
 
 ---
 
