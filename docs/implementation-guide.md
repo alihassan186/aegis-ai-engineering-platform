@@ -106,21 +106,21 @@ Use this table to know **which document answers which question** while coding.
 ## 3. Current codebase state
 
 
-| Component               | Status             | Location                       |
-| ----------------------- | ------------------ | ------------------------------ |
-| FastAPI app + `/health` | Implemented        | `src/aegis/main.py`            |
-| Settings                | Implemented        | `src/aegis/config/settings.py` |
-| Domain layer            | Empty (`.gitkeep`) | `src/aegis/domain/`            |
-| Application layer       | Empty              | `src/aegis/application/`       |
+| Component               | Status             | Location                             |
+| ----------------------- | ------------------ | ------------------------------------ |
+| FastAPI app + `/health` | Implemented        | `src/aegis/main.py`                  |
+| Settings                | Implemented        | `src/aegis/config/settings.py`       |
+| Domain layer            | Implemented        | `src/aegis/domain/incidents/`        |
+| Application layer       | Empty              | `src/aegis/application/`             |
 | Database session        | Implemented        | `src/aegis/infrastructure/database/` |
-| PostgreSQL (Docker)     | Implemented        | `docker/` · `scripts/docker-up.sh` |
-| Alembic migrations      | Implemented        | `alembic/` (empty baseline)    |
-| Authentication          | Not implemented    | —                              |
-| Incident API            | Not implemented    | —                              |
-| Agents, RAG, AWS        | Not implemented    | —                              |
+| PostgreSQL (Docker)     | Implemented        | `docker/` · `scripts/docker-up.sh`   |
+| Alembic migrations      | Implemented        | `alembic/` (empty baseline)          |
+| Authentication          | Not implemented    | —                                    |
+| Incident API            | Not implemented    | —                                    |
+| Agents, RAG, AWS        | Not implemented    | —                                    |
 
 
-**You are here:** Step 1.4 complete → next [Step 1.5 — Incident domain model](#step-15--implement-incident-domain-model).
+**You are here:** Step 1.5 complete → next [Step 1.6 — PostgreSQL schema and repository](#step-16--postgresql-schema-and-repository).
 
 ---
 
@@ -380,7 +380,7 @@ docker compose -f docker/docker-compose.yml ps   # postgres healthy
 **Done checklist:**
 
 - [x] Postgres container starts and is healthy
-- [ ] Can connect with `psql` or GUI tool
+- [x] Can connect with `psql` or GUI tool
 
 ---
 
@@ -526,11 +526,11 @@ uv run mypy src/aegis/domain
 
 **Done checklist:**
 
-- [ ] Incident entity with all FR-005 fields
-- [ ] All 6 states defined
-- [ ] Transition rules match [incident-flow.md](architecture/incident-flow.md)
-- [ ] Unit tests cover valid and invalid transitions
-- [ ] No infrastructure imports in domain/
+- [x] Incident entity with all FR-005 fields
+- [x] All 6 states defined
+- [x] Transition rules match [incident-flow.md](architecture/incident-flow.md)
+- [x] Unit tests cover valid and invalid transitions
+- [x] No infrastructure imports in domain/
 
 ---
 
