@@ -9,6 +9,8 @@ from fastapi import FastAPI, Request, Response
 
 REQUEST_ID_HEADER = "X-Request-ID"
 
+print(f"REQUEST_ID_HEADER in request_id.py: {REQUEST_ID_HEADER}")
+
 
 def request_id_from(request: Request) -> str:
     return getattr(request.state, "request_id", "unknown")
