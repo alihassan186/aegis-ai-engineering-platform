@@ -318,9 +318,12 @@ uv run alembic current
 uv run uvicorn aegis.main:app --reload
 ```
 
+Incident routes need `AEGIS_DATABASE_URL`. Copy `config/.env.example` to `.env` at the repo root (the app loads it on startup). Postgres must already be running on port 5434.
+
 | Endpoint | URL |
 |---|---|
 | Health check | [http://127.0.0.1:8000/health](http://127.0.0.1:8000/health) |
+| Incidents API | [http://127.0.0.1:8000/api/v1/incidents](http://127.0.0.1:8000/api/v1/incidents) |
 | OpenAPI docs | [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs) |
 | ReDoc | [http://127.0.0.1:8000/redoc](http://127.0.0.1:8000/redoc) |
 

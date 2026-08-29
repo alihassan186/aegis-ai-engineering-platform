@@ -117,11 +117,11 @@ Use this table to know **which document answers which question** while coding.
 | Alembic migrations      | Implemented     | `alembic/` (incidents schema)            |
 | Incident repository     | Implemented     | `src/aegis/infrastructure/repositories/` |
 | Authentication          | Not implemented | —                                        |
-| Incident API            | Not implemented | —                                        |
+| Incident API            | Implemented     | `src/aegis/api/` · `/api/v1/incidents` |
 | Agents, RAG, AWS        | Not implemented | —                                        |
 
 
-**You are here:** Step 1.7 complete → next [Step 1.8 — REST API routes](#step-18--rest-api-routes).
+**You are here:** Step 1.8 complete → next [Step 1.9 — Authentication and RBAC](#step-19--authentication-and-rbac).
 
 ---
 
@@ -661,10 +661,10 @@ uv run pytest tests/unit/application/ -v
 
 **Done checklist:**
 
-- [ ] All four use cases implemented
-- [ ] Create sets initial state `open` with timestamp
-- [ ] List supports all FR-009 filters
-- [ ] Transition delegates to domain state machine
+- [x] All four use cases implemented
+- [x] Create sets initial state `open` with timestamp
+- [x] List supports all FR-009 filters
+- [x] Transition delegates to domain state machine
 
 ---
 
@@ -735,10 +735,10 @@ uv run pytest tests/integration/api/ tests/contract/ -v
 
 **Done checklist:**
 
-- [ ] All four endpoints work via `/docs`
-- [ ] OpenAPI spec generated automatically
-- [ ] Error format consistent
-- [ ] Integration tests pass
+- [x] All four endpoints work via `/docs`
+- [x] OpenAPI spec generated automatically
+- [x] Error format consistent
+- [x] Integration tests pass
 
 ---
 

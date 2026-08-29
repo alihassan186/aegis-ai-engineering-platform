@@ -11,6 +11,9 @@ from contextlib import asynccontextmanager
 from fastapi import APIRouter, FastAPI
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
 
+from aegis.api.errors import register_exception_handlers
+from aegis.api.request_id import add_request_id_middleware
+from aegis.api.router import api_v1_router
 from aegis.config.settings import Settings, get_settings
 from aegis.infrastructure.database.session import start_database, stop_database
 
@@ -38,13 +41,16 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     application = FastAPI(
         title=resolved.app_name,
-        version="0.1.0",
-        description="AEGIS bootstrap foundation",
+        version="0.2.0",
+        description="AEGIS incident investigation API",
         debug=resolved.debug,
         lifespan=lifespan,
     )
     application.state.settings = resolved
+    add_request_id_middleware(application)
+    register_exception_handlers(application)
     application.include_router(_health_router())
+    application.include_router(api_v1_router)
     return application
 
 
