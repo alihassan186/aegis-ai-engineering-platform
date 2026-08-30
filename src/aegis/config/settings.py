@@ -46,6 +46,8 @@ class Settings:
     app_name: str = "aegis"
     log_level: str = "INFO"
     database_url: str = ""
+    jwt_secret: str = ""
+    jwt_expire_seconds: int = 3600
 
     @classmethod
     def from_env(cls) -> Settings:
@@ -59,8 +61,16 @@ class Settings:
             raise ValueError(
                 "AEGIS_DATABASE_URL must use the postgresql+asyncpg:// driver prefix (ADR-002)."
             )
+        jwt_secret = os.getenv("AEGIS_JWT_SECRET", "").strip()
+        jwt_expire_seconds = _parse_positive_int(
+            os.getenv("AEGIS_JWT_EXPIRE_SECONDS"),
+            default=3600,
+        )
+
         if environment == "production" and not database_url:
             raise ValueError("AEGIS_DATABASE_URL is required when AEGIS_ENV=production (NFR-060).")
+        if environment == "production" and not jwt_secret:
+            raise ValueError("AEGIS_JWT_SECRET is required when AEGIS_ENV=production (THR-013).")
 
         return cls(
             environment=environment,
@@ -68,8 +78,20 @@ class Settings:
             app_name=os.getenv("AEGIS_APP_NAME", "aegis"),
             log_level=os.getenv("AEGIS_LOG_LEVEL", "INFO").upper(),
             database_url=database_url,
+            jwt_secret=jwt_secret,
+            jwt_expire_seconds=jwt_expire_seconds,
         )
 
 
 def get_settings() -> Settings:
     return Settings.from_env()
+
+
+def _parse_positive_int(raw: str | None, *, default: int) -> int:
+    if raw is None or not raw.strip():
+        return default
+    try:
+        value = int(raw)
+    except ValueError:
+        return default
+    return value if value > 0 else default

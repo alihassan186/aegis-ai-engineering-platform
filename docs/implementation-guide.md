@@ -116,12 +116,12 @@ Use this table to know **which document answers which question** while coding.
 | PostgreSQL (Docker)     | Implemented     | `docker/` · `scripts/docker-up.sh`       |
 | Alembic migrations      | Implemented     | `alembic/` (incidents schema)            |
 | Incident repository     | Implemented     | `src/aegis/infrastructure/repositories/` |
-| Authentication          | Not implemented | —                                        |
-| Incident API            | Implemented     | `src/aegis/api/` · `/api/v1/incidents` |
+| Authentication          | Implemented     | `src/aegis/api/auth/` · JWT + RBAC       |
+| Incident API            | Implemented     | `src/aegis/api/` · `/api/v1/incidents`   |
 | Agents, RAG, AWS        | Not implemented | —                                        |
 
 
-**You are here:** Step 1.8 complete → next [Step 1.9 — Authentication and RBAC](#step-19--authentication-and-rbac).
+**You are here:** Step 1.9 complete → next [Step 1.10 — v0.2 quality gate and release checklist](#step-110--v02-quality-gate-and-release-checklist).
 
 ---
 

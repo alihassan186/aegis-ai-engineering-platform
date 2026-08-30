@@ -1,22 +1,41 @@
-"""FastAPI dependencies: session, repositories, use cases."""
+"""FastAPI dependencies: session, repositories, use cases, and JWT principal."""
 
 from __future__ import annotations
 
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Callable
 from dataclasses import dataclass
 
 from fastapi import Depends, Request
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from aegis.api.exceptions import DatabaseNotConfiguredError
+from aegis.api.exceptions import AuthenticationError, AuthorizationError, DatabaseNotConfiguredError
 from aegis.application.incidents import (
     CreateIncident,
     GetIncident,
     ListIncidents,
     TransitionIncident,
 )
+from aegis.config.settings import Settings
 from aegis.core.protocols import IncidentRepository
+from aegis.domain.auth.enums import Role
+from aegis.domain.auth.permissions import Permission, has_permission
+from aegis.infrastructure.auth.jwt import (
+    InvalidAccessTokenError,
+    JwtNotConfiguredError,
+    decode_access_token,
+)
 from aegis.infrastructure.repositories.incident_repository import SqlAlchemyIncidentRepository
+
+_bearer = HTTPBearer(auto_error=False)
+
+
+@dataclass(frozen=True, slots=True)
+class CurrentUser:
+    """Authenticated API caller (FR-070)."""
+
+    subject: str
+    role: Role
 
 
 @dataclass(frozen=True, slots=True)
@@ -64,3 +83,53 @@ def get_transition_incident(
     repos: Repositories = Depends(get_repositories),
 ) -> TransitionIncident:
     return TransitionIncident(repos.incidents)
+
+
+def get_current_user(
+    request: Request,
+    credentials: HTTPAuthorizationCredentials | None = Depends(_bearer),
+) -> CurrentUser:
+    """Validate Bearer JWT (NFR-030)."""
+    if credentials is None or credentials.scheme.lower() != "bearer" or not credentials.credentials:
+        raise AuthenticationError("Missing or invalid Authorization bearer token.")
+
+    settings = _settings_from(request)
+    try:
+        payload = decode_access_token(settings, credentials.credentials)
+    except JwtNotConfiguredError:
+        raise
+    except InvalidAccessTokenError as exc:
+        raise AuthenticationError(str(exc)) from exc
+
+    return CurrentUser(subject=payload.subject, role=payload.role)
+
+
+def require_role(*allowed: Role) -> Callable[..., CurrentUser]:
+    """Restrict a route to explicit roles (FR-071)."""
+
+    def _check(user: CurrentUser = Depends(get_current_user)) -> CurrentUser:
+        if user.role not in allowed:
+            raise AuthorizationError("Insufficient role for this operation.")
+        return user
+
+    return _check
+
+
+def require_permission(permission: Permission) -> Callable[..., CurrentUser]:
+    """Restrict a route using the v0.2 permission matrix (FR-071)."""
+
+    def _check(user: CurrentUser = Depends(get_current_user)) -> CurrentUser:
+        if not has_permission(user.role, permission):
+            raise AuthorizationError("Insufficient role for this operation.")
+        return user
+
+    return _check
+
+
+def _settings_from(request: Request) -> Settings:
+    settings = getattr(request.app.state, "settings", None)
+    if not isinstance(settings, Settings):
+        raise JwtNotConfiguredError(
+            "JWT is not configured. Set AEGIS_JWT_SECRET (never hardcode secrets)."
+        )
+    return settings

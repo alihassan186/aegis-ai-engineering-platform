@@ -11,6 +11,7 @@ from contextlib import asynccontextmanager
 from fastapi import APIRouter, FastAPI
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
 
+from aegis.api.auth.router import router as auth_router
 from aegis.api.errors import register_exception_handlers
 from aegis.api.request_id import add_request_id_middleware
 from aegis.api.router import api_v1_router
@@ -51,6 +52,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     register_exception_handlers(application)
     application.include_router(_health_router())
     application.include_router(api_v1_router)
+    if resolved.environment != "production":
+        application.include_router(auth_router, prefix="/api/v1/auth", tags=["auth"])
     return application
 
 

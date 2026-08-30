@@ -318,11 +318,14 @@ uv run alembic current
 uv run uvicorn aegis.main:app --reload
 ```
 
-Incident routes need `AEGIS_DATABASE_URL`. Copy `config/.env.example` to `.env` at the repo root (the app loads it on startup). Postgres must already be running on port 5434.
+Incident routes need `AEGIS_DATABASE_URL` and a Bearer JWT (`AEGIS_JWT_SECRET`). Copy `config/.env.example` to `.env` at the repo root (the app loads it on startup). Postgres must already be running on port 5434.
+
+`POST /api/v1/auth/token` is a **development/test login only**. Production authenticates through an identity provider; that route is not registered when `AEGIS_ENV=production`.
 
 | Endpoint | URL |
 |---|---|
 | Health check | [http://127.0.0.1:8000/health](http://127.0.0.1:8000/health) |
+| Dev token | [http://127.0.0.1:8000/api/v1/auth/token](http://127.0.0.1:8000/api/v1/auth/token) |
 | Incidents API | [http://127.0.0.1:8000/api/v1/incidents](http://127.0.0.1:8000/api/v1/incidents) |
 | OpenAPI docs | [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs) |
 | ReDoc | [http://127.0.0.1:8000/redoc](http://127.0.0.1:8000/redoc) |
@@ -331,7 +334,16 @@ Verify:
 
 ```bash
 curl http://127.0.0.1:8000/health
+
+TOKEN=$(curl -s http://127.0.0.1:8000/api/v1/auth/token \
+  -H 'Content-Type: application/json' \
+  -d '{"username":"ali","role":"engineer"}' | python3 -c "import sys,json; print(json.load(sys.stdin)['access_token'])")
+
+curl http://127.0.0.1:8000/api/v1/incidents \
+  -H "Authorization: Bearer $TOKEN"
 ```
+
+In `/docs`, use **Authorize** and paste `Bearer <token>` (or the token alone, depending on the UI). `/health` stays unauthenticated.
 
 ---
 
@@ -348,6 +360,8 @@ Environment variables are loaded from `.env` or the process environment.
 | `AEGIS_APP_NAME` | `aegis` | Application display name |
 | `AEGIS_LOG_LEVEL` | `INFO` | Logging verbosity |
 | `AEGIS_DATABASE_URL` | empty | PostgreSQL URL using `postgresql+asyncpg://` (required in production) |
+| `AEGIS_JWT_SECRET` | empty | HMAC secret for JWTs (required in production; never hardcode) |
+| `AEGIS_JWT_EXPIRE_SECONDS` | `3600` | Access token lifetime |
 
 ### Integrations
 

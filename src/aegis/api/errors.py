@@ -6,9 +6,10 @@ from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
-from aegis.api.exceptions import DatabaseNotConfiguredError
+from aegis.api.exceptions import AuthenticationError, AuthorizationError, DatabaseNotConfiguredError
 from aegis.api.request_id import request_id_from
 from aegis.domain.incidents.exceptions import InvalidTransitionError
+from aegis.infrastructure.auth.jwt import JwtNotConfiguredError
 from aegis.shared.exceptions import NotFoundError, ValidationError
 
 
@@ -23,6 +24,31 @@ def error_body(request: Request, code: str, message: str) -> dict[str, dict[str,
 
 
 def register_exception_handlers(application: FastAPI) -> None:
+    @application.exception_handler(AuthenticationError)
+    async def authentication_handler(request: Request, exc: AuthenticationError) -> JSONResponse:
+        return JSONResponse(
+            status_code=401,
+            content=error_body(request, "UNAUTHENTICATED", str(exc)),
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    @application.exception_handler(AuthorizationError)
+    async def authorization_handler(request: Request, exc: AuthorizationError) -> JSONResponse:
+        return JSONResponse(
+            status_code=403,
+            content=error_body(request, "FORBIDDEN", str(exc)),
+        )
+
+    @application.exception_handler(JwtNotConfiguredError)
+    async def jwt_not_configured_handler(
+        request: Request,
+        exc: JwtNotConfiguredError,
+    ) -> JSONResponse:
+        return JSONResponse(
+            status_code=503,
+            content=error_body(request, "AUTH_NOT_CONFIGURED", str(exc)),
+        )
+
     @application.exception_handler(DatabaseNotConfiguredError)
     async def database_not_configured_handler(
         request: Request,

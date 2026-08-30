@@ -2,28 +2,9 @@
 
 from __future__ import annotations
 
-from collections.abc import AsyncIterator
-
 import httpx
-import pytest
-from sqlalchemy.ext.asyncio import AsyncSession
 
-from aegis.api.dependencies import get_db
-from aegis.config.settings import Settings
-from aegis.main import create_app
-
-
-@pytest.fixture
-async def api_client(db_session: AsyncSession) -> AsyncIterator[httpx.AsyncClient]:
-    application = create_app(Settings(environment="test", database_url=""))
-
-    async def override_get_db() -> AsyncIterator[AsyncSession]:
-        yield db_session
-
-    application.dependency_overrides[get_db] = override_get_db
-    transport = httpx.ASGITransport(app=application)
-    async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
-        yield client
+from tests.helpers.auth import authorization_header
 
 
 def _create_payload(**overrides: object) -> dict[str, object]:
@@ -38,7 +19,11 @@ def _create_payload(**overrides: object) -> dict[str, object]:
 
 
 async def test_create_incident_returns_201(api_client: httpx.AsyncClient) -> None:
-    response = await api_client.post("/api/v1/incidents", json=_create_payload())
+    response = await api_client.post(
+        "/api/v1/incidents",
+        json=_create_payload(),
+        headers=authorization_header(),
+    )
 
     assert response.status_code == 201
     body = response.json()
@@ -50,9 +35,18 @@ async def test_create_incident_returns_201(api_client: httpx.AsyncClient) -> Non
 
 
 async def test_get_incident_round_trip(api_client: httpx.AsyncClient) -> None:
-    created = (await api_client.post("/api/v1/incidents", json=_create_payload())).json()
+    created = (
+        await api_client.post(
+            "/api/v1/incidents",
+            json=_create_payload(),
+            headers=authorization_header(),
+        )
+    ).json()
 
-    response = await api_client.get(f"/api/v1/incidents/{created['id']}")
+    response = await api_client.get(
+        f"/api/v1/incidents/{created['id']}",
+        headers=authorization_header(),
+    )
 
     assert response.status_code == 200
     assert response.json()["id"] == created["id"]
@@ -60,15 +54,18 @@ async def test_get_incident_round_trip(api_client: httpx.AsyncClient) -> None:
 
 
 async def test_list_incidents_filters_by_service(api_client: httpx.AsyncClient) -> None:
-    await api_client.post("/api/v1/incidents", json=_create_payload())
+    auth = authorization_header()
+    await api_client.post("/api/v1/incidents", json=_create_payload(), headers=auth)
     await api_client.post(
         "/api/v1/incidents",
         json=_create_payload(title="Search", affected_service="search-api"),
+        headers=auth,
     )
 
     response = await api_client.get(
         "/api/v1/incidents",
         params={"affected_service": "search-api"},
+        headers=auth,
     )
 
     assert response.status_code == 200
@@ -78,11 +75,15 @@ async def test_list_incidents_filters_by_service(api_client: httpx.AsyncClient) 
 
 
 async def test_transition_state_returns_history(api_client: httpx.AsyncClient) -> None:
-    created = (await api_client.post("/api/v1/incidents", json=_create_payload())).json()
+    auth = authorization_header()
+    created = (
+        await api_client.post("/api/v1/incidents", json=_create_payload(), headers=auth)
+    ).json()
 
     response = await api_client.patch(
         f"/api/v1/incidents/{created['id']}/state",
         json={"state": "investigating"},
+        headers=auth,
     )
 
     assert response.status_code == 200
@@ -96,7 +97,10 @@ async def test_transition_state_returns_history(api_client: httpx.AsyncClient) -
 async def test_get_missing_incident_returns_404_error_envelope(
     api_client: httpx.AsyncClient,
 ) -> None:
-    response = await api_client.get("/api/v1/incidents/11111111-1111-1111-1111-111111111111")
+    response = await api_client.get(
+        "/api/v1/incidents/11111111-1111-1111-1111-111111111111",
+        headers=authorization_header(),
+    )
 
     assert response.status_code == 404
     error = response.json()["error"]
@@ -107,11 +111,15 @@ async def test_get_missing_incident_returns_404_error_envelope(
 
 
 async def test_invalid_transition_returns_409(api_client: httpx.AsyncClient) -> None:
-    created = (await api_client.post("/api/v1/incidents", json=_create_payload())).json()
+    auth = authorization_header()
+    created = (
+        await api_client.post("/api/v1/incidents", json=_create_payload(), headers=auth)
+    ).json()
 
     response = await api_client.patch(
         f"/api/v1/incidents/{created['id']}/state",
         json={"state": "resolved"},
+        headers=auth,
     )
 
     assert response.status_code == 409
@@ -119,7 +127,11 @@ async def test_invalid_transition_returns_409(api_client: httpx.AsyncClient) -> 
 
 
 async def test_invalid_body_returns_422(api_client: httpx.AsyncClient) -> None:
-    response = await api_client.post("/api/v1/incidents", json={"title": "x"})
+    response = await api_client.post(
+        "/api/v1/incidents",
+        json={"title": "x"},
+        headers=authorization_header(),
+    )
 
     assert response.status_code == 422
     assert response.json()["error"]["code"] == "VALIDATION_ERROR"
@@ -129,7 +141,7 @@ async def test_echoes_incoming_request_id(api_client: httpx.AsyncClient) -> None
     response = await api_client.post(
         "/api/v1/incidents",
         json=_create_payload(),
-        headers={"X-Request-ID": "client-trace-1"},
+        headers={**authorization_header(), "X-Request-ID": "client-trace-1"},
     )
 
     assert response.headers["x-request-id"] == "client-trace-1"

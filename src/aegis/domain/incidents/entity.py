@@ -85,7 +85,7 @@ class Incident:
     ) -> Incident:
         """Open a new incident (FR-002, FR-005)."""
         moment = _require_aware(created_at, "created_at") if created_at else _utc_now()
-        print(f"moment in incident.py: {moment}")
+
         return cls(
             id=incident_id or uuid4(),
             title=title,
