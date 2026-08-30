@@ -9,9 +9,6 @@ from fastapi import FastAPI, Request, Response
 
 REQUEST_ID_HEADER = "X-Request-ID"
 
-print(f"REQUEST_ID_HEADER in request_id.py: {REQUEST_ID_HEADER}")
-
-
 def request_id_from(request: Request) -> str:
     return getattr(request.state, "request_id", "unknown")
 
@@ -26,4 +23,5 @@ def add_request_id_middleware(application: FastAPI) -> None:
         request.state.request_id = request_id
         response = await call_next(request)
         response.headers[REQUEST_ID_HEADER] = request_id
+        print(f"response.headers in request_id.py: {response.headers}")
         return response

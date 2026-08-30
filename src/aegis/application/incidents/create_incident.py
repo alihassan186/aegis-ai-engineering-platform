@@ -20,4 +20,5 @@ class CreateIncident:
             owner_id=command.owner_id,
         )
         persisted = await self._repository.create(incident)
+        print(f"persisted in create_incident.py: {persisted}")
         return IncidentDto.from_entity(persisted)

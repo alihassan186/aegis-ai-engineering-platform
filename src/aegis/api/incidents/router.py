@@ -9,10 +9,13 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Query, Request, Response, status
 
 from aegis.api.dependencies import (
+    CurrentUser,
     get_create_incident,
+    get_current_user,
     get_get_incident,
     get_list_incidents,
     get_transition_incident,
+    require_permission,
 )
 from aegis.api.incidents.schemas import (
     CreateIncidentRequest,
@@ -33,11 +36,14 @@ from aegis.application.incidents import (
     TransitionIncident,
     TransitionIncidentCommand,
 )
+from aegis.domain.auth.permissions import Permission
 from aegis.domain.incidents.enums import IncidentState, Severity
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(get_current_user)])
 
 _ERROR_RESPONSES: dict[int | str, dict[str, Any]] = {
+    401: {"model": ErrorResponse},
+    403: {"model": ErrorResponse},
     404: {"model": ErrorResponse},
     409: {"model": ErrorResponse},
     422: {"model": ErrorResponse},
@@ -54,6 +60,7 @@ async def create_incident(
     body: CreateIncidentRequest,
     request: Request,
     response: Response,
+    _user: CurrentUser = Depends(require_permission(Permission.CREATE_INCIDENT)),
     use_case: CreateIncident = Depends(get_create_incident),
 ) -> IncidentResponse:
     dto = await use_case.execute(
@@ -124,6 +131,7 @@ async def transition_incident_state(
     id: UUID,
     body: TransitionStateRequest,
     request: Request,
+    _user: CurrentUser = Depends(require_permission(Permission.TRANSITION_INCIDENT)),
     use_case: TransitionIncident = Depends(get_transition_incident),
 ) -> IncidentResponse:
     dto = await use_case.execute(TransitionIncidentCommand(incident_id=id, new_state=body.state))
