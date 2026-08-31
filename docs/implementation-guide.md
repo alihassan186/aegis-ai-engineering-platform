@@ -122,7 +122,7 @@ Use this table to know **which document answers which question** while coding.
 | Agents, RAG, AWS        | Not implemented | —                                        |
 
 
-**You are here:** Step 2.1 complete → next [Step 2.2 — Model five services](#step-22--model-five-services).
+**You are here:** Step 2.2 complete → next [Step 2.3 — Generate logs, metrics, and traces](#step-23--generate-logs-metrics-and-traces).
 
 ---
 
@@ -1011,9 +1011,9 @@ curl http://127.0.0.1:8001/services   # if you exposed HTTP
 
 **Done checklist:**
 
-- [ ] Five services exist with the names from §13
-- [ ] Caller can list services and see a status
-- [ ] No Docker-per-service
+- [x] Five services exist with the names from §13
+- [x] Caller can list services and see a status
+- [x] No Docker-per-service
 
 ---
 

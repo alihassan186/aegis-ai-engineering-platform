@@ -11,10 +11,19 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
+from pydantic import BaseModel
 
 from apps.simulator.config import Settings, get_settings
+from apps.simulator.services import ServiceId, ServiceRuntime, ServiceStatus
 
 BOOT_MESSAGE = "simulator boot"
+
+
+class ServiceResponse(BaseModel):
+    id: ServiceId
+    display_name: str
+    depends_on: list[ServiceId]
+    status: ServiceStatus
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
@@ -23,6 +32,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     @asynccontextmanager
     async def lifespan(application: FastAPI) -> AsyncIterator[None]:
         application.state.boot_message = BOOT_MESSAGE
+        application.state.runtime = ServiceRuntime()
         yield
 
     application = FastAPI(
@@ -37,6 +47,19 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     @application.get("/health")
     def health_check() -> dict[str, str]:
         return {"status": "ok", "app": resolved.app_name}
+
+    @application.get("/services", response_model=list[ServiceResponse])
+    def list_services() -> list[ServiceResponse]:
+        runtime: ServiceRuntime = application.state.runtime
+        return [
+            ServiceResponse(
+                id=row.spec.id,
+                display_name=row.spec.display_name,
+                depends_on=sorted(row.spec.depends_on),
+                status=row.status,
+            )
+            for row in runtime.list_snapshots()
+        ]
 
     return application
 
