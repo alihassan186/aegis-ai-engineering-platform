@@ -118,11 +118,11 @@ Use this table to know **which document answers which question** while coding.
 | Incident repository     | Implemented     | `src/aegis/infrastructure/repositories/` |
 | Authentication          | Implemented     | `src/aegis/api/auth/` · JWT + RBAC       |
 | Incident API            | Implemented     | `src/aegis/api/` · `/api/v1/incidents`   |
-| Production simulator    | Not implemented | `apps/simulator/` (empty package)        |
+| Production simulator    | Skeleton (2.1)  | `apps/simulator/` · `:8001` `/health`    |
 | Agents, RAG, AWS        | Not implemented | —                                        |
 
 
-**You are here:** Phase 1 (v0.2) complete → next [Step 2.1 — Simulator service skeleton](#step-21--simulator-service-skeleton).
+**You are here:** Step 2.1 complete → next [Step 2.2 — Model five services](#step-22--model-five-services).
 
 ---
 
@@ -948,10 +948,10 @@ uv run pytest tests/unit/simulator/ -v
 
 **Done checklist:**
 
-- [ ] Simulator process starts independently of AEGIS
-- [ ] Health (or smoke) check passes
-- [ ] No import of `aegis.api` or SQLAlchemy from the skeleton
-- [ ] Unit test passes
+- [x] Simulator process starts independently of AEGIS
+- [x] Health (or smoke) check passes
+- [x] No import of `aegis.api` or SQLAlchemy from the skeleton
+- [x] Unit test passes
 
 ---
 

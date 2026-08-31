@@ -6,3 +6,4 @@ import os
 
 # Stop Settings.from_env() from reading the developer `.env` during tests.
 os.environ["AEGIS_SKIP_DOTENV"] = "1"
+os.environ["SIMULATOR_SKIP_DOTENV"] = "1"
