@@ -2,7 +2,7 @@
 
 **Document owner:** Engineering  
 **Status:** Active  
-**Last updated:** 2026-08-27
+**Last updated:** 2026-08-31
 
 This is the **master step-by-step guide** for turning AEGIS documentation into working code. Every implementation step links back to the requirement, architecture decision, or design document that justifies it.
 
@@ -118,10 +118,11 @@ Use this table to know **which document answers which question** while coding.
 | Incident repository     | Implemented     | `src/aegis/infrastructure/repositories/` |
 | Authentication          | Implemented     | `src/aegis/api/auth/` · JWT + RBAC       |
 | Incident API            | Implemented     | `src/aegis/api/` · `/api/v1/incidents`   |
+| Production simulator    | Not implemented | `apps/simulator/` (empty package)        |
 | Agents, RAG, AWS        | Not implemented | —                                        |
 
 
-**You are here:** Step 1.9 complete → next [Step 1.10 — v0.2 quality gate and release checklist](#step-110--v02-quality-gate-and-release-checklist).
+**You are here:** Phase 1 (v0.2) complete → next [Step 2.1 — Simulator service skeleton](#step-21--simulator-service-skeleton).
 
 ---
 
@@ -848,11 +849,11 @@ uv run pytest -v
 
 **Done checklist:**
 
-- [ ] All v0.2 P0 FRs implemented
-- [ ] Full test suite passes
-- [ ] Lint, format, mypy pass
-- [ ] Update CHANGELOG or release notes (optional)
-- [ ] Git tag `v0.2.0` (when ready)
+- [x] All v0.2 P0 FRs implemented
+- [x] Full test suite passes
+- [x] Lint, format, mypy pass
+- [x] Update CHANGELOG or release notes (optional)
+- [x] Git tag `v0.2.0` (when ready)
 
 ---
 
@@ -862,7 +863,11 @@ uv run pytest -v
 
 **Release goal:** Synthetic multi-service environment that generates incidents for AEGIS to consume.
 
-**Start after:** Phase 1 complete.
+**Architecture reference:** [Platform overview §13](architecture/platform-overview.md)
+
+**Start after:** Phase 1 complete (Step 1.10 quality gate).
+
+**Why before RAG/agents:** You need realistic data to test against ([Risk register RISK-007](requirements/risk-register.md)). Agents in v0.5 investigate incidents; this phase is how those incidents get created without a real production estate.
 
 
 | Step | Goal                                                             | Key FRs        | Key docs                                                   |
@@ -873,9 +878,469 @@ uv run pytest -v
 | 2.4  | Configurable failure scenarios                                   | FR-082, FR-083 | [Product vision](product/product-vision.md)                |
 | 2.5  | Webhook emission to AEGIS API                                    | FR-084, FR-113 | [Incident flow § Phase 1](architecture/incident-flow.md)   |
 | 2.6  | Incident deduplication in AEGIS                                  | FR-007         | [Incident flow](architecture/incident-flow.md)             |
+| 2.7  | v0.3 quality gate                                                | —              | This section                                               |
 
 
-**Why before RAG/agents:** You need realistic data to test against ([Risk register RISK-007](requirements/risk-register.md)).
+**Two codebases in this phase:**
+
+```text
+apps/simulator/     → 2.1–2.5  (producer: fake estate + HTTP client)
+src/aegis/          → 2.5–2.6  (consumer: webhook ingest + dedup)
+```
+
+The simulator is **inside the AEGIS system boundary** as a dev/test tool ([System boundaries §1](architecture/system-boundaries.md)). It is **not** a layer inside `src/aegis/domain`. Do not import FastAPI routes from the simulator into domain.
+
+---
+
+
+
+### Step 2.1 — Simulator service skeleton
+
+
+|                   |                                                                                                                                          |
+| ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| **Goal**          | A runnable process under `apps/simulator/` with its own settings and health check                                                        |
+| **Why**           | [FR-080](requirements/functional-requirements.md) · [Product vision §9](product/product-vision.md) (simulator is in scope as a test env) |
+| **Documentation** | [Product vision §9, §11 v0.3](product/product-vision.md) · [Platform overview §4 `apps/`](architecture/platform-overview.md)             |
+| **Implements**    | FR-080 (skeleton only)                                                                                                                   |
+
+
+**Files to create / modify:**
+
+```text
+apps/simulator/__init__.py              # exists — keep
+apps/simulator/main.py                  # process entry (FastAPI or CLI loop)
+apps/simulator/config.py                # SIMULATOR_* / AEGIS_* client settings from env
+apps/simulator/pyproject.toml           # only if you treat it as a separate uv project;
+                                        # otherwise run it as a module from the repo root
+```
+
+**What to build:**
+
+- A **separate process** from `uvicorn aegis.main:app`. Suggested: small FastAPI app on a different port (e.g. `127.0.0.1:8001`) with `GET /health` → `{"status":"ok","app":"simulator"}`.
+- Settings from environment (same pattern as `src/aegis/config/settings.py`): no hardcoded URLs or secrets.
+- Prove it starts with `uv run` from the repo root (or `uv run --package` if you split projects).
+
+**Best practices:**
+
+- Keep the simulator **out of** `src/aegis/domain` and `src/aegis/application` (ADR-001).
+- One responsibility: later it *emits* signals; it does not *own* incident lifecycle.
+
+**Do NOT:**
+
+- Call the AEGIS API yet (Step 2.5)
+- Generate logs/metrics/traces yet (Step 2.3)
+- Model the five services yet (Step 2.2) — a single “boot” message is enough
+- Add Docker Compose service unless you already need it to run; host process is enough
+
+**Tests:**
+
+- `tests/unit/simulator/test_health.py` — import/create the simulator app and `GET /health` (or equivalent CLI smoke test)
+
+**Verification:**
+
+```bash
+# Example if you use FastAPI on 8001:
+uv run uvicorn apps.simulator.main:app --host 127.0.0.1 --port 8001
+curl http://127.0.0.1:8001/health
+uv run pytest tests/unit/simulator/ -v
+```
+
+**Done checklist:**
+
+- [ ] Simulator process starts independently of AEGIS
+- [ ] Health (or smoke) check passes
+- [ ] No import of `aegis.api` or SQLAlchemy from the skeleton
+- [ ] Unit test passes
+
+---
+
+
+
+### Step 2.2 — Model five services
+
+
+|                   |                                                                                                                                     |
+| ----------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| **Goal**          | Simulator represents user, order, payment, inventory, and notification as first-class services                                      |
+| **Why**           | [FR-080](requirements/functional-requirements.md) — multi-service ecosystem, not a single fake app                                  |
+| **Documentation** | [Platform overview §13](architecture/platform-overview.md) (User, Order, Payment, Inventory, Notification)                          |
+| **Implements**    | FR-080                                                                                                                              |
+
+
+**Files to create:**
+
+```text
+apps/simulator/services/__init__.py
+apps/simulator/services/catalog.py      # ServiceId enum + metadata (name, depends_on)
+apps/simulator/services/runtime.py      # in-memory status per service (healthy / failing)
+```
+
+**What to build:**
+
+- Enum or frozen catalog matching the diagram **exactly**:
+  - `user`
+  - `order`
+  - `payment`
+  - `inventory`
+  - `notification`
+- Each service has: id, display name, optional `depends_on` (e.g. `order` depends on `user` + `inventory` + `payment` — keep this small and documented; do not invent a service mesh).
+- API or module function: list services and their current status. Example: `GET /services` on the simulator app.
+
+**Best practices:**
+
+- Services are **in-process models**, not five Docker containers (out of scope for v0.3).
+- Status is data (`healthy` / `degraded` / `down`), not real resource exhaustion.
+
+**Do NOT:**
+
+- Deploy real microservices, Kubernetes, or extra Postgres instances
+- Emit webhooks or AEGIS incidents
+- Implement the six failure scenarios yet (Step 2.4)
+
+**Tests:**
+
+- `tests/unit/simulator/test_service_catalog.py` — all five ids present; catalog is stable
+
+**Verification:**
+
+```bash
+uv run pytest tests/unit/simulator/test_service_catalog.py -v
+curl http://127.0.0.1:8001/services   # if you exposed HTTP
+```
+
+**Done checklist:**
+
+- [ ] Five services exist with the names from §13
+- [ ] Caller can list services and see a status
+- [ ] No Docker-per-service
+
+---
+
+
+
+### Step 2.3 — Generate logs, metrics, and traces
+
+
+|                   |                                                                                                      |
+| ----------------- | ---------------------------------------------------------------------------------------------------- |
+| **Goal**          | Each service can produce structured logs, a metric sample, and a trace span (synthetic)              |
+| **Why**           | [FR-081](requirements/functional-requirements.md) — later agents need signal *shape*, not Datadog    |
+| **Documentation** | [FR-080–084](requirements/functional-requirements.md) · [Platform overview §13 outputs](architecture/platform-overview.md) |
+| **Implements**    | FR-081                                                                                               |
+
+
+**Files to create:**
+
+```text
+apps/simulator/signals/__init__.py
+apps/simulator/signals/models.py        # LogRecord, MetricSample, TraceSpan (dataclasses)
+apps/simulator/signals/emitter.py       # emit for one service at “now”
+```
+
+**What to build:**
+
+- Three signal types matching §13 **Generated Signals** (logs, metrics/latency, traces). Deployment events can be a fourth optional record type if it stays a simple struct — do not build a CI system.
+- Healthy tick: e.g. one log line (`INFO` request completed), one latency metric (ms), one span (`service`, `trace_id`, `span_id`, `duration_ms`).
+- Sink for v0.3: **in-memory ring buffer** and/or stdout JSON. Enough to `GET /signals?service=payment` or dump last N records in tests.
+
+**Best practices:**
+
+- Structured fields: `timestamp`, `service`, `severity`/`name`/`value`, `trace_id`. This is what FR-081 means by “realistic,” not a real OpenTelemetry collector.
+- Deterministic fixtures in tests (inject a clock).
+
+**Do NOT:**
+
+- Install CloudWatch, Tempo, Jaeger, or OpenSearch
+- Call AEGIS
+- Simulate failure modes yet (Step 2.4) — healthy traffic only
+- Persist signals in AEGIS Postgres (AEGIS does not store primary telemetry — [System boundaries §1](architecture/system-boundaries.md))
+
+**Tests:**
+
+- `tests/unit/simulator/test_signals.py` — emit for `payment`; assert log + metric + span present
+
+**Verification:**
+
+```bash
+uv run pytest tests/unit/simulator/test_signals.py -v
+```
+
+**Done checklist:**
+
+- [ ] All five services can emit the three signal types
+- [ ] Tests do not require Docker beyond existing AEGIS Postgres
+- [ ] No observability vendor SDKs required
+
+---
+
+
+
+### Step 2.4 — Configurable failure scenarios
+
+
+|                   |                                                                                                                                                          |
+| ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Goal**          | Operator can enable a named scenario; affected services emit *failing* signals                                                                           |
+| **Why**           | [FR-082, FR-083](requirements/functional-requirements.md) · [Product vision §11 v0.3](product/product-vision.md)                                         |
+| **Documentation** | [Platform overview §13 Failure Scenarios](architecture/platform-overview.md) · [FR-083](requirements/functional-requirements.md)                         |
+| **Implements**    | FR-082, FR-083                                                                                                                                           |
+
+
+**Files to create:**
+
+```text
+apps/simulator/scenarios/__init__.py
+apps/simulator/scenarios/catalog.py     # ScenarioId matching FR-083
+apps/simulator/scenarios/engine.py      # apply scenario → service statuses + signal bias
+```
+
+**FR-083 catalog (implement all six as config, not as real faults):**
+
+
+| Scenario id            | Typical affected service(s) | Signal symptoms (examples)                          |
+| ---------------------- | --------------------------- | --------------------------------------------------- |
+| `db_exhaustion`        | `order` or `payment`        | errors `too many connections`, error-rate metric ↑  |
+| `memory_leak`          | `user`                      | growing `memory_bytes` gauge, GC / OOM-style logs   |
+| `latency_spike`        | `payment`                   | p99 latency high, slow spans                        |
+| `bad_deployment`       | any one service             | `deployment` event + 5xx logs after a version bump  |
+| `queue_backlog`        | `notification`              | queue depth metric ↑, consumer lag logs             |
+| `dependency_failure`   | `order` (depends on others) | timeouts calling `payment` / `inventory`            |
+
+
+**What to build:**
+
+- Activate/deactivate via config or `POST /scenarios/{id}` on the simulator (dev only).
+- While a scenario is active, Step 2.3 emitters **bias** logs/metrics/traces (higher error rate, higher latency). Do **not** actually leak memory or fork bombs.
+- `GET /scenarios` lists ids and which is active.
+
+**Best practices:**
+
+- Scenario = data + rules. Same emitter, different parameters.
+- One active scenario at a time in v0.3 (keeps tests simple).
+
+**Do NOT:**
+
+- Exhaust the real Postgres connection pool or allocate unbounded lists
+- POST to AEGIS yet (Step 2.5)
+- Add Kubernetes chaos / toxiproxy unless you already have it — out of v0.3 scope
+
+**Tests:**
+
+- `tests/unit/simulator/test_scenarios.py` — each FR-083 id exists; activating `latency_spike` increases payment latency samples vs healthy baseline
+
+**Verification:**
+
+```bash
+uv run pytest tests/unit/simulator/test_scenarios.py -v
+```
+
+**Done checklist:**
+
+- [ ] All six FR-083 scenario ids exist
+- [ ] At least one scenario changes emitted signals in a test
+- [ ] No real resource-exhaustion side effects
+
+---
+
+
+
+### Step 2.5 — Webhook emission to AEGIS API
+
+
+|                   |                                                                                                                                                                                                 |
+| ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Goal**          | Simulator POSTs an incident **signal** to AEGIS; AEGIS creates an `open` incident (FR-001 ingest path beyond manual `/incidents`)                                                                |
+| **Why**           | [FR-084](requirements/functional-requirements.md) · [FR-113](requirements/functional-requirements.md) · [Incident flow § Phase 1](architecture/incident-flow.md)                                |
+| **Documentation** | [Incident flow — Signal ingestion](architecture/incident-flow.md) · [Threat model THR-002](security/threat-model.md) · [System boundaries §1 HTTP API](architecture/system-boundaries.md)     |
+| **Implements**    | FR-084, FR-113, FR-001 (webhook path), THR-002 (signature)                                                                                                                                      |
+
+
+This step touches **both** apps.
+
+**Files to create — AEGIS (consumer):**
+
+```text
+src/aegis/api/webhooks/router.py            # POST /api/v1/webhooks/incidents
+src/aegis/api/webhooks/schemas.py           # inbound signal body
+src/aegis/api/webhooks/signature.py         # HMAC verify (THR-002)
+src/aegis/application/incidents/ingest_signal.py
+# Wire router in src/aegis/api/router.py
+# Settings: AEGIS_WEBHOOK_SECRET (required in production, like JWT)
+```
+
+**Files to create — simulator (producer):**
+
+```text
+apps/simulator/aegis_client.py              # HTTP POST + HMAC sign
+# Trigger: when a scenario is active, or POST /emit on the simulator
+```
+
+**Inbound signal (keep small — map into existing CreateIncident fields):**
+
+
+| Field               | Maps to                          |
+| ------------------- | -------------------------------- |
+| `source`            | `"simulator"`                    |
+| `service`           | `affected_service`               |
+| `title` / `summary` | `title`                          |
+| `severity`          | existing `Severity` enum         |
+| `scenario`          | optional, for later fingerprint  |
+| `fingerprint`       | optional hint; AEGIS owns dedup in 2.6 |
+
+
+**What to build:**
+
+- **AEGIS:** `POST /api/v1/webhooks/incidents` validates JSON, verifies HMAC-SHA256 over the raw body (`AEGIS_WEBHOOK_SECRET`, header e.g. `X-Aegis-Signature`), then creates an incident in state `open` via a use case (reuse `Incident.create` — do not duplicate domain rules).
+- Auth: webhook authenticity is the **signature** ([THR-002](security/threat-model.md)). This route is not the human JWT login. Do not leave it open. IP allowlisting from THR-002 can wait (document as follow-up).
+- **Simulator:** HTTP client posts the same body + signature to `AEGIS_BASE_URL` (e.g. `http://127.0.0.1:8000`).
+- Errors: same envelope `{ error: { code, message, request_id } }`. Invalid signature → **401**.
+
+**Best practices:**
+
+- Shared secret only in env (`AEGIS_WEBHOOK_SECRET` / `SIMULATOR_WEBHOOK_SECRET` copy). Never commit it.
+- Version the payload mentally as `incident.signal.v1` even if you do not publish SQS yet.
+- Reuse application `CreateIncident` or a thin `IngestIncidentSignal` that calls the same domain create.
+
+**Do NOT:**
+
+- Publish `incident.opened.v1` to EventBridge/SQS (Phase 4 / ADR-003)
+- Implement deduplication yet (Step 2.6) — two identical webhooks may create two incidents until 2.6
+- Use `POST /api/v1/incidents` as the webhook (that stays the **manual** engineer API + JWT)
+- Implement RAG, agents, or evaluation pipeline boxes from the §13 diagram
+
+**Tests:**
+
+- `tests/integration/api/test_webhook_ingest.py` — valid HMAC → 201 + incident exists; bad HMAC → 401
+- `tests/unit/simulator/test_aegis_client.py` — signature bytes match what AEGIS verifies (can share a test helper)
+
+**Verification:**
+
+```bash
+# Terminal 1 — AEGIS (needs AEGIS_WEBHOOK_SECRET in .env)
+uv run uvicorn aegis.main:app --reload
+
+# Terminal 2 — simulator emit (or pytest)
+uv run pytest tests/integration/api/test_webhook_ingest.py tests/unit/simulator/test_aegis_client.py -v
+```
+
+**Done checklist:**
+
+- [ ] Simulator can emit one signal AEGIS accepts
+- [ ] Unsigned / wrong signature rejected
+- [ ] Created incident is `open` with correct `affected_service`
+- [ ] Manual `POST /api/v1/incidents` still requires JWT
+
+---
+
+
+
+### Step 2.6 — Incident deduplication in AEGIS
+
+
+|                   |                                                                                                                                 |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| **Goal**          | Two signals for the same underlying issue become **one** incident (or link to the existing one)                                 |
+| **Why**           | [FR-007](requirements/functional-requirements.md) · [Incident flow § Phase 1 Deduplicate](architecture/incident-flow.md)        |
+| **Documentation** | [Incident flow — same fingerprint](architecture/incident-flow.md)                                                               |
+| **Implements**    | FR-007                                                                                                                          |
+
+
+**Files to create / modify:**
+
+```text
+src/aegis/domain/incidents/fingerprint.py   # compute fingerprint from signal fields
+src/aegis/application/incidents/ingest_signal.py   # lookup-or-create
+src/aegis/infrastructure/repositories/incident_repository.py
+src/aegis/infrastructure/database/models/incident.py   # fingerprint column if needed
+alembic/versions/*_incident_fingerprint.py
+src/aegis/core/protocols.py                 # get_open_by_fingerprint
+```
+
+**What to build:**
+
+- **Fingerprint** (v0.3, keep it boring): hash or stable key from `affected_service` + `scenario` (or signal type) + optional time bucket (e.g. calendar hour UTC). Same key while an incident is still `open` (or still “active” — pick one rule and test it).
+- Ingest path: if an **open** incident with that fingerprint exists → **do not** create a second row; return the existing incident (HTTP 200) and optionally record that a duplicate signal arrived (in-memory counter or a line in description — do **not** build a full evidence model).
+- If none exists → create as today (201).
+- Persist fingerprint on the incident row so list/get stay simple.
+
+**Best practices:**
+
+- Dedup is a **domain/application** rule, not “if title == title” in the router.
+- Unique constraint in Postgres on `(fingerprint)` for open incidents if you can express it cleanly (partial unique index `WHERE deleted_at IS NULL AND state = 'open'` is ideal). If that is too heavy for the first slice, application-level check + a test is acceptable, then add the index in the same step if time allows.
+- Manual `POST /api/v1/incidents` can omit fingerprint (null) so engineer-created incidents are not collapsed.
+
+**Do NOT:**
+
+- Implement FR-008 (related-incident graph)
+- Soft-delete or auto-close as a substitute for dedup
+- Emit EventBridge events
+- Dedup closed incidents by default (a new outage after close is a **new** incident)
+
+**Tests:**
+
+- `tests/unit/domain/incidents/test_fingerprint.py`
+- `tests/unit/application/incidents/test_ingest_signal.py` — second ingest returns same id
+- `tests/integration/api/test_webhook_ingest.py` — POST twice → one row
+
+**Verification:**
+
+```bash
+uv run pytest tests/unit/domain/incidents/test_fingerprint.py \
+  tests/unit/application/incidents/test_ingest_signal.py \
+  tests/integration/api/test_webhook_ingest.py -v
+```
+
+**Done checklist:**
+
+- [ ] Duplicate webhook does not create a second open incident
+- [ ] Distinct service/scenario still creates a new incident
+- [ ] Manual create without fingerprint still works
+- [ ] Tests pass without relying on an empty leftover `/docs` table (assert on ids you created)
+
+---
+
+
+
+### Step 2.7 — v0.3 quality gate
+
+
+|                   |                                                                                          |
+| ----------------- | ---------------------------------------------------------------------------------------- |
+| **Goal**          | v0.3 is complete enough to feed later RAG/agent work                                     |
+| **Documentation** | [RISK-007](requirements/risk-register.md) · [FR-007, FR-080–084, FR-113](requirements/functional-requirements.md) |
+
+
+**v0.3 FR checklist:**
+
+
+| FR     | Description                         | Step   |
+| ------ | ----------------------------------- | ------ |
+| FR-080 | Multi-service simulator             | 2.1–2.2 |
+| FR-081 | Logs, metrics, traces               | 2.3    |
+| FR-082 | Configurable scenarios              | 2.4    |
+| FR-083 | Six named failure types             | 2.4    |
+| FR-084 | Signals consumable by AEGIS         | 2.5    |
+| FR-113 | Webhook ingestion                   | 2.5    |
+| FR-007 | Deduplicate signals                 | 2.6    |
+
+
+**Verification (full suite):**
+
+```bash
+uv run ruff check .
+uv run ruff format --check .
+uv run mypy src tests
+uv run pytest -v
+```
+
+**Done checklist:**
+
+- [ ] All v0.3 FRs in the table above implemented
+- [ ] Simulator + AEGIS demo: activate a scenario → webhook → one incident in `/docs`
+- [ ] Duplicate emit does not double-create
+- [ ] Full test suite, lint, and mypy pass
+- [ ] Git tag `v0.3.0` (when ready)
 
 ---
 
@@ -1082,6 +1547,6 @@ Copy this template when you start any new step:
 
 ## Next action
 
-**Start here:** [Step 1.1 — Create layered package structure](#step-11--create-layered-package-structure)
+**Start here:** [Step 2.1 — Simulator service skeleton](#step-21--simulator-service-skeleton)
 
-When ready, ask: *"Implement Step 1.1"* and we will code it together with full engineering reasoning.
+When ready, ask: *"Implement Step 2.1"* and we will code it together with full engineering reasoning.
