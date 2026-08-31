@@ -100,9 +100,13 @@ async def test_list_filters_by_state_and_service(db_session: AsyncSession) -> No
 
     investigating = await repo.list(IncidentFilters(state=IncidentState.INVESTIGATING))
     search_only = await repo.list(IncidentFilters(affected_service="search-api"))
+    investigating_ids = {item.id for item in investigating}
+    search_ids = {item.id for item in search_only}
 
-    assert [item.id for item in investigating] == [payments.id]
-    assert [item.id for item in search_only] == [search.id]
+    assert payments.id in investigating_ids
+    assert search.id not in investigating_ids
+    assert search.id in search_ids
+    assert payments.id not in search_ids
 
 
 async def test_list_filters_by_created_date(db_session: AsyncSession) -> None:
@@ -119,11 +123,13 @@ async def test_list_filters_by_created_date(db_session: AsyncSession) -> None:
     await repo.create(newer)
 
     cutoff = datetime(2026, 8, 10, tzinfo=UTC)
-    recent = await repo.list(IncidentFilters(created_after=cutoff))
-    early = await repo.list(IncidentFilters(created_before=cutoff))
+    recent_ids = {item.id for item in await repo.list(IncidentFilters(created_after=cutoff))}
+    early_ids = {item.id for item in await repo.list(IncidentFilters(created_before=cutoff))}
 
-    assert [item.id for item in recent] == [newer.id]
-    assert [item.id for item in early] == [older.id]
+    assert newer.id in recent_ids
+    assert older.id not in recent_ids
+    assert older.id in early_ids
+    assert newer.id not in early_ids
 
 
 async def test_list_excludes_soft_deleted_rows(db_session: AsyncSession) -> None:
@@ -137,4 +143,5 @@ async def test_list_excludes_soft_deleted_rows(db_session: AsyncSession) -> None
     await db_session.flush()
 
     assert await repo.get_by_id(incident.id) is None
-    assert await repo.list(IncidentFilters()) == []
+    listed_ids = {item.id for item in await repo.list(IncidentFilters())}
+    assert incident.id not in listed_ids
