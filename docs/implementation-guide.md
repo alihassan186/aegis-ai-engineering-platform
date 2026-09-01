@@ -118,11 +118,11 @@ Use this table to know **which document answers which question** while coding.
 | Incident repository     | Implemented     | `src/aegis/infrastructure/repositories/` |
 | Authentication          | Implemented     | `src/aegis/api/auth/` · JWT + RBAC       |
 | Incident API            | Implemented     | `src/aegis/api/` · `/api/v1/incidents`   |
-| Production simulator    | Skeleton (2.1)  | `apps/simulator/` · `:8001` `/health`    |
+| Production simulator    | Steps 2.1–2.4   | `apps/simulator/` · `:8001` scenarios    |
 | Agents, RAG, AWS        | Not implemented | —                                        |
 
 
-**You are here:** Step 2.3 complete → next [Step 2.4 — Configurable failure scenarios](#step-24--configurable-failure-scenarios).
+**You are here:** Step 2.4 complete → next [Step 2.5 — Webhook emission to AEGIS API](#step-25--webhook-emission-to-aegis-api).
 
 ---
 
@@ -1137,9 +1137,9 @@ uv run pytest tests/unit/simulator/test_scenarios.py -v
 
 **Done checklist:**
 
-- [ ] All six FR-083 scenario ids exist
-- [ ] At least one scenario changes emitted signals in a test
-- [ ] No real resource-exhaustion side effects
+- [x] All six FR-083 scenario ids exist
+- [x] At least one scenario changes emitted signals in a test
+- [x] No real resource-exhaustion side effects
 
 ---
 

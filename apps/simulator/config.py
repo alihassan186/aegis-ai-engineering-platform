@@ -6,6 +6,8 @@ import os
 from dataclasses import dataclass
 from pathlib import Path
 
+from apps.simulator.scenarios.catalog import ScenarioId
+
 _ENVIRONMENT_NAMES = {"development", "test", "production"}
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 
@@ -45,6 +47,7 @@ class Settings:
     host: str = "127.0.0.1"
     port: int = 8001
     aegis_base_url: str = ""
+    scenario: ScenarioId | None = None
 
     @classmethod
     def from_env(cls) -> Settings:
@@ -61,11 +64,21 @@ class Settings:
             host=os.getenv("SIMULATOR_HOST", "127.0.0.1").strip() or "127.0.0.1",
             port=_parse_positive_int(os.getenv("SIMULATOR_PORT"), default=8001),
             aegis_base_url=os.getenv("AEGIS_BASE_URL", "").strip(),
+            scenario=_parse_optional_scenario(os.getenv("SIMULATOR_SCENARIO")),
         )
 
 
 def get_settings() -> Settings:
     return Settings.from_env()
+
+
+def _parse_optional_scenario(raw: str | None) -> ScenarioId | None:
+    if raw is None or not raw.strip():
+        return None
+    try:
+        return ScenarioId(raw.strip())
+    except ValueError:
+        return None
 
 
 def _parse_positive_int(raw: str | None, *, default: int) -> int:

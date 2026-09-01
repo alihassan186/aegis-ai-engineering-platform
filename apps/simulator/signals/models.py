@@ -59,3 +59,5 @@ class HealthyTick:
     log: LogRecord
     metric: MetricSample
     span: TraceSpan
+    extra_metrics: tuple[MetricSample, ...] = ()
+    deployment: DeploymentEvent | None = None

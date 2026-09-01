@@ -1,6 +1,6 @@
 """Synthetic logs, metrics, and traces (FR-081)."""
 
-from apps.simulator.signals.emitter import SignalBuffer, emit_healthy_tick
+from apps.simulator.signals.emitter import SignalBias, SignalBuffer, emit_healthy_tick
 from apps.simulator.signals.models import (
     DeploymentEvent,
     HealthyTick,
@@ -16,6 +16,7 @@ __all__ = [
     "LogRecord",
     "LogSeverity",
     "MetricSample",
+    "SignalBias",
     "SignalBuffer",
     "TraceSpan",
     "emit_healthy_tick",

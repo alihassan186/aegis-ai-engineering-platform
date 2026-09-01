@@ -15,6 +15,7 @@ from fastapi import FastAPI, Query
 from pydantic import BaseModel
 
 from apps.simulator.config import Settings, get_settings
+from apps.simulator.scenarios import ScenarioEngine, ScenarioId, scenario_catalog
 from apps.simulator.services import ServiceId, ServiceRuntime, ServiceStatus
 from apps.simulator.signals import HealthyTick, SignalBuffer
 
@@ -56,14 +57,38 @@ class SpanSignalResponse(BaseModel):
     duration_ms: float
 
 
+class DeploymentSignalResponse(BaseModel):
+    kind: str = "deployment"
+    timestamp: datetime
+    service: ServiceId
+    version: str
+    trace_id: str
+
+
 class SignalsResponse(BaseModel):
-    items: list[LogSignalResponse | MetricSignalResponse | SpanSignalResponse]
+    items: list[
+        LogSignalResponse | MetricSignalResponse | SpanSignalResponse | DeploymentSignalResponse
+    ]
+
+
+class ScenarioItemResponse(BaseModel):
+    id: ScenarioId
+    display_name: str
+    affected: list[ServiceId]
+    active: bool
+
+
+class ScenarioListResponse(BaseModel):
+    active: ScenarioId | None
+    items: list[ScenarioItemResponse]
 
 
 def _signal_items(
     ticks: Sequence[HealthyTick],
-) -> list[LogSignalResponse | MetricSignalResponse | SpanSignalResponse]:
-    items: list[LogSignalResponse | MetricSignalResponse | SpanSignalResponse] = []
+) -> list[LogSignalResponse | MetricSignalResponse | SpanSignalResponse | DeploymentSignalResponse]:
+    items: list[
+        LogSignalResponse | MetricSignalResponse | SpanSignalResponse | DeploymentSignalResponse
+    ] = []
     for tick in ticks:
         items.append(
             LogSignalResponse(
@@ -93,6 +118,26 @@ def _signal_items(
                 duration_ms=tick.span.duration_ms,
             )
         )
+        for extra in tick.extra_metrics:
+            items.append(
+                MetricSignalResponse(
+                    timestamp=extra.timestamp,
+                    service=extra.service,
+                    name=extra.name,
+                    value=extra.value,
+                    unit=extra.unit,
+                    trace_id=extra.trace_id,
+                )
+            )
+        if tick.deployment is not None:
+            items.append(
+                DeploymentSignalResponse(
+                    timestamp=tick.deployment.timestamp,
+                    service=tick.deployment.service,
+                    version=tick.deployment.version,
+                    trace_id=tick.deployment.trace_id,
+                )
+            )
     return items
 
 
@@ -101,9 +146,14 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     @asynccontextmanager
     async def lifespan(application: FastAPI) -> AsyncIterator[None]:
+        runtime = ServiceRuntime()
+        engine = ScenarioEngine()
+        if resolved.scenario is not None:
+            engine.activate(resolved.scenario, runtime)
         application.state.boot_message = BOOT_MESSAGE
-        application.state.runtime = ServiceRuntime()
+        application.state.runtime = runtime
         application.state.signals = SignalBuffer()
+        application.state.scenarios = engine
         yield
 
     application = FastAPI(
@@ -133,12 +183,44 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         ]
 
     @application.post("/signals/tick", response_model=SignalsResponse)
-    def emit_healthy_signals(
-        service: ServiceId = Query(..., description="Catalog service to emit a healthy tick for"),
+    def emit_signals(
+        service: ServiceId = Query(..., description="Catalog service to emit one tick for"),
     ) -> SignalsResponse:
         buffer: SignalBuffer = application.state.signals
-        tick = buffer.emit_healthy(service)
+        engine: ScenarioEngine = application.state.scenarios
+        tick = buffer.emit_healthy(service, bias=engine.bias_for(service))
         return SignalsResponse(items=_signal_items((tick,)))
+
+    @application.get("/scenarios", response_model=ScenarioListResponse)
+    def list_scenarios() -> ScenarioListResponse:
+        engine: ScenarioEngine = application.state.scenarios
+        active = engine.active_id
+        return ScenarioListResponse(
+            active=active,
+            items=[
+                ScenarioItemResponse(
+                    id=spec.id,
+                    display_name=spec.display_name,
+                    affected=sorted(spec.affected),
+                    active=active is spec.id,
+                )
+                for spec in scenario_catalog()
+            ],
+        )
+
+    @application.post("/scenarios/{scenario_id}", response_model=ScenarioListResponse)
+    def activate_scenario(scenario_id: ScenarioId) -> ScenarioListResponse:
+        engine: ScenarioEngine = application.state.scenarios
+        runtime: ServiceRuntime = application.state.runtime
+        engine.activate(scenario_id, runtime)
+        return list_scenarios()
+
+    @application.delete("/scenarios", response_model=ScenarioListResponse)
+    def deactivate_scenario() -> ScenarioListResponse:
+        engine: ScenarioEngine = application.state.scenarios
+        runtime: ServiceRuntime = application.state.runtime
+        engine.deactivate(runtime)
+        return list_scenarios()
 
     @application.get("/signals", response_model=SignalsResponse)
     def list_signals(
