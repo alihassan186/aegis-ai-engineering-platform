@@ -20,6 +20,19 @@ class CreateIncidentCommand:
 
 
 @dataclass(frozen=True, slots=True)
+class IngestIncidentSignalCommand:
+    """Inbound incident.signal.v1 mapped onto CreateIncident fields (FR-113)."""
+
+    source: str
+    service: str
+    title: str
+    severity: Severity
+    summary: str | None = None
+    scenario: str | None = None
+    fingerprint: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
 class ListIncidentsQuery:
     state: IncidentState | None = None
     severity: Severity | None = None

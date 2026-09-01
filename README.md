@@ -327,6 +327,7 @@ Incident routes need `AEGIS_DATABASE_URL` and a Bearer JWT (`AEGIS_JWT_SECRET`).
 | Health check | [http://127.0.0.1:8000/health](http://127.0.0.1:8000/health) |
 | Dev token | [http://127.0.0.1:8000/api/v1/auth/token](http://127.0.0.1:8000/api/v1/auth/token) |
 | Incidents API | [http://127.0.0.1:8000/api/v1/incidents](http://127.0.0.1:8000/api/v1/incidents) |
+| Incident webhooks | [http://127.0.0.1:8000/api/v1/webhooks/incidents](http://127.0.0.1:8000/api/v1/webhooks/incidents) (HMAC `X-Aegis-Signature`, not JWT) |
 | OpenAPI docs | [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs) |
 | ReDoc | [http://127.0.0.1:8000/redoc](http://127.0.0.1:8000/redoc) |
 
@@ -362,6 +363,7 @@ Environment variables are loaded from `.env` or the process environment.
 | `AEGIS_DATABASE_URL` | empty | PostgreSQL URL using `postgresql+asyncpg://` (required in production) |
 | `AEGIS_JWT_SECRET` | empty | HMAC secret for JWTs (required in production; never hardcode) |
 | `AEGIS_JWT_EXPIRE_SECONDS` | `3600` | Access token lifetime |
+| `AEGIS_WEBHOOK_SECRET` | empty | HMAC secret for `POST /api/v1/webhooks/incidents` (required in production; THR-002) |
 
 ### Integrations
 

@@ -1,4 +1,4 @@
-"""JWT helpers for API tests. Not a product secret."""
+"""JWT and webhook helpers for API tests. Not product secrets."""
 
 from __future__ import annotations
 
@@ -7,6 +7,7 @@ from aegis.domain.auth.enums import Role
 from aegis.infrastructure.auth.jwt import create_access_token
 
 TEST_JWT_SECRET = "test-only-jwt-secret-not-for-production"
+TEST_WEBHOOK_SECRET = "test-only-webhook-secret-not-for-production"
 
 
 def api_test_settings(
@@ -15,12 +16,14 @@ def api_test_settings(
     database_url: str = "",
     jwt_secret: str = TEST_JWT_SECRET,
     jwt_expire_seconds: int = 3600,
+    webhook_secret: str = TEST_WEBHOOK_SECRET,
 ) -> Settings:
     return Settings(
         environment=environment,
         database_url=database_url,
         jwt_secret=jwt_secret,
         jwt_expire_seconds=jwt_expire_seconds,
+        webhook_secret=webhook_secret,
     )
 
 

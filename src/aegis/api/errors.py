@@ -6,7 +6,12 @@ from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
-from aegis.api.exceptions import AuthenticationError, AuthorizationError, DatabaseNotConfiguredError
+from aegis.api.exceptions import (
+    AuthenticationError,
+    AuthorizationError,
+    DatabaseNotConfiguredError,
+    WebhookNotConfiguredError,
+)
 from aegis.api.request_id import request_id_from
 from aegis.domain.incidents.exceptions import InvalidTransitionError
 from aegis.infrastructure.auth.jwt import JwtNotConfiguredError
@@ -26,10 +31,21 @@ def error_body(request: Request, code: str, message: str) -> dict[str, dict[str,
 def register_exception_handlers(application: FastAPI) -> None:
     @application.exception_handler(AuthenticationError)
     async def authentication_handler(request: Request, exc: AuthenticationError) -> JSONResponse:
+        headers = {"WWW-Authenticate": exc.challenge} if exc.challenge else None
         return JSONResponse(
             status_code=401,
             content=error_body(request, "UNAUTHENTICATED", str(exc)),
-            headers={"WWW-Authenticate": "Bearer"},
+            headers=headers,
+        )
+
+    @application.exception_handler(WebhookNotConfiguredError)
+    async def webhook_not_configured_handler(
+        request: Request,
+        exc: WebhookNotConfiguredError,
+    ) -> JSONResponse:
+        return JSONResponse(
+            status_code=503,
+            content=error_body(request, "WEBHOOK_NOT_CONFIGURED", str(exc)),
         )
 
     @application.exception_handler(AuthorizationError)

@@ -7,15 +7,18 @@ Run separately from AEGIS::
 
 from __future__ import annotations
 
+import json
 from collections.abc import AsyncIterator, Sequence
 from contextlib import asynccontextmanager
 from datetime import datetime
 
 from fastapi import FastAPI, Query
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
+from apps.simulator.aegis_client import AegisClient, AegisUnreachableError, signal_from_scenario
 from apps.simulator.config import Settings, get_settings
-from apps.simulator.scenarios import ScenarioEngine, ScenarioId, scenario_catalog
+from apps.simulator.scenarios import SCENARIOS, ScenarioEngine, ScenarioId, scenario_catalog
 from apps.simulator.services import ServiceId, ServiceRuntime, ServiceStatus
 from apps.simulator.signals import HealthyTick, SignalBuffer
 
@@ -154,6 +157,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         application.state.runtime = runtime
         application.state.signals = SignalBuffer()
         application.state.scenarios = engine
+        application.state.aegis_client = AegisClient(
+            base_url=resolved.aegis_base_url,
+            secret=resolved.webhook_secret,
+        )
         yield
 
     application = FastAPI(
@@ -221,6 +228,54 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         runtime: ServiceRuntime = application.state.runtime
         engine.deactivate(runtime)
         return list_scenarios()
+
+    @application.post("/emit")
+    def emit_incident_signal() -> JSONResponse:
+        engine: ScenarioEngine = application.state.scenarios
+        resolved_settings: Settings = application.state.settings
+        if engine.active_id is None:
+            return JSONResponse(
+                status_code=409,
+                content={
+                    "error": {
+                        "code": "NO_ACTIVE_SCENARIO",
+                        "message": "Activate a scenario before emitting.",
+                    }
+                },
+            )
+        if not resolved_settings.aegis_base_url:
+            return JSONResponse(
+                status_code=503,
+                content={
+                    "error": {
+                        "code": "AEGIS_NOT_CONFIGURED",
+                        "message": "Set AEGIS_BASE_URL.",
+                    }
+                },
+            )
+        if not resolved_settings.webhook_secret:
+            return JSONResponse(
+                status_code=503,
+                content={
+                    "error": {
+                        "code": "WEBHOOK_NOT_CONFIGURED",
+                        "message": "Set SIMULATOR_WEBHOOK_SECRET.",
+                    }
+                },
+            )
+        client: AegisClient = application.state.aegis_client
+        try:
+            result = client.emit_incident_signal(signal_from_scenario(SCENARIOS[engine.active_id]))
+        except AegisUnreachableError as exc:
+            return JSONResponse(
+                status_code=502,
+                content={"error": {"code": "AEGIS_UNREACHABLE", "message": str(exc)}},
+            )
+        try:
+            payload = json.loads(result.body.decode("utf-8")) if result.body else {}
+        except json.JSONDecodeError:
+            payload = {"raw": result.body.decode("utf-8", errors="replace")}
+        return JSONResponse(status_code=result.status_code, content=payload)
 
     @application.get("/signals", response_model=SignalsResponse)
     def list_signals(

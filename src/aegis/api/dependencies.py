@@ -16,6 +16,7 @@ from aegis.application.incidents import (
     ListIncidents,
     TransitionIncident,
 )
+from aegis.application.incidents.ingest_signal import IngestIncidentSignal
 from aegis.config.settings import Settings
 from aegis.core.protocols import IncidentRepository
 from aegis.domain.auth.enums import Role
@@ -69,6 +70,12 @@ async def get_repositories(session: AsyncSession = Depends(get_db)) -> Repositor
 
 def get_create_incident(repos: Repositories = Depends(get_repositories)) -> CreateIncident:
     return CreateIncident(repos.incidents)
+
+
+def get_ingest_incident_signal(
+    create_incident: CreateIncident = Depends(get_create_incident),
+) -> IngestIncidentSignal:
+    return IngestIncidentSignal(create_incident)
 
 
 def get_get_incident(repos: Repositories = Depends(get_repositories)) -> GetIncident:

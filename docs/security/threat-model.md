@@ -79,7 +79,7 @@ Out of scope: threats to target production applications under investigation (cov
 | ID | Threat | Surface | Mitigation | Status |
 |---|---|---|---|---|
 | THR-001 | Attacker impersonates valid user via stolen JWT | [1] API | Short-lived tokens, secure signing key in Secrets Manager | Planned v0.2 |
-| THR-002 | Attacker impersonates webhook source | [2] Webhook | Webhook signature verification, IP allowlisting | Planned v0.3 |
+| THR-002 | Attacker impersonates webhook source | [2] Webhook | Webhook signature verification, IP allowlisting | Partial v0.3 (HMAC; IP allowlisting deferred) |
 | THR-003 | Agent impersonates another agent to escalate privileges | [5] Gateway | Agent identity in signed tokens; gateway validates agent_id | Planned v0.6 |
 
 ### Tampering

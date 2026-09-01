@@ -37,7 +37,8 @@ def _load_dotenv_file() -> None:
 class Settings:
     """Env-backed settings. No secrets hardcoded (THR-013).
 
-    ``aegis_base_url`` is reserved for Step 2.5. This step must not call AEGIS.
+    ``aegis_base_url`` and ``webhook_secret`` are used by Step 2.5 to POST
+    signed incident signals. Never hardcode the secret.
     """
 
     environment: str = "development"
@@ -48,6 +49,7 @@ class Settings:
     port: int = 8001
     aegis_base_url: str = ""
     scenario: ScenarioId | None = None
+    webhook_secret: str = ""
 
     @classmethod
     def from_env(cls) -> Settings:
@@ -65,11 +67,19 @@ class Settings:
             port=_parse_positive_int(os.getenv("SIMULATOR_PORT"), default=8001),
             aegis_base_url=os.getenv("AEGIS_BASE_URL", "").strip(),
             scenario=_parse_optional_scenario(os.getenv("SIMULATOR_SCENARIO")),
+            webhook_secret=_webhook_secret_from_env(),
         )
 
 
 def get_settings() -> Settings:
     return Settings.from_env()
+
+
+def _webhook_secret_from_env() -> str:
+    simulator = os.getenv("SIMULATOR_WEBHOOK_SECRET", "").strip()
+    if simulator:
+        return simulator
+    return os.getenv("AEGIS_WEBHOOK_SECRET", "").strip()
 
 
 def _parse_optional_scenario(raw: str | None) -> ScenarioId | None:

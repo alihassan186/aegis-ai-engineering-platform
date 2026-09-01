@@ -16,6 +16,7 @@ def test_defaults_when_env_unset(monkeypatch: pytest.MonkeyPatch) -> None:
         "AEGIS_DATABASE_URL",
         "AEGIS_JWT_SECRET",
         "AEGIS_JWT_EXPIRE_SECONDS",
+        "AEGIS_WEBHOOK_SECRET",
     ):
         monkeypatch.delenv(name, raising=False)
 
@@ -28,6 +29,7 @@ def test_defaults_when_env_unset(monkeypatch: pytest.MonkeyPatch) -> None:
     assert settings.database_url == ""
     assert settings.jwt_secret == ""
     assert settings.jwt_expire_seconds == 3600
+    assert settings.webhook_secret == ""
 
 
 def test_loads_database_url_from_env(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -97,6 +99,28 @@ def test_loads_jwt_secret_from_env(monkeypatch: pytest.MonkeyPatch) -> None:
 
     assert settings.jwt_secret == "local-dev-secret"
     assert settings.jwt_expire_seconds == 1800
+
+
+def test_production_requires_webhook_secret(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("AEGIS_ENV", "production")
+    monkeypatch.setenv(
+        "AEGIS_DATABASE_URL",
+        "postgresql+asyncpg://aegis:aegis@127.0.0.1:5432/aegis",
+    )
+    monkeypatch.setenv("AEGIS_JWT_SECRET", "prod-jwt")
+    monkeypatch.delenv("AEGIS_WEBHOOK_SECRET", raising=False)
+
+    with pytest.raises(ValueError, match="AEGIS_WEBHOOK_SECRET is required"):
+        Settings.from_env()
+
+
+def test_loads_webhook_secret_from_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("AEGIS_WEBHOOK_SECRET", "local-webhook-secret")
+    monkeypatch.delenv("AEGIS_DATABASE_URL", raising=False)
+
+    settings = Settings.from_env()
+
+    assert settings.webhook_secret == "local-webhook-secret"
 
 
 def test_database_url_must_use_asyncpg_prefix(monkeypatch: pytest.MonkeyPatch) -> None:
