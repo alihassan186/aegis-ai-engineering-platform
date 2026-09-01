@@ -14,12 +14,12 @@ class ServiceStatus(StrEnum):
     DOWN = "down"
 
 
-
-
 @dataclass(frozen=True, slots=True)
 class ServiceSnapshot:
-    spec: ServiceSpec    # The service's catalog specification (identity, display name, dependencies).
-    status: ServiceStatus  # The in-memory simulated status for this service ("healthy", "degraded", or "down").
+    """One catalog spec plus in-memory status (healthy, degraded, or down)."""
+
+    spec: ServiceSpec
+    status: ServiceStatus
 
 
 class ServiceRuntime:

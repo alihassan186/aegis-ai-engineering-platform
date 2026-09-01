@@ -122,7 +122,7 @@ Use this table to know **which document answers which question** while coding.
 | Agents, RAG, AWS        | Not implemented | —                                        |
 
 
-**You are here:** Step 2.2 complete → next [Step 2.3 — Generate logs, metrics, and traces](#step-23--generate-logs-metrics-and-traces).
+**You are here:** Step 2.3 complete → next [Step 2.4 — Configurable failure scenarios](#step-24--configurable-failure-scenarios).
 
 ---
 
@@ -1068,9 +1068,9 @@ uv run pytest tests/unit/simulator/test_signals.py -v
 
 **Done checklist:**
 
-- [ ] All five services can emit the three signal types
-- [ ] Tests do not require Docker beyond existing AEGIS Postgres
-- [ ] No observability vendor SDKs required
+- [x] All five services can emit the three signal types
+- [x] Tests do not require Docker beyond existing AEGIS Postgres
+- [x] No observability vendor SDKs required
 
 ---
 
