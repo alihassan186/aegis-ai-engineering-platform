@@ -74,7 +74,7 @@ async def test_jwt_does_not_replace_hmac(api_client: httpx.AsyncClient) -> None:
     assert response.status_code == 401
 
 
-async def test_duplicate_webhooks_create_two_incidents_until_dedup(
+async def test_duplicate_webhooks_return_the_same_open_incident(
     api_client: httpx.AsyncClient,
 ) -> None:
     raw = encode_signal(signal_payload())
@@ -83,8 +83,50 @@ async def test_duplicate_webhooks_create_two_incidents_until_dedup(
     second = await api_client.post("/api/v1/webhooks/incidents", content=raw, headers=headers)
 
     assert first.status_code == 201
-    assert second.status_code == 201
-    assert first.json()["id"] != second.json()["id"]
+    assert second.status_code == 200
+    assert first.json()["id"] == second.json()["id"]
+    assert first.json()["state"] == "open"
+    assert "duplicate signal at" in (second.json()["description"] or "")
+
+    listed = await api_client.get(
+        "/api/v1/incidents",
+        params={"affected_service": "payment"},
+        headers=authorization_header(),
+    )
+    created_ids = {first.json()["id"]}
+    listed_ids = {item["id"] for item in listed.json()["items"]}
+    assert created_ids <= listed_ids
+    matching = [item for item in listed.json()["items"] if item["id"] == first.json()["id"]]
+    assert len(matching) == 1
+
+
+async def test_distinct_service_webhook_creates_another_incident(
+    api_client: httpx.AsyncClient,
+) -> None:
+    payment_raw = encode_signal(signal_payload())
+    order_raw = encode_signal(
+        signal_payload(
+            service="order",
+            scenario="dependency_failure",
+            title="Dependency failure on order",
+        )
+    )
+    payment = await api_client.post(
+        "/api/v1/webhooks/incidents",
+        content=payment_raw,
+        headers=signed_webhook_headers(payment_raw),
+    )
+    order = await api_client.post(
+        "/api/v1/webhooks/incidents",
+        content=order_raw,
+        headers=signed_webhook_headers(order_raw),
+    )
+
+    assert payment.status_code == 201
+    assert order.status_code == 201
+    assert payment.json()["id"] != order.json()["id"]
+    assert payment.json()["affected_service"] == "payment"
+    assert order.json()["affected_service"] == "order"
 
 
 async def test_manual_incidents_post_still_requires_jwt(api_client: httpx.AsyncClient) -> None:

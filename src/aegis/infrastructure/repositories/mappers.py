@@ -30,6 +30,7 @@ def to_domain(row: IncidentModel) -> Incident:
         created_at=row.created_at,
         updated_at=row.updated_at,
         state_history=history,
+        fingerprint=row.fingerprint,
     )
 
 
@@ -45,6 +46,7 @@ def to_orm(incident: Incident) -> IncidentModel:
         created_at=incident.created_at,
         updated_at=incident.updated_at,
         deleted_at=None,
+        fingerprint=incident.fingerprint,
     )
     row.state_history = [_history_row(incident.id, step) for step in incident.state_history]
     return row
@@ -59,6 +61,7 @@ def apply_to_orm(incident: Incident, row: IncidentModel) -> None:
     row.affected_service = incident.affected_service
     row.owner_id = incident.owner_id
     row.updated_at = incident.updated_at
+    row.fingerprint = incident.fingerprint
 
     existing = {
         (entry.from_state, entry.to_state, entry.transitioned_at) for entry in row.state_history

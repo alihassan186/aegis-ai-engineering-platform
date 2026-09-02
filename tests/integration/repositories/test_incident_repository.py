@@ -23,6 +23,7 @@ def _incident(
     description: str | None = "p99 above SLO",
     owner_id: UUID | None = None,
     created_at: datetime | None = None,
+    fingerprint: str | None = None,
 ) -> Incident:
     return Incident.create(
         title=title,
@@ -31,6 +32,7 @@ def _incident(
         description=description,
         owner_id=owner_id,
         created_at=created_at,
+        fingerprint=fingerprint,
     )
 
 
@@ -145,3 +147,24 @@ async def test_list_excludes_soft_deleted_rows(db_session: AsyncSession) -> None
     assert await repo.get_by_id(incident.id) is None
     listed_ids = {item.id for item in await repo.list(IncidentFilters())}
     assert incident.id not in listed_ids
+
+
+async def test_get_open_by_fingerprint_ignores_closed_rows(db_session: AsyncSession) -> None:
+    key = "v1|payment|latency_spike|2026-09-02T14"
+    repo = SqlAlchemyIncidentRepository(db_session)
+    open_row = _incident(fingerprint=key)
+    await repo.create(open_row)
+
+    found = await repo.get_open_by_fingerprint(key)
+    assert found is not None
+    assert found.id == open_row.id
+
+    open_row.transition_to(IncidentState.CLOSED)
+    await repo.save(open_row)
+    assert await repo.get_open_by_fingerprint(key) is None
+
+    replacement = _incident(title="Second outage", fingerprint=key)
+    await repo.create(replacement)
+    found_again = await repo.get_open_by_fingerprint(key)
+    assert found_again is not None
+    assert found_again.id == replacement.id

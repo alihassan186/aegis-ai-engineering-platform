@@ -34,6 +34,7 @@ def test_create_opens_incident_with_identity_and_associations() -> None:
     assert incident.created_at == created_at
     assert incident.updated_at == created_at
     assert incident.state_history == ()
+    assert incident.fingerprint is None
 
 
 def test_create_assigns_unique_ids() -> None:

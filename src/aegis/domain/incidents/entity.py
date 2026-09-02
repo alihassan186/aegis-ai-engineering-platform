@@ -16,6 +16,15 @@ from aegis.domain.incidents.transitions import require_allowed_transition
 from aegis.shared.exceptions import ValidationError
 
 
+def _optional_text(value: str | None, field_name: str) -> str | None:
+    if value is None:
+        return None
+    cleaned = value.strip()
+    if not cleaned:
+        raise ValidationError(f"{field_name} must not be empty.")
+    return cleaned
+
+
 def _utc_now() -> datetime:
     return datetime.now(timezone.utc)
 
@@ -58,6 +67,7 @@ class Incident:
         created_at: datetime,
         updated_at: datetime,
         state_history: list[StateTransition] | None = None,
+        fingerprint: str | None = None,
     ) -> None:
         self._id = id
         self._title = _require_text(title, "title")
@@ -70,6 +80,7 @@ class Incident:
         self._created_at = _require_aware(created_at, "created_at")
         self._updated_at = _require_aware(updated_at, "updated_at")
         self._state_history = list(state_history or [])
+        self._fingerprint = _optional_text(fingerprint, "fingerprint")
 
     @classmethod
     def create(
@@ -82,6 +93,7 @@ class Incident:
         owner_id: UUID | None = None,
         incident_id: UUID | None = None,
         created_at: datetime | None = None,
+        fingerprint: str | None = None,
     ) -> Incident:
         """Open a new incident (FR-002, FR-005)."""
         moment = _require_aware(created_at, "created_at") if created_at else _utc_now()
@@ -97,6 +109,7 @@ class Incident:
             created_at=moment,
             updated_at=moment,
             state_history=[],
+            fingerprint=fingerprint,
         )
 
     @property
@@ -138,6 +151,20 @@ class Incident:
     @property
     def state_history(self) -> tuple[StateTransition, ...]:
         return tuple(self._state_history)
+
+    @property
+    def fingerprint(self) -> str | None:
+        return self._fingerprint
+
+    def note_duplicate_signal(self, *, occurred_at: datetime | None = None) -> None:
+        """Record that another signal matched this open incident (FR-007)."""
+        moment = _require_aware(occurred_at, "occurred_at") if occurred_at else _utc_now()
+        line = f"duplicate signal at {moment.isoformat()}"
+        if self._description:
+            self._description = f"{self._description}\n{line}"
+        else:
+            self._description = line
+        self._updated_at = moment
 
     def transition_to(
         self,

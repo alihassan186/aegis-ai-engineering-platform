@@ -17,6 +17,7 @@ class CreateIncidentCommand:
     severity: Severity
     description: str | None = None
     owner_id: UUID | None = None
+    fingerprint: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -30,6 +31,14 @@ class IngestIncidentSignalCommand:
     summary: str | None = None
     scenario: str | None = None
     fingerprint: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class IngestIncidentSignalResult:
+    """Lookup-or-create outcome. ``created`` drives HTTP 201 vs 200."""
+
+    incident: IncidentDto
+    created: bool
 
 
 @dataclass(frozen=True, slots=True)
