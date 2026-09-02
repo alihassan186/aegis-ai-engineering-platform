@@ -5,6 +5,7 @@ from aegis.application.incidents.dto import (
     CreateIncidentCommand,
     IncidentDto,
     IngestIncidentSignalCommand,
+    IngestIncidentSignalResult,
     ListIncidentsQuery,
     TransitionIncidentCommand,
 )
@@ -20,6 +21,7 @@ __all__ = [
     "IncidentDto",
     "IngestIncidentSignal",
     "IngestIncidentSignalCommand",
+    "IngestIncidentSignalResult",
     "ListIncidents",
     "ListIncidentsQuery",
     "TransitionIncident",

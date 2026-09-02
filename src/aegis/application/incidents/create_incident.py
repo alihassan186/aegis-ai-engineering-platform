@@ -18,6 +18,7 @@ class CreateIncident:
             severity=command.severity,
             description=command.description,
             owner_id=command.owner_id,
+            fingerprint=command.fingerprint,
         )
         persisted = await self._repository.create(incident)
         return IncidentDto.from_entity(persisted)

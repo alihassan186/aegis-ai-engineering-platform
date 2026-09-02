@@ -73,9 +73,9 @@ def get_create_incident(repos: Repositories = Depends(get_repositories)) -> Crea
 
 
 def get_ingest_incident_signal(
-    create_incident: CreateIncident = Depends(get_create_incident),
+    repos: Repositories = Depends(get_repositories),
 ) -> IngestIncidentSignal:
-    return IngestIncidentSignal(create_incident)
+    return IngestIncidentSignal(repos.incidents)
 
 
 def get_get_incident(repos: Repositories = Depends(get_repositories)) -> GetIncident:

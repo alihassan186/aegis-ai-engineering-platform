@@ -38,6 +38,8 @@ async def require_webhook_signature(request: Request) -> None:
 router = APIRouter(dependencies=[Depends(require_webhook_signature)])
 
 _ERROR_RESPONSES: dict[int | str, dict[str, Any]] = {
+    200: {"model": IncidentResponse},
+    201: {"model": IncidentResponse},
     401: {"model": ErrorResponse},
     422: {"model": ErrorResponse},
     503: {"model": ErrorResponse},
@@ -61,7 +63,7 @@ async def ingest_incident_signal(
     except PydanticValidationError as exc:
         raise RequestValidationError(exc.errors()) from exc
 
-    dto = await use_case.execute(
+    dto_result = await use_case.execute(
         IngestIncidentSignalCommand(
             source=body.source,
             service=body.service,
@@ -73,5 +75,9 @@ async def ingest_incident_signal(
         )
     )
     request_id = request_id_from(request)
-    response.headers["Location"] = f"/api/v1/incidents/{dto.id}"
-    return incident_response_from_dto(dto, request_id)
+    if dto_result.created:
+        response.status_code = status.HTTP_201_CREATED
+        response.headers["Location"] = f"/api/v1/incidents/{dto_result.incident.id}"
+    else:
+        response.status_code = status.HTTP_200_OK
+    return incident_response_from_dto(dto_result.incident, request_id)

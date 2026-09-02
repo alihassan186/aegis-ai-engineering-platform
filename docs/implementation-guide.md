@@ -31,7 +31,11 @@ This is the **master step-by-step guide** for turning AEGIS documentation into w
 
 ---
 
+
+
 ## 1. How to use this guide
+
+
 
 ### Your workflow for every step
 
@@ -44,6 +48,8 @@ VERIFY → Run commands in "Verification" section
 MARK  → Check off Done checklist
 NEXT  → Only then proceed to next step
 ```
+
+
 
 ### What each step contains
 
@@ -64,6 +70,8 @@ NEXT  → Only then proceed to next step
 
 
 ---
+
+
 
 ## 2. Documentation map
 
@@ -93,6 +101,8 @@ Use this table to know **which document answers which question** while coding.
 
 ---
 
+
+
 ## 3. Current codebase state
 
 
@@ -108,13 +118,15 @@ Use this table to know **which document answers which question** while coding.
 | Incident repository     | Implemented     | `src/aegis/infrastructure/repositories/` |
 | Authentication          | Implemented     | `src/aegis/api/auth/` · JWT + RBAC       |
 | Incident API            | Implemented     | `src/aegis/api/` · `/api/v1/incidents`   |
-| Production simulator    | Steps 2.1–2.5   | `apps/simulator/` · webhook emit         |
+| Production simulator    | Steps 2.1–2.6   | `apps/simulator/` + ingest dedup         |
 | Agents, RAG, AWS        | Not implemented | —                                        |
 
 
-**You are here:** Step 2.5 complete → next [Step 2.6 — Incident deduplication in AEGIS](#step-26--incident-deduplication-in-aegis).
+**You are here:** Step 2.6 complete → next [Step 2.7 — v0.3 quality gate](#step-27--v03-quality-gate).
 
 ---
+
+
 
 ## 4. Implementation principles
 
@@ -129,6 +141,8 @@ These come from [Product vision §8](product/product-vision.md) and [ADR-001 bou
 7. **Conventional commits** — `feat:`, `fix:`, `test:` per README Git workflow.
 8. **No secrets in code** — use `.env` and [Threat model §10](security/threat-model.md).
 
+
+
 ### Layer responsibilities (memorize this)
 
 ```text
@@ -139,6 +153,8 @@ main.py + routes → HTTP interface (thin — delegates to application layer)
 ```
 
 ---
+
+
 
 ## 5. Release roadmap overview
 
@@ -158,9 +174,13 @@ main.py + routes → HTTP interface (thin — delegates to application layer)
 
 ---
 
+
+
 ## Phase 0 — Complete v0.1 foundation
 
 > **Status:** Mostly complete. Run verification below. Skip to Phase 1 if all checks pass.
+
+
 
 ### Step 0.1 — Verify bootstrap
 
@@ -191,6 +211,8 @@ curl http://127.0.0.1:8000/health
 
 ---
 
+
+
 ## Phase 1 — v0.2 Core backend
 
 **Release goal:** Engineers can create, list, filter, and manage incidents via a secured REST API backed by PostgreSQL.
@@ -198,6 +220,8 @@ curl http://127.0.0.1:8000/health
 **Architecture reference:** [Platform overview §3, §5, §6](architecture/platform-overview.md)
 
 ---
+
+
 
 ### Step 1.1 — Create layered package structure
 
@@ -258,6 +282,8 @@ uv run mypy src
 
 ---
 
+
+
 ### Step 1.2 — Extend configuration for database
 
 
@@ -310,6 +336,8 @@ uv run pytest tests/unit/test_settings.py
 
 ---
 
+
+
 ### Step 1.3 — Add PostgreSQL via Docker Compose
 
 
@@ -357,6 +385,8 @@ docker compose -f docker/docker-compose.yml ps   # postgres healthy
 - [x] Can connect with `psql` or GUI tool
 
 ---
+
+
 
 ### Step 1.4 — Add SQLAlchemy, Alembic, and database session
 
@@ -417,6 +447,8 @@ uv run pytest tests/integration/test_database_connection.py
 - [x] Integration test connects to Postgres
 
 ---
+
+
 
 ### Step 1.5 — Implement Incident domain model
 
@@ -504,6 +536,8 @@ uv run mypy src/aegis/domain
 
 ---
 
+
+
 ### Step 1.6 — PostgreSQL schema and repository
 
 
@@ -576,6 +610,8 @@ uv run pytest tests/integration/repositories/ -v
 
 ---
 
+
+
 ### Step 1.7 — Application use cases
 
 
@@ -632,6 +668,8 @@ uv run pytest tests/unit/application/ -v
 - [x] Transition delegates to domain state machine
 
 ---
+
+
 
 ### Step 1.8 — REST API routes
 
@@ -705,6 +743,8 @@ uv run pytest tests/integration/api/ tests/contract/ -v
 
 ---
 
+
+
 ### Step 1.9 — Authentication and RBAC
 
 
@@ -767,6 +807,8 @@ uv run pytest tests/integration/api/test_auth.py tests/security/ -v
 
 ---
 
+
+
 ### Step 1.10 — v0.2 quality gate and release checklist
 
 
@@ -815,6 +857,8 @@ uv run pytest -v
 
 ---
 
+
+
 ## Phase 2 — v0.3 Production simulator
 
 **Release goal:** Synthetic multi-service environment that generates incidents for AEGIS to consume.
@@ -847,6 +891,8 @@ src/aegis/          → 2.5–2.6  (consumer: webhook ingest + dedup)
 The simulator is **inside the AEGIS system boundary** as a dev/test tool ([System boundaries §1](architecture/system-boundaries.md)). It is **not** a layer inside `src/aegis/domain`. Do not import FastAPI routes from the simulator into domain.
 
 ---
+
+
 
 ### Step 2.1 — Simulator service skeleton
 
@@ -909,6 +955,8 @@ uv run pytest tests/unit/simulator/ -v
 
 ---
 
+
+
 ### Step 2.2 — Model five services
 
 
@@ -969,6 +1017,8 @@ curl http://127.0.0.1:8001/services   # if you exposed HTTP
 
 ---
 
+
+
 ### Step 2.3 — Generate logs, metrics, and traces
 
 
@@ -1023,6 +1073,8 @@ uv run pytest tests/unit/simulator/test_signals.py -v
 - [x] No observability vendor SDKs required
 
 ---
+
+
 
 ### Step 2.4 — Configurable failure scenarios
 
@@ -1090,6 +1142,8 @@ uv run pytest tests/unit/simulator/test_scenarios.py -v
 - [x] No real resource-exhaustion side effects
 
 ---
+
+
 
 ### Step 2.5 — Webhook emission to AEGIS API
 
@@ -1174,10 +1228,12 @@ uv run pytest tests/integration/api/test_webhook_ingest.py tests/unit/simulator/
 
 - [x] Simulator can emit one signal AEGIS accepts
 - [x] Unsigned / wrong signature rejected
-- [ ] Created incident is `open` with correct `affected_service`
-- [ ] Manual `POST /api/v1/incidents` still requires JWT
+- [x] Created incident is `open` with correct `affected_service`
+- [x] Manual `POST /api/v1/incidents` still requires JWT
 
 ---
+
+
 
 ### Step 2.6 — Incident deduplication in AEGIS
 
@@ -1237,12 +1293,14 @@ uv run pytest tests/unit/domain/incidents/test_fingerprint.py \
 
 **Done checklist:**
 
-- [ ] Duplicate webhook does not create a second open incident
-- [ ] Distinct service/scenario still creates a new incident
-- [ ] Manual create without fingerprint still works
-- [ ] Tests pass without relying on an empty leftover `/docs` table (assert on ids you created)
+- [x] Duplicate webhook does not create a second open incident
+- [x] Distinct service/scenario still creates a new incident
+- [x] Manual create without fingerprint still works
+- [x] Tests pass without relying on an empty leftover `/docs` table (assert on ids you created)
 
 ---
+
+
 
 ### Step 2.7 — v0.3 quality gate
 
@@ -1286,6 +1344,8 @@ uv run pytest -v
 
 ---
 
+
+
 ## Phase 3 — v0.4 RAG platform
 
 **Release goal:** Ingest documentation, index in OpenSearch, retrieve with citations.
@@ -1305,6 +1365,8 @@ uv run pytest -v
 **Why before agents:** Knowledge Agent needs RAG ([Platform overview §8](architecture/platform-overview.md)).
 
 ---
+
+
 
 ## Phase 4 — v0.5 Multi-agent investigation
 
@@ -1328,6 +1390,8 @@ uv run pytest -v
 
 ---
 
+
+
 ## Phase 5 — v0.6 Tool gateway & MCP
 
 **Release goal:** All agent tools pass through policy-enforced gateway.
@@ -1346,6 +1410,8 @@ uv run pytest -v
 
 
 ---
+
+
 
 ## Phase 6 — v0.7 AWS deployment
 
@@ -1367,6 +1433,8 @@ uv run pytest -v
 
 ---
 
+
+
 ## Phase 7 — v0.8 Observability & evaluation
 
 
@@ -1380,6 +1448,8 @@ uv run pytest -v
 
 
 ---
+
+
 
 ## Phase 8 — v0.9 Controlled remediation
 
@@ -1395,6 +1465,8 @@ uv run pytest -v
 
 
 ---
+
+
 
 ## 15. Traceability quick reference
 
@@ -1416,6 +1488,8 @@ Code location (src/aegis/...)
 Test location (tests/...)
 ```
 
+
+
 ### v0.2 traceability example
 
 ```text
@@ -1429,6 +1503,8 @@ Tests:    tests/unit/domain/ + tests/integration/api/
 ```
 
 ---
+
+
 
 ## 16. Per-step template
 
@@ -1456,6 +1532,8 @@ Copy this template when you start any new step:
 
 ---
 
+
+
 ## Related documents
 
 - [Documentation index](README.md)
@@ -1464,6 +1542,8 @@ Copy this template when you start any new step:
 - [Product vision](product/product-vision.md) — why we're building this
 
 ---
+
+
 
 ## Next action
 
