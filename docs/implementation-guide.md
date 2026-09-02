@@ -122,7 +122,7 @@ Use this table to know **which document answers which question** while coding.
 | Agents, RAG, AWS        | Not implemented | —                                        |
 
 
-**You are here:** Step 2.6 complete → next [Step 2.7 — v0.3 quality gate](#step-27--v03-quality-gate).
+**You are here:** Step 2.7.1 complete → next [Step 2.7.2 — Show webhook ingest on AEGIS `/docs`](#step-272--show-webhook-ingest-on-aegis-docs).
 
 ---
 
@@ -878,7 +878,7 @@ uv run pytest -v
 | 2.4  | Configurable failure scenarios                                   | FR-082, FR-083 | [Product vision](product/product-vision.md)                |
 | 2.5  | Webhook emission to AEGIS API                                    | FR-084, FR-113 | [Incident flow § Phase 1](architecture/incident-flow.md)   |
 | 2.6  | Incident deduplication in AEGIS                                  | FR-007         | [Incident flow](architecture/incident-flow.md)             |
-| 2.7  | v0.3 quality gate                                                | —              | This section                                               |
+| 2.7  | v0.3 quality gate (do **2.7.1 → 2.7.5** in order)                | FR-007, FR-080–084, FR-113 | [RISK-007](requirements/risk-register.md)          |
 
 
 **Two codebases in this phase:**
@@ -1305,44 +1305,359 @@ uv run pytest tests/unit/domain/incidents/test_fingerprint.py \
 ### Step 2.7 — v0.3 quality gate
 
 
-|                   |                                                                                                                   |
-| ----------------- | ----------------------------------------------------------------------------------------------------------------- |
-| **Goal**          | v0.3 is complete enough to feed later RAG/agent work                                                              |
-| **Documentation** | [RISK-007](requirements/risk-register.md) · [FR-007, FR-080–084, FR-113](requirements/functional-requirements.md) |
+|                   |                                                                                                                                                          |
+| ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Goal**          | v0.3 is complete enough to feed later RAG/agent work — proven by FR traceability, `/docs`, a live demo, a green suite, and a release note                |
+| **Why**           | [RISK-007](requirements/risk-register.md) — agents need repeatable incidents; do not start OpenSearch until this gate passes                              |
+| **Documentation** | [RISK-007](requirements/risk-register.md) · [FR-007, FR-080–084, FR-113](requirements/functional-requirements.md) · [Incident flow § Phase 1](architecture/incident-flow.md) |
+| **Implements**    | Gate for FR-007, FR-080, FR-081, FR-082, FR-083, FR-084, FR-113 (no new product features)                                                                |
 
 
-**v0.3 FR checklist:**
+This step is a **gate**, not a new feature. Implement **2.7.1 then 2.7.2 then 2.7.3 then 2.7.4 then 2.7.5**. Do not skip ahead. Do not start Phase 3 until the parent Done checklist at the bottom is complete.
+
+**v0.3 FR map (what 2.1–2.6 already built — you verify here, you do not rebuild):**
 
 
-| FR     | Description                 | Step    |
-| ------ | --------------------------- | ------- |
-| FR-080 | Multi-service simulator     | 2.1–2.2 |
-| FR-081 | Logs, metrics, traces       | 2.3     |
-| FR-082 | Configurable scenarios      | 2.4     |
-| FR-083 | Six named failure types     | 2.4     |
-| FR-084 | Signals consumable by AEGIS | 2.5     |
-| FR-113 | Webhook ingestion           | 2.5     |
-| FR-007 | Deduplicate signals         | 2.6     |
+| FR     | Description                         | Built in | Proof you will collect in 2.7                          |
+| ------ | ----------------------------------- | -------- | ------------------------------------------------------ |
+| FR-080 | Multi-service simulator             | 2.1–2.2  | 2.7.1 file/test paths for five services                |
+| FR-081 | Logs, metrics, traces               | 2.3      | 2.7.1 `test_signals.py`                                |
+| FR-082 | Configurable scenarios              | 2.4      | 2.7.1 `POST /scenarios/{id}`                           |
+| FR-083 | Six named failure types             | 2.4      | 2.7.1 all six ids in catalog tests                     |
+| FR-084 | Signals consumable by AEGIS         | 2.5      | 2.7.3 `POST /emit` → webhook                           |
+| FR-113 | Webhook ingestion                   | 2.5      | 2.7.2 `/docs` + 2.7.3 HMAC POST                        |
+| FR-007 | Deduplicate signals                 | 2.6      | 2.7.3 second emit → **200** same id                    |
 
 
-**Verification (full suite):**
+**Parent Done checklist** (tick only after **all** of 2.7.1–2.7.5):
+
+- [ ] All v0.3 FRs in the table above have a row in the 2.7.1 traceability file
+- [ ] Simulator + AEGIS demo: activate a scenario → webhook → one incident visible via `/docs` and `GET /api/v1/incidents/{id}`
+- [ ] Duplicate emit does not double-create
+- [ ] Full test suite, lint, and mypy pass
+- [ ] Git tag `v0.3.0` (when you are ready — 2.7.5)
+
+---
+
+
+
+#### Step 2.7.1 — Trace every v0.3 FR to code and tests
+
+
+|                   |                                                                                                                         |
+| ----------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| **Goal**          | One page lists, for each v0.3 FR, the production files and the tests that prove it                                      |
+| **Why**           | [RISK-007](requirements/risk-register.md) — later RAG/eval needs to know what “a scenario incident” already is          |
+| **Documentation** | [FR-007, FR-080–084, FR-113](requirements/functional-requirements.md)                                                   |
+| **Implements**    | Traceability only (no behaviour change)                                                                                 |
+
+
+**Files to create:**
+
+```text
+docs/releases/v0.3-fr-traceability.md
+```
+
+**What to build:**
+
+- A markdown table with **one row per FR** in the parent map (FR-080, FR-081, FR-082, FR-083, FR-084, FR-113, FR-007).
+- Columns: `FR` · `What it means in this repo` · `Primary code paths` · `Primary tests`.
+- Fill paths by **inspecting the repo**, not by inventing new modules. Examples of what you should find (confirm, do not copy blindly):
+  - FR-080 → `apps/simulator/main.py`, `apps/simulator/services/catalog.py`, `tests/unit/simulator/test_health.py`, `test_service_catalog.py`
+  - FR-081 → `apps/simulator/signals/`, `tests/unit/simulator/test_signals.py`
+  - FR-082 / FR-083 → `apps/simulator/scenarios/`, `tests/unit/simulator/test_scenarios.py` (all six ids)
+  - FR-084 / FR-113 → `apps/simulator/aegis_client.py`, `src/aegis/api/webhooks/`, `tests/unit/simulator/test_aegis_client.py`, `tests/integration/api/test_webhook_ingest.py`
+  - FR-007 → `src/aegis/domain/incidents/fingerprint.py`, `ingest_signal.py`, `tests/unit/domain/incidents/test_fingerprint.py`, second-ingest tests
+- One short **Out of v0.3** bullet list: no RAG, no agents, no EventBridge, no FR-008 related-incident graph, no IP allowlisting.
+
+**Best practices:**
+
+- Paths must exist in git. If a row has no test, that is a **gap** — stop and add a test in the original step’s file, do not invent a new feature.
+- Keep the page boring. This is a map, not a tutorial.
+
+**Do NOT:**
+
+- Re-implement 2.1–2.6
+- Start OpenSearch, Bedrock, or LangGraph
+- Change fingerprint, HMAC, or catalog behaviour
+
+**Tests:**
+
+- None new. This step is documentation. Proof is: every path in the table opens in the editor.
+
+**Verification:**
+
+```bash
+# Every file you listed must exist, for example:
+test -f apps/simulator/services/catalog.py
+test -f src/aegis/api/webhooks/router.py
+test -f src/aegis/domain/incidents/fingerprint.py
+test -f docs/releases/v0.3-fr-traceability.md
+```
+
+**Done checklist:**
+
+- [x] Seven FR rows filled with real paths
+- [x] Out of v0.3 list present
+- [x] No new runtime code in this slice
+
+---
+
+
+
+#### Step 2.7.2 — Show webhook ingest on AEGIS `/docs`
+
+
+|                   |                                                                                                                                      |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| **Goal**          | FastAPI Swagger UI (`/docs`) and `/openapi.json` document `POST /api/v1/webhooks/incidents` with **201** (create) and **200** (dedup) |
+| **Why**           | [FR-111](requirements/functional-requirements.md) · parent checklist “one incident in `/docs`” — operators must see the ingest route |
+| **Documentation** | [System boundaries §1 HTTP API](architecture/system-boundaries.md) · [FR-113](requirements/functional-requirements.md)               |
+| **Implements**    | FR-111 (webhook path visible), FR-113 (documented)                                                                                   |
+
+
+**Files to modify:**
+
+```text
+tests/contract/test_openapi_incidents.py    # assert webhook path + 200/201
+src/aegis/api/webhooks/router.py            # only if OpenAPI is missing 200/201
+```
+
+**What to build:**
+
+- Open `http://127.0.0.1:8000/docs` (AEGIS, not the simulator). Confirm a **webhooks** tag and `POST /api/v1/webhooks/incidents`.
+- Contract test: `/openapi.json` contains that path; POST responses include `201` and `200`.
+- If the route exists but OpenAPI omits `200`, add it to `responses=` on the webhook router (do not change HMAC or ingest logic).
+
+**Best practices:**
+
+- `/docs` is the AEGIS app on **8000**. Simulator `/docs` on 8001 is a different OpenAPI — do not confuse them.
+- Webhook auth in the UI is **not** Bearer JWT. Note in the router docstring that authenticity is `X-Aegis-Signature`.
+
+**Do NOT:**
+
+- Put the webhook on `/api/v1/incidents` (that stays JWT + manual create)
+- Remove HMAC
+- Implement Try-it-out HMAC signing inside Swagger (out of scope)
+
+**Tests:**
+
+- `tests/contract/test_openapi_incidents.py` — webhook path present; `200` and `201` listed; existing `/docs` UI test still `200`
+
+**Verification:**
+
+```bash
+uv run pytest tests/contract/test_openapi_incidents.py -v
+# AEGIS running:
+curl -s http://127.0.0.1:8000/openapi.json | python3 -c "import sys,json; p=json.load(sys.stdin)['paths']; print(p['/api/v1/webhooks/incidents']['post']['responses'].keys())"
+```
+
+**Done checklist:**
+
+- [ ] `/docs` shows the webhook operation
+- [ ] Contract test asserts `200` and `201`
+- [ ] Manual `POST /api/v1/incidents` still documented separately and still JWT
+
+---
+
+
+
+#### Step 2.7.3 — Demo: scenario → webhook → one incident (duplicate emit stays one)
+
+
+|                   |                                                                                                                                                |
+| ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Goal**          | An operator can activate a scenario, emit once, see **one** `open` incident; emit again and get the **same id** (HTTP 200)                      |
+| **Why**           | Parent checklist: live demo + FR-007 / FR-084 / FR-113 together                                                                                |
+| **Documentation** | [Incident flow § Phase 1](architecture/incident-flow.md) · [FR-007](requirements/functional-requirements.md)                                   |
+| **Implements**    | Proof of FR-084, FR-113, FR-007 (no new domain rules)                                                                                          |
+
+
+**Files to create:**
+
+```text
+scripts/demo-v0.3.sh    # curl-only; reads secrets from the environment
+```
+
+**What to build:**
+
+- A bash script that **fails fast** (`set -euo pipefail`) and:
+  1. `GET http://127.0.0.1:8000/health` and `GET http://127.0.0.1:8001/health`
+  2. `POST http://127.0.0.1:8001/scenarios/latency_spike`
+  3. `POST http://127.0.0.1:8001/emit` — expect **201** from AEGIS (simulator may proxy that status)
+  4. Parse incident `id` from the JSON body
+  5. Dev login `POST /api/v1/auth/token` then `GET /api/v1/incidents/{id}` — `state` is `open`, `affected_service` is `payment` for `latency_spike`
+  6. `POST /emit` again — expect **200** and the **same** `id`
+  7. Print both ids and `exit 1` if they differ
+- Script must **not** hardcode webhook/JWT secrets. Use env already required by `.env` (`AEGIS_WEBHOOK_SECRET` is used by the simulator client; token login uses `AEGIS_JWT_SECRET` on the server).
+- Header comment: both processes must already be running; Postgres migrated (`uv run alembic upgrade head`).
+
+**Best practices:**
+
+- Assert on the **id you created**, never “table is empty” (leftover rows are normal).
+- Default scenario `latency_spike` is enough. Do not loop all six in this script.
+
+**Do NOT:**
+
+- Auto-start uvicorn or Docker from the script (operator starts processes)
+- Publish EventBridge / SQS
+- Close or soft-delete the incident as part of the demo
+- Call OpenSearch
+
+**Tests:**
+
+- Existing: `tests/integration/api/test_webhook_ingest.py` (`test_duplicate_webhooks_return_the_same_open_incident`)
+- The shell script is **manual verification**, not pytest
+
+**Verification:**
+
+```bash
+# Terminal A
+uv run uvicorn aegis.main:app --host 127.0.0.1 --port 8000
+
+# Terminal B
+uv run uvicorn apps.simulator.main:app --host 127.0.0.1 --port 8001
+
+# Terminal C (repo root, .env loaded by the apps)
+bash scripts/demo-v0.3.sh
+uv run pytest tests/integration/api/test_webhook_ingest.py -v
+```
+
+**Done checklist:**
+
+- [ ] First emit creates one `open` incident
+- [ ] Second emit returns the same id
+- [ ] You can open `/docs`, find the incident id, and match `GET /api/v1/incidents/{id}`
+- [ ] Script contains no committed secrets
+
+---
+
+
+
+#### Step 2.7.4 — Full suite, lint, types, and version stamp
+
+
+|                   |                                                                                                      |
+| ----------------- | ---------------------------------------------------------------------------------------------------- |
+| **Goal**          | `ruff`, `mypy`, and `pytest` are green; AEGIS reports version **0.3.0**                              |
+| **Why**           | [NFR-051–055](requirements/non-functional-requirements.md) quality bar used at the v0.2 gate (1.10) |
+| **Documentation** | Same as Step 1.10                                                                                    |
+| **Implements**    | Release hygiene (no new FR)                                                                          |
+
+
+**Files to modify (only if needed):**
+
+```text
+pyproject.toml                 # [project] version = "0.3.0"
+src/aegis/main.py              # FastAPI(version="0.3.0")
+apps/simulator/main.py         # already 0.3.0 — confirm, do not invent a second scheme
+```
+
+**What to build:**
+
+- Run the full suite below. **Fix failures** — do not skip tests, do not `--no-verify`.
+- `mypy` must include **`apps`** (simulator) as well as `src` and `tests` (`pyproject.toml` `[tool.mypy] files`).
+- Set the AEGIS FastAPI `version` and package version to `0.3.0` so `/docs` and OpenAPI `info.version` match the release.
+
+**Best practices:**
+
+- If a test fails, fix the product or the test in the step that owns it (2.1–2.6), then re-run 2.7.4. Do not disable tests.
+- Do not reformat the whole repo “for fun”; only files you touch if ruff format fails.
+
+**Do NOT:**
+
+- Add RAG, agents, or new endpoints “while the suite is open”
+- Change fingerprint or HMAC to make a test pass without a failing assertion that requires it
+- Tag git yet (that is 2.7.5)
+
+**Tests:**
+
+- The entire `tests/` tree (the command is the test)
+
+**Verification:**
 
 ```bash
 uv run ruff check .
 uv run ruff format --check .
-uv run mypy src tests
+uv run mypy src tests apps
 uv run pytest -v
 ```
 
 **Done checklist:**
 
-- [ ] All v0.3 FRs in the table above implemented
-- [ ] Simulator + AEGIS demo: activate a scenario → webhook → one incident in `/docs`
-- [ ] Duplicate emit does not double-create
-- [ ] Full test suite, lint, and mypy pass
-- [ ] Git tag `v0.3.0` (when ready)
+- [ ] `ruff check` and `ruff format --check` pass
+- [ ] `mypy src tests apps` passes
+- [ ] `pytest -v` passes (full suite)
+- [ ] OpenAPI / FastAPI version is `0.3.0`
 
 ---
+
+
+
+#### Step 2.7.5 — RISK-007, release note, tag when ready
+
+
+|                   |                                                                                                      |
+| ----------------- | ---------------------------------------------------------------------------------------------------- |
+| **Goal**          | Risk register and a short release note describe v0.3; you can tag `v0.3.0` when you choose           |
+| **Why**           | [RISK-007](requirements/risk-register.md) review at a version gate · [NFR](requirements/non-functional-requirements.md) release notes |
+| **Documentation** | [RISK-007](requirements/risk-register.md) · parent 2.7 FR map                                        |
+| **Implements**    | Process / docs only                                                                                  |
+
+
+**Files to create / modify:**
+
+```text
+docs/releases/v0.3.md                    # short release note (what v0.3 is / is not)
+docs/requirements/risk-register.md       # RISK-007 status: simulator exists; golden RCA dataset still open
+docs/implementation-guide.md             # tick 2.7.1–2.7.5 and parent Done checklist; You are here → Phase 3
+docs/README.md                           # link the release note (optional, one line)
+```
+
+**What to build:**
+
+- `docs/releases/v0.3.md`: one screen of **what shipped** (simulator, six scenarios, HMAC webhook, open-incident fingerprint) and **what did not** (RAG, agents, EventBridge, FR-008, IP allowlisting).
+- RISK-007: do **not** close the risk. Set status to something like `Partial v0.3` and add a detailed subsection: simulator mitigates “no incidents to evaluate”; **golden RCA dataset** remains open until later evaluation steps.
+- Point “You are here” in the implementation guide at [Phase 3 / Step 3.1](#phase-3--v04-rag-platform) only after 2.7.1–2.7.4 are done.
+- Git tag **when you are ready** (you create the tag; do not force-push `main`):
+
+```bash
+git tag -a v0.3.0 -m "v0.3 production simulator, webhook ingest, open-incident dedup"
+git show v0.3.0 --no-patch
+```
+
+**Best practices:**
+
+- Tag the commit that has 2.7.1–2.7.4 merged, not an uncommitted tree.
+- Do not put secrets in the release note.
+
+**Do NOT:**
+
+- Start Step 3.1 (OpenSearch) in the same change as the tag
+- Mark RISK-007 **Closed** (golden dataset is still missing)
+- Rewrite ADRs
+
+**Tests:**
+
+- None. Re-run 2.7.4 if you touched Python while editing docs (you should not need to).
+
+**Verification:**
+
+```bash
+# RISK-007 still mentioned as not fully closed
+grep -n "RISK-007" docs/requirements/risk-register.md
+test -f docs/releases/v0.3.md
+```
+
+**Done checklist:**
+
+- [ ] `docs/releases/v0.3.md` exists and lists out-of-scope items
+- [ ] RISK-007 updated to partial (simulator yes, golden dataset no)
+- [ ] Implementation guide parent 2.7 checklist ticked
+- [ ] Tag `v0.3.0` created when you are ready (optional until you explicitly want it)
+
+---
+
 
 
 

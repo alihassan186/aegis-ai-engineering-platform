@@ -20,7 +20,7 @@ Tracks product, technical, operational, and security risks. Reviewed at each maj
 | RISK-004 | Bedrock API unavailability or throttling | Operational | 3 | 4 | 12 | Open | Retry with backoff; fallback model; queue-based async processing |
 | RISK-005 | Investigation cost exceeds budget per incident | Financial | 3 | 3 | 9 | Open | Token tracking; model routing; caching; cost alerts |
 | RISK-006 | Scope creep delays foundation delivery | Product | 4 | 3 | 12 | Open | Incremental roadmap; ADRs; phase gates |
-| RISK-007 | Insufficient evaluation data for RCA benchmarking | Product | 3 | 4 | 12 | Open | Production simulator; golden dataset curation |
+| RISK-007 | Insufficient evaluation data for RCA benchmarking | Product | 3 | 4 | 12 | Partial v0.3 | Simulator + webhook ingest exist; golden RCA dataset still open |
 | RISK-008 | Sensitive data leaked in logs or LLM context | Security | 3 | 5 | 15 | Open | PII/secrets redaction; context size limits; audit review |
 | RISK-009 | Single-region AWS dependency | Operational | 2 | 4 | 8 | Accepted | Accept for v1.0; multi-region deferred |
 | RISK-010 | Agent infinite loop or runaway token consumption | Technical | 3 | 3 | 9 | Open | Step limits; token budgets; timeout enforcement |

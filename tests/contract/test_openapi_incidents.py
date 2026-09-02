@@ -24,6 +24,10 @@ def test_openapi_documents_incident_routes() -> None:
     assert item["get"]["responses"]["200"]
     assert state["patch"]["responses"]["200"]
     assert paths["/api/v1/auth/token"]["post"]["responses"]["200"]
+    webhook = paths["/api/v1/webhooks/incidents"]
+    assert "post" in webhook
+    assert webhook["post"]["responses"]["201"]
+    assert webhook["post"]["responses"]["200"]
 
 
 def test_openapi_error_schema_matches_system_boundaries() -> None:

@@ -42,7 +42,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     application = FastAPI(
         title=resolved.app_name,
-        version="0.2.0",
+        version="0.3.0",
         description="AEGIS incident investigation API",
         debug=resolved.debug,
         lifespan=lifespan,
