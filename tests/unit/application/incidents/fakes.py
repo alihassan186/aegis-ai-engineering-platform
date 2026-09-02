@@ -6,6 +6,7 @@ from uuid import UUID
 
 from aegis.core.protocols import IncidentFilters
 from aegis.domain.incidents.entity import Incident
+from aegis.domain.incidents.enums import IncidentState
 from aegis.shared.exceptions import NotFoundError
 
 
@@ -34,3 +35,9 @@ class FakeIncidentRepository:
         self.items[incident.id] = incident
         self.saved.append(incident)
         return incident
+
+    async def get_open_by_fingerprint(self, fingerprint: str) -> Incident | None:
+        for incident in self.items.values():
+            if incident.fingerprint == fingerprint and incident.state is IncidentState.OPEN:
+                return incident
+        return None

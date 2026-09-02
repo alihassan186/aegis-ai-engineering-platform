@@ -10,6 +10,7 @@ from sqlalchemy.orm import selectinload
 
 from aegis.core.protocols import IncidentFilters
 from aegis.domain.incidents.entity import Incident
+from aegis.domain.incidents.enums import IncidentState
 from aegis.infrastructure.database.models.incident import IncidentModel
 from aegis.infrastructure.repositories.mappers import apply_to_orm, to_domain, to_orm
 from aegis.shared.exceptions import NotFoundError
@@ -75,3 +76,18 @@ class SqlAlchemyIncidentRepository:
         )
         result = await self._session.execute(stmt)
         return result.scalar_one_or_none()
+
+    async def get_open_by_fingerprint(self, fingerprint: str) -> Incident | None:
+        stmt = (
+            select(IncidentModel)
+            .options(selectinload(IncidentModel.state_history))
+            .where(
+                IncidentModel.fingerprint == fingerprint,
+                IncidentModel.state == IncidentState.OPEN.value,
+                IncidentModel.deleted_at.is_(None),
+            )
+            .limit(1)
+        )
+        result = await self._session.execute(stmt)
+        row = result.scalar_one_or_none()
+        return None if row is None else to_domain(row)
