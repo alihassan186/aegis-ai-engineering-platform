@@ -2,7 +2,7 @@
 
 **Document owner:** Engineering  
 **Status:** Draft  
-**Last updated:** 2026-08-26
+**Last updated:** 2026-09-03
 
 Tracks product, technical, operational, and security risks. Reviewed at each major release milestone.
 
@@ -85,6 +85,31 @@ Tracks product, technical, operational, and security risks. Reviewed at each maj
 
 **Owner:** Security / Engineering  
 **Review date:** v0.4 release gate
+
+---
+
+### RISK-007 — Insufficient evaluation data for RCA benchmarking
+
+**Status:** Partial v0.3 — **not closed.**
+
+**Description:** RCA quality (FR-090, FR-091) needs repeatable incidents and a labelled golden dataset. Without either, later agent evaluation has nothing fair to score.
+
+**Impact:** Agents cannot be benchmarked; hallucination and retrieval quality stay unmeasured.
+
+**v0.3 mitigation (done):**
+- Production simulator (`apps/simulator/`) can activate a named scenario and emit a signed incident signal (FR-080–084).
+- AEGIS webhook ingest + open-incident fingerprint (FR-113, FR-007) produce a stable `open` incident operators can GET and show in `/docs`.
+- This removes the “no incidents exist to evaluate against” blocker for local work.
+
+**Still open:**
+- No **golden RCA dataset** (expected root cause, evidence, citations per scenario).
+- Simulator signals are synthetic shape, not production telemetry.
+- No eval harness, no FR-090/FR-091 scoring.
+
+**Do not close** this risk until a golden dataset exists and is used at an investigation/eval gate (later phases).
+
+**Owner:** Engineering  
+**Review date:** investigation / evaluation gate (after v0.5 agents at the earliest)
 
 ---
 

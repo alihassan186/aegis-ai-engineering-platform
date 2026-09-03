@@ -18,9 +18,9 @@ This is the **master step-by-step guide** for turning AEGIS documentation into w
 4. [Implementation principles](#4-implementation-principles)
 5. [Release roadmap overview](#5-release-roadmap-overview)
 6. [Phase 0 — Complete v0.1 foundation](#phase-0--complete-v01-foundation)
-7. [Phase 1 — v0.2 Core backend](#phase-1--v02-core-backend) ← **START CODING HERE**
+7. [Phase 1 — v0.2 Core backend](#phase-1--v02-core-backend)
 8. [Phase 2 — v0.3 Production simulator](#phase-2--v03-production-simulator)
-9. [Phase 3 — v0.4 RAG platform](#phase-3--v04-rag-platform)
+9. [Phase 3 — v0.4 RAG platform](#phase-3--v04-rag-platform) ← **YOU ARE HERE**
 10. [Phase 4 — v0.5 Multi-agent investigation](#phase-4--v05-multi-agent-investigation)
 11. [Phase 5 — v0.6 Tool gateway & MCP](#phase-5--v06-tool-gateway--mcp)
 12. [Phase 6 — v0.7 AWS deployment](#phase-6--v07-aws-deployment)
@@ -118,11 +118,11 @@ Use this table to know **which document answers which question** while coding.
 | Incident repository     | Implemented     | `src/aegis/infrastructure/repositories/` |
 | Authentication          | Implemented     | `src/aegis/api/auth/` · JWT + RBAC       |
 | Incident API            | Implemented     | `src/aegis/api/` · `/api/v1/incidents`   |
-| Production simulator    | Steps 2.1–2.6   | `apps/simulator/` + ingest dedup         |
-| Agents, RAG, AWS        | Not implemented | —                                        |
+| Production simulator    | v0.3 complete   | `apps/simulator/` + webhook ingest + FR-007 |
+| Agents, RAG, AWS        | Not implemented | Phase 3+                                     |
 
 
-**You are here:** Step 2.7.3 complete → next [Step 2.7.4 — Full suite, lint, types, and version stamp](#step-274--full-suite-lint-types-and-version-stamp).
+**You are here:** v0.3 quality gate complete → next [Phase 3 / Step 3.1 — OpenSearch local setup](#phase-3--v04-rag-platform).
 
 ---
 
@@ -1331,10 +1331,10 @@ This step is a **gate**, not a new feature. Implement **2.7.1 then 2.7.2 then 2.
 
 **Parent Done checklist** (tick only after **all** of 2.7.1–2.7.5):
 
-- [ ] All v0.3 FRs in the table above have a row in the 2.7.1 traceability file
-- [ ] Simulator + AEGIS demo: activate a scenario → webhook → one incident visible via `/docs` and `GET /api/v1/incidents/{id}`
-- [ ] Duplicate emit does not double-create
-- [ ] Full test suite, lint, and mypy pass
+- [x] All v0.3 FRs in the table above have a row in the 2.7.1 traceability file
+- [x] Simulator + AEGIS demo: activate a scenario → webhook → one incident visible via `/docs` and `GET /api/v1/incidents/{id}`
+- [x] Duplicate emit does not double-create
+- [x] Full test suite, lint, and mypy pass
 - [ ] Git tag `v0.3.0` (when you are ready — 2.7.5)
 
 ---
@@ -1585,10 +1585,10 @@ uv run pytest -v
 
 **Done checklist:**
 
-- [ ] `ruff check` and `ruff format --check` pass
-- [ ] `mypy src tests apps` passes
-- [ ] `pytest -v` passes (full suite)
-- [ ] OpenAPI / FastAPI version is `0.3.0`
+- [x] `ruff check` and `ruff format --check` pass
+- [x] `mypy src tests apps` passes
+- [x] `pytest -v` passes (full suite)
+- [x] OpenAPI / FastAPI version is `0.3.0`
 
 ---
 
@@ -1651,9 +1651,9 @@ test -f docs/releases/v0.3.md
 
 **Done checklist:**
 
-- [ ] `docs/releases/v0.3.md` exists and lists out-of-scope items
-- [ ] RISK-007 updated to partial (simulator yes, golden dataset no)
-- [ ] Implementation guide parent 2.7 checklist ticked
+- [x] `docs/releases/v0.3.md` exists and lists out-of-scope items
+- [x] RISK-007 updated to partial (simulator yes, golden dataset no)
+- [x] Implementation guide parent 2.7 checklist ticked
 - [ ] Tag `v0.3.0` created when you are ready (optional until you explicitly want it)
 
 ---
