@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 from typing import Any
+from uuid import uuid4
 
 from aegis.api.webhooks.signature import SIGNATURE_HEADER, compute_signature
 from tests.helpers.auth import TEST_WEBHOOK_SECRET
@@ -21,6 +22,26 @@ def signal_payload(**overrides: Any) -> dict[str, Any]:
     }
     body.update(overrides)
     return body
+
+
+def isolated_signal_payload(**overrides: Any) -> dict[str, Any]:
+    """Payload whose fingerprint will not match leftover open incidents.
+
+    Ingest collapses ``service + scenario + UTC hour``. The v0.3 demo commits
+    ``payment`` / ``latency_spike`` into the shared local database, so tests
+    that expect HTTP 201 must not reuse that pair.
+    """
+    token = uuid4().hex[:8]
+    service = str(overrides.pop("service", f"payment-{token}"))
+    scenario = str(overrides.pop("scenario", f"latency_spike-{token}"))
+    return signal_payload(
+        service=service,
+        scenario=scenario,
+        title=overrides.pop("title", f"Latency spike on {service}"),
+        summary=overrides.pop("summary", f"Latency spike: synthetic failing signals from {service}"),
+        fingerprint=overrides.pop("fingerprint", f"{service}:{scenario}"),
+        **overrides,
+    )
 
 
 def encode_signal(payload: dict[str, Any]) -> bytes:

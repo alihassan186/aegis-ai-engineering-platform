@@ -122,7 +122,7 @@ Use this table to know **which document answers which question** while coding.
 | Agents, RAG, AWS        | Not implemented | —                                        |
 
 
-**You are here:** Step 2.7.2 complete → next [Step 2.7.3 — Demo: scenario → webhook → one incident](#step-273--demo-scenario--webhook--one-incident-duplicate-emit-stays-one).
+**You are here:** Step 2.7.3 complete → next [Step 2.7.4 — Full suite, lint, types, and version stamp](#step-274--full-suite-lint-types-and-version-stamp).
 
 ---
 
@@ -1525,10 +1525,10 @@ uv run pytest tests/integration/api/test_webhook_ingest.py -v
 
 **Done checklist:**
 
-- [ ] First emit creates one `open` incident
-- [ ] Second emit returns the same id
-- [ ] You can open `/docs`, find the incident id, and match `GET /api/v1/incidents/{id}`
-- [ ] Script contains no committed secrets
+- [x] First emit creates one `open` incident
+- [x] Second emit returns the same id
+- [x] You can open `/docs`, find the incident id, and match `GET /api/v1/incidents/{id}`
+- [x] Script contains no committed secrets
 
 ---
 
