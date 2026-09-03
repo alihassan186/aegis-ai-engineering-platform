@@ -24,10 +24,28 @@ def test_openapi_documents_incident_routes() -> None:
     assert item["get"]["responses"]["200"]
     assert state["patch"]["responses"]["200"]
     assert paths["/api/v1/auth/token"]["post"]["responses"]["200"]
-    webhook = paths["/api/v1/webhooks/incidents"]
-    assert "post" in webhook
-    assert webhook["post"]["responses"]["201"]
-    assert webhook["post"]["responses"]["200"]
+
+
+def test_openapi_documents_webhook_ingest() -> None:
+    with TestClient(create_app()) as client:
+        spec = client.get("/openapi.json").json()
+
+    webhook = spec["paths"]["/api/v1/webhooks/incidents"]["post"]
+    assert "webhooks" in webhook["tags"]
+    assert webhook["responses"]["201"]
+    assert webhook["responses"]["200"]
+    description = webhook.get("description") or ""
+    assert "X-Aegis-Signature" in description
+
+
+def test_openapi_keeps_manual_incident_create_separate() -> None:
+    with TestClient(create_app()) as client:
+        spec = client.get("/openapi.json").json()
+
+    manual = spec["paths"]["/api/v1/incidents"]["post"]
+    assert "incidents" in manual["tags"]
+    assert manual["responses"]["201"]
+    assert "/api/v1/webhooks/incidents" in spec["paths"]
 
 
 def test_openapi_error_schema_matches_system_boundaries() -> None:

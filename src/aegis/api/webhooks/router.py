@@ -1,4 +1,8 @@
-"""Webhook ingest routes. Authenticity is HMAC, not human JWT (THR-002)."""
+"""Webhook ingest routes.
+
+Authenticity is HMAC-SHA256 via ``X-Aegis-Signature: sha256=<hex>`` over the
+raw body, not Bearer JWT (THR-002). IP allowlisting is deferred.
+"""
 
 from __future__ import annotations
 
@@ -51,6 +55,13 @@ _ERROR_RESPONSES: dict[int | str, dict[str, Any]] = {
     status_code=status.HTTP_201_CREATED,
     response_model=IncidentResponse,
     responses=_ERROR_RESPONSES,
+    summary="Ingest an incident signal",
+    description=(
+        "External ingest (FR-113). Authenticity is HMAC-SHA256 via "
+        "`X-Aegis-Signature: sha256=<hex>` over the raw JSON body, not Bearer JWT. "
+        "201 creates a new open incident; 200 returns the existing open incident "
+        "for the same fingerprint (FR-007). Swagger Try-it-out does not sign the body."
+    ),
 )
 async def ingest_incident_signal(
     request: Request,
