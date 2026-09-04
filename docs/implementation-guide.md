@@ -106,20 +106,20 @@ Use this table to know **which document answers which question** while coding.
 ## 3. Current codebase state
 
 
-| Component               | Status          | Location                                 |
-| ----------------------- | --------------- | ---------------------------------------- |
-| FastAPI app + `/health` | Implemented     | `src/aegis/main.py`                      |
-| Settings                | Implemented     | `src/aegis/config/settings.py`           |
-| Domain layer            | Implemented     | `src/aegis/domain/incidents/`            |
-| Application layer       | Implemented     | `src/aegis/application/incidents/`       |
-| Database session        | Implemented     | `src/aegis/infrastructure/database/`     |
-| PostgreSQL (Docker)     | Implemented     | `docker/` · `scripts/docker-up.sh`       |
-| Alembic migrations      | Implemented     | `alembic/` (incidents schema)            |
-| Incident repository     | Implemented     | `src/aegis/infrastructure/repositories/` |
-| Authentication          | Implemented     | `src/aegis/api/auth/` · JWT + RBAC       |
-| Incident API            | Implemented     | `src/aegis/api/` · `/api/v1/incidents`   |
+| Component               | Status          | Location                                    |
+| ----------------------- | --------------- | ------------------------------------------- |
+| FastAPI app + `/health` | Implemented     | `src/aegis/main.py`                         |
+| Settings                | Implemented     | `src/aegis/config/settings.py`              |
+| Domain layer            | Implemented     | `src/aegis/domain/incidents/`               |
+| Application layer       | Implemented     | `src/aegis/application/incidents/`          |
+| Database session        | Implemented     | `src/aegis/infrastructure/database/`        |
+| PostgreSQL (Docker)     | Implemented     | `docker/` · `scripts/docker-up.sh`          |
+| Alembic migrations      | Implemented     | `alembic/` (incidents schema)               |
+| Incident repository     | Implemented     | `src/aegis/infrastructure/repositories/`    |
+| Authentication          | Implemented     | `src/aegis/api/auth/` · JWT + RBAC          |
+| Incident API            | Implemented     | `src/aegis/api/` · `/api/v1/incidents`      |
 | Production simulator    | v0.3 complete   | `apps/simulator/` + webhook ingest + FR-007 |
-| Agents, RAG, AWS        | Not implemented | Phase 3+                                     |
+| Agents, RAG, AWS        | Not implemented | Phase 3+                                    |
 
 
 **You are here:** v0.3 quality gate complete → next [Phase 3 / Step 3.1 — OpenSearch local setup](#phase-3--v04-rag-platform).
@@ -1665,18 +1665,18 @@ test -f docs/releases/v0.3.md
 **Release goal:** Ingest documentation, index in OpenSearch, retrieve with citations.
 
 
-| Step | Goal                                                 | Key FRs        | Key docs                                                               |
-| ---- | ---------------------------------------------------- | -------------- | ---------------------------------------------------------------------- |
-| 3.1  | OpenSearch local setup (Docker)                      | FR-040         | [Platform overview §11](architecture/platform-overview.md)             |
-| 3.2  | Document ingestion pipeline (parse, chunk, metadata) | FR-040, FR-042 | [System boundaries §4 RAG boundary](architecture/system-boundaries.md) |
-| 3.3  | Bedrock Titan embeddings                             | FR-040         | [ADR-004](adr/ADR-004-aws-bedrock.md)                                  |
-| 3.4  | Index to OpenSearch (vector + keyword)               | FR-043         | [Platform overview §11](architecture/platform-overview.md)             |
-| 3.5  | Retrieval API with citations                         | FR-044, FR-042 | [FR-040–045](requirements/functional-requirements.md)                  |
-| 3.6  | Re-indexing on document change                       | FR-045         | [FR-045](requirements/functional-requirements.md)                      |
-| 3.7  | Index historical incidents                           | FR-041         | [Incident flow § Phase 6](architecture/incident-flow.md)               |
+| Step | Goal                                                 | Key FRs        | Key docs                          |
+| ---- | ---------------------------------------------------- | -------------- | --------------------------------- |
+| 3.1  | OpenSearch local setup (Docker)                      | FR-040         | Platform overview §11             |
+| 3.2  | Document ingestion pipeline (parse, chunk, metadata) | FR-040, FR-042 | System boundaries §4 RAG boundary |
+| 3.3  | Bedrock Titan embeddings                             | FR-040         | ADR-004                           |
+| 3.4  | Index to OpenSearch (vector + keyword)               | FR-043         | Platform overview §11             |
+| 3.5  | Retrieval API with citations                         | FR-044, FR-042 | FR-040–045                        |
+| 3.6  | Re-indexing on document change                       | FR-045         | FR-045                            |
+| 3.7  | Index historical incidents                           | FR-041         | Incident flow § Phase 6           |
 
 
-**Why before agents:** Knowledge Agent needs RAG ([Platform overview §8](architecture/platform-overview.md)).
+**Why before agents:** Knowledge Agent needs RAG (Platform overview §8).
 
 ---
 
