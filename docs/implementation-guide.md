@@ -1335,7 +1335,7 @@ This step is a **gate**, not a new feature. Implement **2.7.1 then 2.7.2 then 2.
 - [x] Simulator + AEGIS demo: activate a scenario → webhook → one incident visible via `/docs` and `GET /api/v1/incidents/{id}`
 - [x] Duplicate emit does not double-create
 - [x] Full test suite, lint, and mypy pass
-- [ ] Git tag `v0.3.0` (when you are ready — 2.7.5)
+- [x] Git tag `v0.3.0` (when you are ready — 2.7.5)
 
 ---
 
@@ -1654,7 +1654,7 @@ test -f docs/releases/v0.3.md
 - [x] `docs/releases/v0.3.md` exists and lists out-of-scope items
 - [x] RISK-007 updated to partial (simulator yes, golden dataset no)
 - [x] Implementation guide parent 2.7 checklist ticked
-- [ ] Tag `v0.3.0` created when you are ready (optional until you explicitly want it)
+- [x] Tag `v0.3.0` created when you are ready (optional until you explicitly want it)
 
 ---
 
