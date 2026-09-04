@@ -101,8 +101,13 @@ Tracks product, technical, operational, and security risks. Reviewed at each maj
 - AEGIS webhook ingest + open-incident fingerprint (FR-113, FR-007) produce a stable `open` incident operators can GET and show in `/docs`.
 - This removes the “no incidents exist to evaluate against” blocker for local work.
 
+**v0.4 Step 3.0 (corpus, not closed):**
+- Written runbooks + closed RCA narratives live under `docs/knowledge/` (one pair per FR-083 scenario).
+- RAG retrieval labels: `evaluation/datasets/rag/queries.jsonl`.
+- This is **knowledge**, not a scored FR-090 harness.
+
 **Still open:**
-- No **golden RCA dataset** (expected root cause, evidence, citations per scenario).
+- No **scored** golden RCA dataset runner (expected root cause vs agent output).
 - Simulator signals are synthetic shape, not production telemetry.
 - No eval harness, no FR-090/FR-091 scoring.
 

@@ -119,10 +119,11 @@ Use this table to know **which document answers which question** while coding.
 | Authentication          | Implemented     | `src/aegis/api/auth/` · JWT + RBAC          |
 | Incident API            | Implemented     | `src/aegis/api/` · `/api/v1/incidents`      |
 | Production simulator    | v0.3 complete   | `apps/simulator/` + webhook ingest + FR-007 |
-| Agents, RAG, AWS        | Not implemented | Phase 3+                                    |
+| RAG knowledge corpus    | Step 3.0        | `docs/knowledge/` + `evaluation/datasets/rag/` |
+| Agents, OpenSearch, AWS | Not implemented | Step 3.1+                                   |
 
 
-**You are here:** v0.3 quality gate complete → next [Phase 3 / Step 3.1 — OpenSearch local setup](#phase-3--v04-rag-platform).
+**You are here:** Step 3.0 complete → next [Step 3.1 — OpenSearch local setup](#phase-3--v04-rag-platform).
 
 ---
 
@@ -1667,6 +1668,7 @@ test -f docs/releases/v0.3.md
 
 | Step | Goal                                                 | Key FRs        | Key docs                          |
 | ---- | ---------------------------------------------------- | -------------- | --------------------------------- |
+| 3.0  | Knowledge corpus (runbooks, RCAs, RAG eval queries)  | FR-040, FR-042 | [docs/knowledge/](knowledge/README.md) |
 | 3.1  | OpenSearch local setup (Docker)                      | FR-040         | Platform overview §11             |
 | 3.2  | Document ingestion pipeline (parse, chunk, metadata) | FR-040, FR-042 | System boundaries §4 RAG boundary |
 | 3.3  | Bedrock Titan embeddings                             | FR-040         | ADR-004                           |
@@ -1677,6 +1679,45 @@ test -f docs/releases/v0.3.md
 
 
 **Why before agents:** Knowledge Agent needs RAG (Platform overview §8).
+
+---
+
+
+
+### Step 3.0 — Knowledge corpus (runbooks, RCAs, RAG eval)
+
+
+|                   |                                                                                                      |
+| ----------------- | ---------------------------------------------------------------------------------------------------- |
+| **Goal**          | A labelled knowledge set exists before OpenSearch — runbooks, closed RCAs, retrieval queries         |
+| **Why**           | [FR-040](requirements/functional-requirements.md) asks for runbooks; [FR-042](requirements/functional-requirements.md) needs metadata; RAG eval needs expected files |
+| **Documentation** | [Knowledge README](knowledge/README.md) · [Platform overview §11](architecture/platform-overview.md) |
+| **Implements**    | Corpus + convention only (no OpenSearch, no Bedrock)                                                 |
+
+
+**Files:**
+
+```text
+docs/knowledge/README.md
+docs/knowledge/catalog/service-map.md
+docs/knowledge/runbooks/*.md          # one per FR-083 scenario
+docs/knowledge/incidents/INC-*.md     # closed historical RCAs
+evaluation/datasets/rag/queries.jsonl
+tests/unit/knowledge/test_corpus.py
+```
+
+**What to build:** Six runbooks + six closed RCA narratives aligned with the simulator catalog. Frontmatter: `doc_type`, `service`, `date`, `status`, plus `scenario` on runbooks/RCAs. Golden queries must point at files that exist. Do not copy live `/emit` rows.
+
+**Do NOT:** Start Docker OpenSearch, call Bedrock, index Postgres incidents, embed `/signals`.
+
+**Tests:** `uv run pytest tests/unit/knowledge/ -v`
+
+**Done checklist:**
+
+- [x] Six FR-083 runbooks with metadata
+- [x] Six closed RCA reports with metadata
+- [x] `queries.jsonl` expected_docs exist
+- [x] No OpenSearch / Bedrock in this slice
 
 ---
 

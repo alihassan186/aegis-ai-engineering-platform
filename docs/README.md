@@ -17,6 +17,7 @@ This documentation defines the **product intent, requirements, architecture, sec
 | | [SLOs and SLIs](requirements/slos-and-slis.md) | Service level objectives and indicators |
 | | [Risk register](requirements/risk-register.md) | Product, technical, and operational risks |
 | **Releases** | [v0.3 release note](releases/v0.3.md) | What shipped in the production-simulator gate (and what did not) |
+| **Knowledge (RAG)** | [Knowledge corpus](knowledge/README.md) | Runbooks + historical RCAs + metadata convention (Step 3.0) |
 | **Architecture** | [Platform overview (diagrams)](architecture/platform-overview.md) | **Start here** — full visual map: services, data flows, agents, AWS |
 | | [System context](architecture/context.md) | C4 Level 1 — actors, external systems, and boundaries |
 | | [System boundaries](architecture/system-boundaries.md) | In-scope vs out-of-scope, trust zones, data flows |
