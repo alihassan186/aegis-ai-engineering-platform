@@ -256,7 +256,7 @@ aegis-ai-engineering-platform/
 | Python | 3.12 |
 | [uv](https://docs.astral.sh/uv/getting-started/installation/) | Latest |
 | Git | 2.x+ |
-| Docker | 24+ (local PostgreSQL) |
+| Docker | 24+ (local PostgreSQL + OpenSearch) |
 
 ### Installation
 
@@ -300,6 +300,20 @@ The API URL is `postgresql+asyncpg://aegis:aegis@127.0.0.1:5434/aegis`.
 
 pgAdmin: [http://127.0.0.1:5051](http://127.0.0.1:5051) — login `admin@example.com` / `admin`.  
 Register a server with host `postgres`, port `5432`, database/user/password `aegis`. Do not use `127.0.0.1` as the host inside pgAdmin.
+
+### Local OpenSearch
+
+Port **9200** is the OpenSearch HTTP port (do not collide with 5434 / 8000 / 8001). The same `scripts/docker-up.sh` start brings up a **single-node** container with the security plugin disabled (local only). It creates an empty index `aegis-knowledge`. No documents are ingested in Step 3.1.
+
+```bash
+# already done if you ran docker-up.sh above
+curl -s http://127.0.0.1:9200/_cluster/health
+curl -s http://127.0.0.1:9200/aegis-knowledge
+```
+
+Set `AEGIS_OPENSEARCH_URL=http://127.0.0.1:9200` in the repo-root `.env` so AEGIS can reach the cluster. Leave it empty in CI; integration tests skip when the URL is unset.
+
+Linux: if the container exits on start, raise the mmap limit once: `sudo sysctl -w vm.max_map_count=262144`. Production Amazon OpenSearch is Phase 6.
 
 ### Database migrations
 
@@ -364,6 +378,7 @@ Environment variables are loaded from `.env` or the process environment.
 | `AEGIS_JWT_SECRET` | empty | HMAC secret for JWTs (required in production; never hardcode) |
 | `AEGIS_JWT_EXPIRE_SECONDS` | `3600` | Access token lifetime |
 | `AEGIS_WEBHOOK_SECRET` | empty | HMAC secret for `POST /api/v1/webhooks/incidents` (required in production; THR-002) |
+| `AEGIS_OPENSEARCH_URL` | empty | Local OpenSearch HTTP URL (Step 3.1). Empty means RAG store unset; tests skip the cluster ping |
 
 ### Integrations
 
