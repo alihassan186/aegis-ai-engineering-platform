@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Start AEGIS local Postgres + pgAdmin + OpenSearch.
+# Start AEGIS local Postgres + pgAdmin + OpenSearch + Dashboards.
 # Workaround: docker-compose 1.29 crashes with KeyError ContainerConfig
 # when recreating containers on Docker Engine 24+. Always create fresh.
 
@@ -15,6 +15,9 @@ fi
 if ! grep -q '^OPENSEARCH_HOST_PORT=' "$PROJECT_DIR/.env"; then
   printf '\nOPENSEARCH_HOST_PORT=9200\n' >> "$PROJECT_DIR/.env"
 fi
+if ! grep -q '^OPENSEARCH_DASHBOARDS_HOST_PORT=' "$PROJECT_DIR/.env"; then
+  printf '\nOPENSEARCH_DASHBOARDS_HOST_PORT=5601\n' >> "$PROJECT_DIR/.env"
+fi
 
 OS_PORT="${OPENSEARCH_HOST_PORT:-}"
 if [[ -z "$OS_PORT" ]]; then
@@ -23,7 +26,7 @@ fi
 OS_PORT="${OS_PORT:-9200}"
 
 echo "Removing leftover AEGIS containers (avoids Compose 1.29 recreate bug)..."
-docker rm -f aegis-postgres aegis-pgadmin aegis-opensearch 2>/dev/null || true
+docker rm -f aegis-postgres aegis-pgadmin aegis-opensearch aegis-opensearch-dashboards 2>/dev/null || true
 docker ps -aq --filter name=aegis-postgres --filter name=aegis-pgadmin --filter name=aegis-opensearch | xargs -r docker rm -f
 
 echo "Starting services..."
@@ -53,3 +56,4 @@ echo
 echo "Postgres:    127.0.0.1:5434  (user/password/db: aegis)"
 echo "pgAdmin:     http://127.0.0.1:5051  (admin@example.com / admin)"
 echo "OpenSearch:  http://127.0.0.1:${OS_PORT}  (index aegis-knowledge, empty)"
+echo "Dashboards:  http://127.0.0.1:5601  (no login; Dev Tools for _cat / _search)"

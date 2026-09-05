@@ -66,6 +66,19 @@ services:
       retries: 20
       start_period: 40s
 
+  # Local GUI (same major as the node). Security plugin off — local only.
+  opensearch-dashboards:
+    image: opensearchproject/opensearch-dashboards:2.17.1
+    container_name: aegis-opensearch-dashboards
+    restart: unless-stopped
+    environment:
+      OPENSEARCH_HOSTS: '["http://opensearch:9200"]'
+      DISABLE_SECURITY_DASHBOARDS_PLUGIN: "true"
+    ports:
+      - "${OPENSEARCH_DASHBOARDS_HOST_PORT:-5601}:5601"
+    depends_on:
+      - opensearch
+
 volumes:
   aegis_postgres_data:
   aegis_pgadmin_data:

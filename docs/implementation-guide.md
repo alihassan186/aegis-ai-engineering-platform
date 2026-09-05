@@ -1728,7 +1728,7 @@ tests/unit/test_settings.py              # default empty; loads from env
 **What to build:**
 
 - Compose service `opensearch` (official image, single-node, `DISABLE_SECURITY_PLUGIN` or equivalent for local only). Host port **9200** (do not collide with 5434 / 8000 / 8001).
-- Optional `opensearch-dashboards` on 5601 — not required to pass the step.
+- Optional `opensearch-dashboards` on 5601 — local GUI (Dev Tools). Not required for the pytest gate.
 - Settings: `AEGIS_OPENSEARCH_URL` from env; **no hardcoded URL or password in code**.
 - Create empty index `**aegis-knowledge**` (or document the name). You may *name* `aegis-logs` in a comment; **do not** fill it with ticks.
 - Health: `GET /_cluster/health` → `status` yellow or green.
@@ -1763,7 +1763,7 @@ cp docker/.env.example docker/.env   # only if docker/.env is missing
 sudo bash scripts/docker-up.sh
 ```
 
-`docker-up.sh` removes leftover `aegis-postgres` / `aegis-pgadmin` / `aegis-opensearch` containers first (Compose 1.29 recreate bug), starts the stack, waits for `GET /_cluster/health`, then `PUT`s `aegis-knowledge` if it is missing. Data volumes are kept — Postgres rows and an already-created index survive a recreate.
+`docker-up.sh` removes leftover `aegis-postgres` / `aegis-pgadmin` / `aegis-opensearch` / `aegis-opensearch-dashboards` containers first (Compose 1.29 recreate bug), starts the stack, waits for `GET /_cluster/health`, then `PUT`s `aegis-knowledge` if it is missing. Data volumes are kept — Postgres rows and an already-created index survive a recreate.
 
 Expected script footer:
 
@@ -1771,15 +1771,16 @@ Expected script footer:
 Postgres:    127.0.0.1:5434  (user/password/db: aegis)
 pgAdmin:     http://127.0.0.1:5051  (admin@example.com / admin)
 OpenSearch:  http://127.0.0.1:9200  (index aegis-knowledge, empty)
+Dashboards:  http://127.0.0.1:5601  (no login; Dev Tools for _cat / _search)
 ```
 
-Confirm the container:
+Confirm the containers:
 
 ```bash
 sudo docker ps --filter name=aegis-opensearch
 ```
 
-You should see `0.0.0.0:9200->9200/tcp` and status `healthy` (or `starting` only for the first ~40s). Dashboards on 5601 are **not** required.
+You should see `0.0.0.0:9200->9200/tcp` (healthy) and Dashboards on `5601`. Dashboards is optional for the pytest gate.
 
 Linux mmap: if the container exits immediately with a max virtual memory error, raise the limit for this boot and retry `docker-up.sh`:
 

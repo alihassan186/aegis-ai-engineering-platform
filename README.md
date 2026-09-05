@@ -288,8 +288,8 @@ That script deletes leftover AEGIS containers first. **docker-compose 1.29 + Doc
 Manual equivalent:
 
 ```bash
-sudo docker rm -f aegis-postgres aegis-pgadmin
-sudo docker ps -aq --filter name=aegis-postgres --filter name=aegis-pgadmin | xargs -r sudo docker rm -f
+sudo docker rm -f aegis-postgres aegis-pgadmin aegis-opensearch aegis-opensearch-dashboards
+sudo docker ps -aq --filter name=aegis-postgres --filter name=aegis-pgadmin --filter name=aegis-opensearch | xargs -r sudo docker rm -f
 sudo docker volume rm docker_aegis_pgadmin_data
 sudo docker-compose -f docker/docker-compose.yml --project-directory docker up -d
 ```
@@ -313,7 +313,10 @@ curl -s http://127.0.0.1:9200/aegis-knowledge
 
 Set `AEGIS_OPENSEARCH_URL=http://127.0.0.1:9200` in the repo-root `.env` so AEGIS can reach the cluster. Leave it empty in CI; integration tests skip when the URL is unset.
 
-Linux: if the container exits on start, raise the mmap limit once: `sudo sysctl -w vm.max_map_count=262144`. Production Amazon OpenSearch is Phase 6.
+**OpenSearch Dashboards** (local GUI, no login): [http://127.0.0.1:5601](http://127.0.0.1:5601).  
+Menu → **Dev Tools** → Console to run `_cat/indices`, `_search`, `_count`. After ingest (Step 3.4), **Discover** → create an index pattern `aegis-knowledge`. This is not pgAdmin — Postgres stays at [http://127.0.0.1:5051](http://127.0.0.1:5051).
+
+Linux: if the OpenSearch container exits on start, raise the mmap limit once: `sudo sysctl -w vm.max_map_count=262144`. Production Amazon OpenSearch is Phase 6.
 
 ### Database migrations
 
