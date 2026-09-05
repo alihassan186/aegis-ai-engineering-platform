@@ -49,6 +49,7 @@ class Settings:
     jwt_secret: str = ""
     jwt_expire_seconds: int = 3600
     webhook_secret: str = ""
+    opensearch_url: str = ""
 
     @classmethod
     def from_env(cls) -> Settings:
@@ -68,6 +69,7 @@ class Settings:
             default=3600,
         )
         webhook_secret = os.getenv("AEGIS_WEBHOOK_SECRET", "").strip()
+        opensearch_url = os.getenv("AEGIS_OPENSEARCH_URL", "").strip().rstrip("/")
 
         if environment == "production" and not database_url:
             raise ValueError("AEGIS_DATABASE_URL is required when AEGIS_ENV=production (NFR-060).")
@@ -87,6 +89,7 @@ class Settings:
             jwt_secret=jwt_secret,
             jwt_expire_seconds=jwt_expire_seconds,
             webhook_secret=webhook_secret,
+            opensearch_url=opensearch_url,
         )
 
 

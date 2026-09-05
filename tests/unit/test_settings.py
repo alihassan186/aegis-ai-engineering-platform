@@ -17,6 +17,7 @@ def test_defaults_when_env_unset(monkeypatch: pytest.MonkeyPatch) -> None:
         "AEGIS_JWT_SECRET",
         "AEGIS_JWT_EXPIRE_SECONDS",
         "AEGIS_WEBHOOK_SECRET",
+        "AEGIS_OPENSEARCH_URL",
     ):
         monkeypatch.delenv(name, raising=False)
 
@@ -30,6 +31,7 @@ def test_defaults_when_env_unset(monkeypatch: pytest.MonkeyPatch) -> None:
     assert settings.jwt_secret == ""
     assert settings.jwt_expire_seconds == 3600
     assert settings.webhook_secret == ""
+    assert settings.opensearch_url == ""
 
 
 def test_loads_database_url_from_env(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -121,6 +123,15 @@ def test_loads_webhook_secret_from_env(monkeypatch: pytest.MonkeyPatch) -> None:
     settings = Settings.from_env()
 
     assert settings.webhook_secret == "local-webhook-secret"
+
+
+def test_loads_opensearch_url_from_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("AEGIS_OPENSEARCH_URL", "http://127.0.0.1:9200/")
+    monkeypatch.delenv("AEGIS_DATABASE_URL", raising=False)
+
+    settings = Settings.from_env()
+
+    assert settings.opensearch_url == "http://127.0.0.1:9200"
 
 
 def test_database_url_must_use_asyncpg_prefix(monkeypatch: pytest.MonkeyPatch) -> None:

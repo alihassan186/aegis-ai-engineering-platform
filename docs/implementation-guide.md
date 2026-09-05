@@ -2,7 +2,7 @@
 
 **Document owner:** Engineering  
 **Status:** Active  
-**Last updated:** 2026-08-31
+**Last updated:** 2026-09-05
 
 This is the **master step-by-step guide** for turning AEGIS documentation into working code. Every implementation step links back to the requirement, architecture decision, or design document that justifies it.
 
@@ -31,11 +31,7 @@ This is the **master step-by-step guide** for turning AEGIS documentation into w
 
 ---
 
-
-
 ## 1. How to use this guide
-
-
 
 ### Your workflow for every step
 
@@ -48,8 +44,6 @@ VERIFY → Run commands in "Verification" section
 MARK  → Check off Done checklist
 NEXT  → Only then proceed to next step
 ```
-
-
 
 ### What each step contains
 
@@ -70,8 +64,6 @@ NEXT  → Only then proceed to next step
 
 
 ---
-
-
 
 ## 2. Documentation map
 
@@ -101,33 +93,30 @@ Use this table to know **which document answers which question** while coding.
 
 ---
 
-
-
 ## 3. Current codebase state
 
 
-| Component               | Status          | Location                                    |
-| ----------------------- | --------------- | ------------------------------------------- |
-| FastAPI app + `/health` | Implemented     | `src/aegis/main.py`                         |
-| Settings                | Implemented     | `src/aegis/config/settings.py`              |
-| Domain layer            | Implemented     | `src/aegis/domain/incidents/`               |
-| Application layer       | Implemented     | `src/aegis/application/incidents/`          |
-| Database session        | Implemented     | `src/aegis/infrastructure/database/`        |
-| PostgreSQL (Docker)     | Implemented     | `docker/` · `scripts/docker-up.sh`          |
-| Alembic migrations      | Implemented     | `alembic/` (incidents schema)               |
-| Incident repository     | Implemented     | `src/aegis/infrastructure/repositories/`    |
-| Authentication          | Implemented     | `src/aegis/api/auth/` · JWT + RBAC          |
-| Incident API            | Implemented     | `src/aegis/api/` · `/api/v1/incidents`      |
-| Production simulator    | v0.3 complete   | `apps/simulator/` + webhook ingest + FR-007 |
+| Component               | Status          | Location                                       |
+| ----------------------- | --------------- | ---------------------------------------------- |
+| FastAPI app + `/health` | Implemented     | `src/aegis/main.py`                            |
+| Settings                | Implemented     | `src/aegis/config/settings.py`                 |
+| Domain layer            | Implemented     | `src/aegis/domain/incidents/`                  |
+| Application layer       | Implemented     | `src/aegis/application/incidents/`             |
+| Database session        | Implemented     | `src/aegis/infrastructure/database/`           |
+| PostgreSQL (Docker)     | Implemented     | `docker/` · `scripts/docker-up.sh`             |
+| Alembic migrations      | Implemented     | `alembic/` (incidents schema)                  |
+| Incident repository     | Implemented     | `src/aegis/infrastructure/repositories/`       |
+| Authentication          | Implemented     | `src/aegis/api/auth/` · JWT + RBAC             |
+| Incident API            | Implemented     | `src/aegis/api/` · `/api/v1/incidents`         |
+| Production simulator    | v0.3 complete   | `apps/simulator/` + webhook ingest + FR-007    |
 | RAG knowledge corpus    | Step 3.0        | `docs/knowledge/` + `evaluation/datasets/rag/` |
-| Agents, OpenSearch, AWS | Not implemented | Step 3.1+                                   |
+| OpenSearch (local)      | Step 3.1        | `docker/` · empty index `aegis-knowledge`      |
+| Agents, AWS, ingest     | Not implemented | Step 3.2+                                      |
 
 
-**You are here:** Step 3.0 complete → next [Step 3.1 — OpenSearch local setup](#phase-3--v04-rag-platform).
+**You are here:** Step 3.1 implemented — run `sudo bash scripts/docker-up.sh` and the curl checks in that step, then [Step 3.2 — Document ingestion pipeline](#step-32--document-ingestion-pipeline-parse-chunk-metadata).
 
 ---
-
-
 
 ## 4. Implementation principles
 
@@ -142,8 +131,6 @@ These come from [Product vision §8](product/product-vision.md) and [ADR-001 bou
 7. **Conventional commits** — `feat:`, `fix:`, `test:` per README Git workflow.
 8. **No secrets in code** — use `.env` and [Threat model §10](security/threat-model.md).
 
-
-
 ### Layer responsibilities (memorize this)
 
 ```text
@@ -154,8 +141,6 @@ main.py + routes → HTTP interface (thin — delegates to application layer)
 ```
 
 ---
-
-
 
 ## 5. Release roadmap overview
 
@@ -175,13 +160,9 @@ main.py + routes → HTTP interface (thin — delegates to application layer)
 
 ---
 
-
-
 ## Phase 0 — Complete v0.1 foundation
 
 > **Status:** Mostly complete. Run verification below. Skip to Phase 1 if all checks pass.
-
-
 
 ### Step 0.1 — Verify bootstrap
 
@@ -212,8 +193,6 @@ curl http://127.0.0.1:8000/health
 
 ---
 
-
-
 ## Phase 1 — v0.2 Core backend
 
 **Release goal:** Engineers can create, list, filter, and manage incidents via a secured REST API backed by PostgreSQL.
@@ -221,8 +200,6 @@ curl http://127.0.0.1:8000/health
 **Architecture reference:** [Platform overview §3, §5, §6](architecture/platform-overview.md)
 
 ---
-
-
 
 ### Step 1.1 — Create layered package structure
 
@@ -283,8 +260,6 @@ uv run mypy src
 
 ---
 
-
-
 ### Step 1.2 — Extend configuration for database
 
 
@@ -337,8 +312,6 @@ uv run pytest tests/unit/test_settings.py
 
 ---
 
-
-
 ### Step 1.3 — Add PostgreSQL via Docker Compose
 
 
@@ -386,8 +359,6 @@ docker compose -f docker/docker-compose.yml ps   # postgres healthy
 - [x] Can connect with `psql` or GUI tool
 
 ---
-
-
 
 ### Step 1.4 — Add SQLAlchemy, Alembic, and database session
 
@@ -448,8 +419,6 @@ uv run pytest tests/integration/test_database_connection.py
 - [x] Integration test connects to Postgres
 
 ---
-
-
 
 ### Step 1.5 — Implement Incident domain model
 
@@ -537,8 +506,6 @@ uv run mypy src/aegis/domain
 
 ---
 
-
-
 ### Step 1.6 — PostgreSQL schema and repository
 
 
@@ -611,8 +578,6 @@ uv run pytest tests/integration/repositories/ -v
 
 ---
 
-
-
 ### Step 1.7 — Application use cases
 
 
@@ -669,8 +634,6 @@ uv run pytest tests/unit/application/ -v
 - [x] Transition delegates to domain state machine
 
 ---
-
-
 
 ### Step 1.8 — REST API routes
 
@@ -744,8 +707,6 @@ uv run pytest tests/integration/api/ tests/contract/ -v
 
 ---
 
-
-
 ### Step 1.9 — Authentication and RBAC
 
 
@@ -808,8 +769,6 @@ uv run pytest tests/integration/api/test_auth.py tests/security/ -v
 
 ---
 
-
-
 ### Step 1.10 — v0.2 quality gate and release checklist
 
 
@@ -858,8 +817,6 @@ uv run pytest -v
 
 ---
 
-
-
 ## Phase 2 — v0.3 Production simulator
 
 **Release goal:** Synthetic multi-service environment that generates incidents for AEGIS to consume.
@@ -892,8 +849,6 @@ src/aegis/          → 2.5–2.6  (consumer: webhook ingest + dedup)
 The simulator is **inside the AEGIS system boundary** as a dev/test tool ([System boundaries §1](architecture/system-boundaries.md)). It is **not** a layer inside `src/aegis/domain`. Do not import FastAPI routes from the simulator into domain.
 
 ---
-
-
 
 ### Step 2.1 — Simulator service skeleton
 
@@ -956,8 +911,6 @@ uv run pytest tests/unit/simulator/ -v
 
 ---
 
-
-
 ### Step 2.2 — Model five services
 
 
@@ -1018,8 +971,6 @@ curl http://127.0.0.1:8001/services   # if you exposed HTTP
 
 ---
 
-
-
 ### Step 2.3 — Generate logs, metrics, and traces
 
 
@@ -1074,8 +1025,6 @@ uv run pytest tests/unit/simulator/test_signals.py -v
 - [x] No observability vendor SDKs required
 
 ---
-
-
 
 ### Step 2.4 — Configurable failure scenarios
 
@@ -1143,8 +1092,6 @@ uv run pytest tests/unit/simulator/test_scenarios.py -v
 - [x] No real resource-exhaustion side effects
 
 ---
-
-
 
 ### Step 2.5 — Webhook emission to AEGIS API
 
@@ -1234,8 +1181,6 @@ uv run pytest tests/integration/api/test_webhook_ingest.py tests/unit/simulator/
 
 ---
 
-
-
 ### Step 2.6 — Incident deduplication in AEGIS
 
 
@@ -1301,8 +1246,6 @@ uv run pytest tests/unit/domain/incidents/test_fingerprint.py \
 
 ---
 
-
-
 ### Step 2.7 — v0.3 quality gate
 
 
@@ -1339,8 +1282,6 @@ This step is a **gate**, not a new feature. Implement **2.7.1 then 2.7.2 then 2.
 - [x] Git tag `v0.3.0` (when you are ready — 2.7.5)
 
 ---
-
-
 
 #### Step 2.7.1 — Trace every v0.3 FR to code and tests
 
@@ -1404,8 +1345,6 @@ test -f docs/releases/v0.3-fr-traceability.md
 
 ---
 
-
-
 #### Step 2.7.2 — Show webhook ingest on AEGIS `/docs`
 
 
@@ -1460,8 +1399,6 @@ curl -s http://127.0.0.1:8000/openapi.json | python3 -c "import sys,json; p=json
 - [x] Manual `POST /api/v1/incidents` still documented separately and still JWT
 
 ---
-
-
 
 #### Step 2.7.3 — Demo: scenario → webhook → one incident (duplicate emit stays one)
 
@@ -1533,8 +1470,6 @@ uv run pytest tests/integration/api/test_webhook_ingest.py -v
 
 ---
 
-
-
 #### Step 2.7.4 — Full suite, lint, types, and version stamp
 
 
@@ -1592,8 +1527,6 @@ uv run pytest -v
 - [x] OpenAPI / FastAPI version is `0.3.0`
 
 ---
-
-
 
 #### Step 2.7.5 — RISK-007, release note, tag when ready
 
@@ -1659,58 +1592,104 @@ test -f docs/releases/v0.3.md
 
 ---
 
-
-
 ## Phase 3 — v0.4 RAG platform
 
 **Release goal:** Ingest documentation, index in OpenSearch, retrieve with citations.
 
+**Start after:** Phase 2 complete (Step 2.7 quality gate) and Step 3.0 corpus in git.
 
-| Step | Goal                                                 | Key FRs        | Key docs                          |
-| ---- | ---------------------------------------------------- | -------------- | --------------------------------- |
-| 3.0  | Knowledge corpus (runbooks, RCAs, RAG eval queries)  | FR-040, FR-042 | [docs/knowledge/](knowledge/README.md) |
-| 3.1  | OpenSearch local setup (Docker)                      | FR-040         | Platform overview §11             |
-| 3.2  | Document ingestion pipeline (parse, chunk, metadata) | FR-040, FR-042 | System boundaries §4 RAG boundary |
-| 3.3  | Bedrock Titan embeddings                             | FR-040         | ADR-004                           |
-| 3.4  | Index to OpenSearch (vector + keyword)               | FR-043         | Platform overview §11             |
-| 3.5  | Retrieval API with citations                         | FR-044, FR-042 | FR-040–045                        |
-| 3.6  | Re-indexing on document change                       | FR-045         | FR-045                            |
-| 3.7  | Index historical incidents                           | FR-041         | Incident flow § Phase 6           |
+**Why before agents:** The Knowledge Agent (Phase 4) needs a retrieve API. RAG is **knowledge**, not simulator ticks and not `src/` ([Platform overview §8](architecture/platform-overview.md), [§11](architecture/platform-overview.md)).
+
+Implement **3.0 → 3.7 in order**. Do not start Phase 4 until 3.5 works against the 24-file allowlist.
 
 
-**Why before agents:** Knowledge Agent needs RAG (Platform overview §8).
+| Step | Goal                                                 | Key FRs        | Key docs                                                      |
+| ---- | ---------------------------------------------------- | -------------- | ------------------------------------------------------------- |
+| 3.0  | Knowledge corpus (runbooks, RCAs, RAG eval queries)  | FR-040, FR-042 | [Knowledge README](knowledge/README.md)                       |
+| 3.1  | OpenSearch local setup (Docker)                      | FR-040         | [Platform overview §11](architecture/platform-overview.md)    |
+| 3.2  | Document ingestion pipeline (parse, chunk, metadata) | FR-040, FR-042 | [System boundaries §4 RAG](architecture/system-boundaries.md) |
+| 3.3  | Bedrock Titan embeddings (+ local fake embedder)     | FR-040         | [ADR-004](adr/ADR-004-aws-bedrock.md)                         |
+| 3.4  | Index to OpenSearch (vector + keyword)               | FR-043         | [Platform overview §11](architecture/platform-overview.md)    |
+| 3.5  | Retrieval API with citations                         | FR-044, FR-042 | [FR-040–045](requirements/functional-requirements.md)         |
+| 3.6  | Re-indexing on document change                       | FR-045         | [FR-045](requirements/functional-requirements.md)             |
+| 3.7  | Confirm historical RCAs are in the knowledge index   | FR-041         | [Incident flow § Phase 6](architecture/incident-flow.md)      |
+
+
+**Index allowlist (exactly 24 files — do not add `src/`):**
+
+```text
+docs/knowledge/catalog/service-map.md
+docs/knowledge/runbooks/*.md                         # 6
+docs/knowledge/incidents/INC-*.md                    # 6
+docs/adr/ADR-001-modular-monolith.md
+docs/adr/ADR-002-postgresql.md
+docs/adr/ADR-003-event-driven-investigation.md
+docs/adr/ADR-004-aws-bedrock.md
+docs/architecture/platform-overview.md
+docs/architecture/system-boundaries.md
+docs/architecture/incident-flow.md
+docs/architecture/context.md
+docs/security/threat-model.md
+docs/product/product-vision.md
+docs/releases/v0.3.md
+```
 
 ---
-
-
 
 ### Step 3.0 — Knowledge corpus (runbooks, RCAs, RAG eval)
 
 
-|                   |                                                                                                      |
-| ----------------- | ---------------------------------------------------------------------------------------------------- |
-| **Goal**          | A labelled knowledge set exists before OpenSearch — runbooks, closed RCAs, retrieval queries         |
+|                   |                                                                                                                                                                      |
+| ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Goal**          | A labelled knowledge set exists before OpenSearch — runbooks, closed RCAs, retrieval queries                                                                         |
 | **Why**           | [FR-040](requirements/functional-requirements.md) asks for runbooks; [FR-042](requirements/functional-requirements.md) needs metadata; RAG eval needs expected files |
-| **Documentation** | [Knowledge README](knowledge/README.md) · [Platform overview §11](architecture/platform-overview.md) |
-| **Implements**    | Corpus + convention only (no OpenSearch, no Bedrock)                                                 |
+| **When**          | After v0.3 (six scenarios exist). **Before** Docker OpenSearch. Create or update a runbook when a failure mode is named, not during an outage.                       |
+| **Documentation** | [Knowledge README](knowledge/README.md) · [Platform overview §11](architecture/platform-overview.md)                                                                 |
+| **Implements**    | Corpus + convention only (no OpenSearch, no Bedrock)                                                                                                                 |
 
 
-**Files:**
+**Files to create / modify:**
 
 ```text
-docs/knowledge/README.md
+docs/knowledge/README.md                         # metadata convention
 docs/knowledge/catalog/service-map.md
-docs/knowledge/runbooks/*.md          # one per FR-083 scenario
-docs/knowledge/incidents/INC-*.md     # closed historical RCAs
-evaluation/datasets/rag/queries.jsonl
+docs/knowledge/runbooks/*.md                     # one per FR-083 scenario
+docs/knowledge/incidents/INC-*.md                # closed historical RCAs
+evaluation/datasets/rag/queries.jsonl            # query → expected_docs
+evaluation/datasets/rag/README.md
 tests/unit/knowledge/test_corpus.py
+docs/implementation-guide.md                     # this step
 ```
 
-**What to build:** Six runbooks + six closed RCA narratives aligned with the simulator catalog. Frontmatter: `doc_type`, `service`, `date`, `status`, plus `scenario` on runbooks/RCAs. Golden queries must point at files that exist. Do not copy live `/emit` rows.
+**What to build:**
 
-**Do NOT:** Start Docker OpenSearch, call Bedrock, index Postgres incidents, embed `/signals`.
+- Six **runbooks** (symptoms, read-only checks, mitigation, escalate) aligned with `apps/simulator/scenarios/catalog.py`.
+- Six **closed RCA** narratives (timeline, evidence *summary*, root cause, fix). Not live `GET /api/v1/incidents` JSON.
+- YAML frontmatter on every knowledge page: `doc_type`, `service`, `date`, `status`; plus `scenario` on runbooks/RCAs.
+- `queries.jsonl`: each `expected_docs` path must exist. Mix runbooks, RCAs, ADR-002, system-boundaries, v0.3 note.
 
-**Tests:** `uv run pytest tests/unit/knowledge/ -v`
+**Best practices:**
+
+- One failure mode → one runbook + one RCA. Distinguish `latency_spike` (payment only) from `db_exhaustion` (payment **and** order).
+- Evidence in RCAs is a **summary**, not raw `/signals` ticks.
+
+**Do NOT:**
+
+- Start Docker OpenSearch or call Bedrock
+- Copy live `/emit` rows into `docs/knowledge/incidents/`
+- Embed simulator logs or `src/`
+
+**Tests:**
+
+- `tests/unit/knowledge/test_corpus.py` — frontmatter, six scenarios, query paths exist
+
+**Verification:**
+
+```bash
+uv run pytest tests/unit/knowledge/ -v
+test -f docs/knowledge/runbooks/payment-latency-spike.md
+test -f evaluation/datasets/rag/queries.jsonl
+```
 
 **Done checklist:**
 
@@ -1721,7 +1700,511 @@ tests/unit/knowledge/test_corpus.py
 
 ---
 
+### Step 3.1 — OpenSearch local setup (Docker)
 
+
+|                   |                                                                                                                                           |
+| ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| **Goal**          | A local OpenSearch process AEGIS can reach; knowledge index name reserved; health check green                                             |
+| **Why**           | [FR-040](requirements/functional-requirements.md) needs a place to put chunks; [Platform overview §11](architecture/platform-overview.md) |
+| **When**          | After Step 3.0 is in git. Same Docker habit as Postgres (`scripts/docker-up.sh`).                                                         |
+| **Documentation** | [Platform overview §11](architecture/platform-overview.md) · [NFR-022](requirements/non-functional-requirements.md)                       |
+| **Implements**    | FR-040 (store only — no ingest yet)                                                                                                       |
+
+
+**Files to create / modify:**
+
+```text
+docker/docker-compose.yml                # add opensearch (single-node; dashboards omitted)
+docker/.env.example                      # OPENSEARCH_HOST_PORT=9200
+scripts/docker-up.sh                     # wait for 9200 + create empty aegis-knowledge
+src/aegis/config/settings.py             # AEGIS_OPENSEARCH_URL from env (empty = unset)
+src/aegis/infrastructure/rag/cluster.py  # health ping + ensure empty index (stdlib urllib)
+config/.env.example                      # AEGIS_OPENSEARCH_URL=http://127.0.0.1:9200
+tests/integration/test_opensearch_connection.py   # skip if URL empty
+tests/unit/test_settings.py              # default empty; loads from env
+```
+
+**What to build:**
+
+- Compose service `opensearch` (official image, single-node, `DISABLE_SECURITY_PLUGIN` or equivalent for local only). Host port **9200** (do not collide with 5434 / 8000 / 8001).
+- Optional `opensearch-dashboards` on 5601 — not required to pass the step.
+- Settings: `AEGIS_OPENSEARCH_URL` from env; **no hardcoded URL or password in code**.
+- Create empty index `**aegis-knowledge**` (or document the name). You may *name* `aegis-logs` in a comment; **do not** fill it with ticks.
+- Health: `GET /_cluster/health` → `status` yellow or green.
+
+**Best practices:**
+
+- Same pattern as Postgres: compose in `docker/`, secrets only in `docker/.env` (gitignored).
+- Disable security plugin **locally** only. Production Amazon OpenSearch is Phase 6.
+- One node is enough. Do not start a 3-node cluster for learning.
+
+**Do NOT:**
+
+- Ingest documents or call Titan (3.2–3.3)
+- Index `src/`, `.env`, or live incidents
+- Put OpenSearch inside `src/aegis/domain`
+- Replace Postgres with OpenSearch
+
+**Tests:**
+
+- `tests/integration/test_opensearch_connection.py` — if `AEGIS_OPENSEARCH_URL` set, ping cluster; otherwise skip
+
+**Verification:**
+
+This step is done when a **local** OpenSearch node answers on port 9200, the empty index `aegis-knowledge` exists, settings read the URL from the environment only, and the integration test either pings the cluster or skips cleanly.
+
+**1. Start the node (same habit as Postgres)**
+
+```bash
+# from the repository root (not scripts/)
+cp docker/.env.example docker/.env   # only if docker/.env is missing
+# sudo if the Docker socket requires it
+sudo bash scripts/docker-up.sh
+```
+
+`docker-up.sh` removes leftover `aegis-postgres` / `aegis-pgadmin` / `aegis-opensearch` containers first (Compose 1.29 recreate bug), starts the stack, waits for `GET /_cluster/health`, then `PUT`s `aegis-knowledge` if it is missing. Data volumes are kept — Postgres rows and an already-created index survive a recreate.
+
+Expected script footer:
+
+```text
+Postgres:    127.0.0.1:5434  (user/password/db: aegis)
+pgAdmin:     http://127.0.0.1:5051  (admin@example.com / admin)
+OpenSearch:  http://127.0.0.1:9200  (index aegis-knowledge, empty)
+```
+
+Confirm the container:
+
+```bash
+sudo docker ps --filter name=aegis-opensearch
+```
+
+You should see `0.0.0.0:9200->9200/tcp` and status `healthy` (or `starting` only for the first ~40s). Dashboards on 5601 are **not** required.
+
+Linux mmap: if the container exits immediately with a max virtual memory error, raise the limit for this boot and retry `docker-up.sh`:
+
+```bash
+sudo sysctl -w vm.max_map_count=262144
+```
+
+**2. Cluster health is yellow or green**
+
+```bash
+curl -s http://127.0.0.1:9200/_cluster/health | python3 -m json.tool
+```
+
+Pass when `"status"` is `"green"` or `"yellow"`. A single-node cluster with `number_of_replicas: 0` on `aegis-knowledge` is usually **green**. `"red"` or a connection refused error means the node is not ready — wait and retry, or read `sudo docker logs aegis-opensearch`.
+
+Security plugin is **off** locally (`DISABLE_SECURITY_PLUGIN=true`). Use `http://`, not `https://`, and do not send a password.
+
+**3. Empty knowledge index exists**
+
+```bash
+curl -s http://127.0.0.1:9200/aegis-knowledge | python3 -m json.tool
+curl -s http://127.0.0.1:9200/aegis-knowledge/_count | python3 -m json.tool
+```
+
+Pass when the first call returns mappings/settings for `aegis-knowledge` (HTTP 200, not 404) and `_count` shows `"count": 0`. Do **not** `POST` documents. A future logs index may be named `aegis-logs` in comments only — do not create or fill it here.
+
+**4. Settings are env-only**
+
+```bash
+# default: empty (no hardcoded host)
+AEGIS_SKIP_DOTENV=1 uv run python -c "from aegis.config.settings import Settings; print(repr(Settings.from_env().opensearch_url))"
+```
+
+Expected: `''`.
+
+Copy `AEGIS_OPENSEARCH_URL=http://127.0.0.1:9200` into the repo-root `.env` (from `config/.env.example`) so a running AEGIS process can see the cluster after restart. The URL must not appear as a default in `src/aegis/config/settings.py`.
+
+**5. Tests**
+
+Without the URL (CI / laptop with Docker down) the integration tests **skip**. Run pytest from the **repository root** (`cd ..` if you are still in `scripts/`):
+
+```bash
+cd /path/to/aegis-ai-engineering-platform
+env -u AEGIS_OPENSEARCH_URL AEGIS_SKIP_DOTENV=1 \
+  uv run pytest tests/integration/test_opensearch_connection.py tests/unit/test_settings.py -v
+```
+
+Expected: integration tests `SKIPPED` (`AEGIS_OPENSEARCH_URL is unset`); unit settings tests `PASSED` (default empty; env load strips a trailing `/`).
+
+With the cluster up, ping it:
+
+```bash
+AEGIS_OPENSEARCH_URL=http://127.0.0.1:9200 AEGIS_SKIP_DOTENV=1 \
+  uv run pytest tests/integration/test_opensearch_connection.py tests/unit/test_settings.py -v
+```
+
+Expected: `test_cluster_health_is_yellow_or_green PASSED`, `test_knowledge_index_exists PASSED`, plus the settings unit tests.
+
+**Done when all of the following are true:** health is yellow/green; `aegis-knowledge` exists and has zero documents; `AEGIS_OPENSEARCH_URL` is empty unless you set it; no Titan call and no ingest of `src/`, `.env`, or live incidents.
+
+**Done checklist:**
+
+- [x] OpenSearch container is up on 9200
+- [x] `AEGIS_OPENSEARCH_URL` is env-only
+- [x] Index `aegis-knowledge` exists (empty is OK)
+- [x] No document ingest in this step
+
+---
+
+### Step 3.2 — Document ingestion pipeline (parse, chunk, metadata)
+
+
+|                   |                                                                                                                                               |
+| ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Goal**          | Turn the 24 allowlist files into chunks with metadata — no embeddings and no HTTP retrieve yet                                                |
+| **Why**           | [FR-040](requirements/functional-requirements.md) ingest; [FR-042](requirements/functional-requirements.md) filters need fields on each chunk |
+| **When**          | After 3.0 (files exist) and 3.1 (you will write chunks to disk or memory first; OpenSearch write is 3.4)                                      |
+| **Documentation** | [System boundaries §4 RAG](architecture/system-boundaries.md) · [Knowledge README](knowledge/README.md)                                       |
+| **Implements**    | FR-040 (parse/chunk), FR-042 (metadata on chunks)                                                                                             |
+
+
+**Files to create / modify:**
+
+```text
+src/aegis/application/rag/               # use cases only — no boto3, no OpenSearch client
+src/aegis/application/rag/chunking.py    # or infrastructure/rag/chunking.py if you treat it as I/O
+src/aegis/application/rag/models.py      # Chunk dataclass: id, text, source_path, heading, metadata
+src/aegis/application/rag/allowlist.py   # the 24 paths — single source of truth
+tests/unit/rag/test_chunking.py
+tests/unit/rag/test_allowlist.py
+```
+
+**What to build:**
+
+- **Allowlist module** that lists exactly the 24 paths. Ingest refuses anything else.
+- Parse markdown: strip or preserve frontmatter; copy `doc_type`, `service`, `date`, `scenario` onto every chunk from that file. ADRs without frontmatter: set `doc_type` from path (`adr`, `architecture`, …), `service=platform`.
+- Chunk by **headings** first, then by size (target ~400–800 tokens / ~1500–3000 characters, overlap ~10–15%). Each chunk: `chunk_id`, `source_path`, `section` (heading), `text`, metadata.
+- Pure function: `path → list[Chunk]`. Deterministic given the same file.
+
+**Best practices:**
+
+- Domain stays free of OpenSearch/Bedrock (ADR-001). Chunking is application or a small infra helper with no network.
+- Do not chunk `docs/implementation-guide.md` or `docs/requirements/*` in v0.4.
+
+**Do NOT:**
+
+- Call Bedrock or write to OpenSearch (3.3–3.4)
+- Include `src/`, `tests/`, `apps/`, `.env`, `queries.jsonl` as documents
+- Use live Postgres incidents as input
+
+**Tests:**
+
+- `test_allowlist.py` — 24 paths; `src/aegis/main.py` rejected
+- `test_chunking.py` — runbook frontmatter copied; a heading becomes `section`; chunks non-empty; ADR-002 produces ≥1 chunk
+
+**Verification:**
+
+```bash
+uv run pytest tests/unit/rag/ -v
+```
+
+**Done checklist:**
+
+- [ ] Allowlist is exactly the 24 files
+- [ ] Chunks carry `service` / `doc_type` when frontmatter exists
+- [ ] `section` + `source_path` set (needed for FR-044 citations)
+- [ ] No network calls
+
+---
+
+### Step 3.3 — Bedrock Titan embeddings (+ local fake)
+
+
+|                   |                                                                                                                                |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| **Goal**          | Each chunk (and later each query) gets a float vector; tests run **without** AWS                                               |
+| **Why**           | [FR-040](requirements/functional-requirements.md) · [ADR-004](adr/ADR-004-aws-bedrock.md) Titan `amazon.titan-embed-text-v2:0` |
+| **When**          | After 3.2 can emit chunks. You may implement the fake first, Titan second.                                                     |
+| **Documentation** | [ADR-004](adr/ADR-004-aws-bedrock.md) · [NFR-034](requirements/non-functional-requirements.md) (IAM, no API keys in code)      |
+| **Implements**    | FR-040 (embed) — not Claude, not RCA                                                                                           |
+
+
+**Files to create / modify:**
+
+```text
+src/aegis/core/protocols.py                    # Embedder protocol: embed_texts(list[str]) -> list[list[float]]
+src/aegis/infrastructure/rag/embedder.py       # Titan via boto3 + FakeEmbedder
+src/aegis/config/settings.py                   # AEGIS_EMBEDDER=fake|titan, AEGIS_AWS_REGION
+config/.env.example
+tests/unit/rag/test_embedder.py                # fake is deterministic; same text → same vector
+```
+
+**What to build:**
+
+- Protocol in `core` (or application): no boto3 import in domain.
+- `**FakeEmbedder`:** hashing / seeded projection to a **fixed dimension** (use Titan v2 size **1024** so 3.4 mappings stay stable). Default for `AEGIS_ENV=test` and local without AWS.
+- `**TitanEmbedder`:** `bedrock-runtime` `InvokeModel`, IAM from the environment (instance role or `aws` profile) — **never** hardcode keys. Same dimension 1024.
+- Batch embed with a small max texts-per-call. Empty string → reject or zero-vector consistently (pick one; test it).
+
+**Best practices:**
+
+- This step is **vectors only**. No Claude Sonnet, no investigation prompts.
+- Settings: region + embedder name from env. Fail clearly if `titan` selected and AWS is missing.
+
+**Do NOT:**
+
+- Call Claude / Haiku (Phase 4)
+- Write OpenSearch (3.4)
+- Put AWS keys in git or in the embedder source
+
+**Tests:**
+
+- Fake: identical input → identical vector; dimension 1024; unit test, no network
+- Optional: Titan marked `@pytest.mark.integration` and skipped without credentials
+
+**Verification:**
+
+```bash
+uv run pytest tests/unit/rag/test_embedder.py -v
+# AEGIS_EMBEDDER=fake is enough for the rest of Phase 3
+```
+
+**Done checklist:**
+
+- [ ] `Embedder` protocol exists
+- [ ] Fake embedder is the test default
+- [ ] Titan path uses IAM / env, no hardcoded secrets
+- [ ] Dimension documented (1024)
+
+---
+
+### Step 3.4 — Index to OpenSearch (vector + keyword)
+
+
+|                   |                                                                                      |
+| ----------------- | ------------------------------------------------------------------------------------ |
+| **Goal**          | Chunks land in `aegis-knowledge` with **text** (BM25) and **knn_vector** (semantic)  |
+| **Why**           | [FR-043](requirements/functional-requirements.md) hybrid search                      |
+| **When**          | After 3.1 (cluster), 3.2 (chunks), 3.3 (vectors). First full ingest of the 24 files. |
+| **Documentation** | [Platform overview §11](architecture/platform-overview.md) (vector + full-text)      |
+| **Implements**    | FR-043 (index shape). Query merge is 3.5.                                            |
+
+
+**Files to create / modify:**
+
+```text
+src/aegis/infrastructure/rag/opensearch_client.py
+src/aegis/infrastructure/rag/mappings.json       # or Python dict: text + knn_vector + metadata
+src/aegis/application/rag/ingest.py              # allowlist → chunk → embed → bulk index
+tests/integration/rag/test_ingest.py             # needs OpenSearch + fake embedder
+```
+
+**What to build:**
+
+- Index mapping: `text` (analyzer standard), `embedding` (`knn_vector`, dim 1024), `source_path`, `section`, `doc_type`, `service`, `scenario`, `date`, `chunk_id`.
+- Idempotent ingest: same `chunk_id` overwrites (you will need this for 3.6).
+- Bulk API; fail the job if allowlist file is missing.
+- CLI or module: `uv run python -m aegis.rag.ingest` (or `uv run aegis-ingest`) from repo root.
+
+**Best practices:**
+
+- Client in **infrastructure**. Application orchestrates. Domain does not import `opensearchpy`.
+- Local: `AEGIS_EMBEDDER=fake` so ingest works offline.
+
+**Do NOT:**
+
+- Build the retrieve HTTP API yet (3.5)
+- Index logs, `src/`, or live incidents
+- Enable a cross-encoder reranker
+
+**Tests:**
+
+- Integration: ingest allowlist → `count` on `aegis-knowledge` > 0; a known `source_path` is findable with `match` on text
+
+**Verification:**
+
+```bash
+AEGIS_EMBEDDER=fake AEGIS_OPENSEARCH_URL=http://127.0.0.1:9200 uv run python -m aegis.rag.ingest
+curl -s 'http://127.0.0.1:9200/aegis-knowledge/_count'
+uv run pytest tests/integration/rag/test_ingest.py -v
+```
+
+**Done checklist:**
+
+- [ ] Mapping has text + knn_vector
+- [ ] 24 files ingested (chunk count ≥ 24)
+- [ ] Re-running ingest does not duplicate forever (same chunk_id)
+- [ ] Fake embedder used in CI/local default
+
+---
+
+### Step 3.5 — Retrieval API with citations
+
+
+|                   |                                                                                                                                                              |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Goal**          | Authenticated HTTP retrieve: query + filters → ranked chunks with **document, section, chunk** citations                                                     |
+| **Why**           | [FR-044](requirements/functional-requirements.md) citations; [FR-042](requirements/functional-requirements.md) filters; Knowledge Agent will call this later |
+| **When**          | After 3.4 has documents. This is the v0.4 product surface.                                                                                                   |
+| **Documentation** | [System boundaries §4](architecture/system-boundaries.md) — query, filters, top_k; chunks as **data** not instructions                                       |
+| **Implements**    | FR-042, FR-044 (and uses FR-043 index)                                                                                                                       |
+
+
+**Files to create / modify:**
+
+```text
+src/aegis/application/rag/retrieve.py
+src/aegis/api/rag/router.py              # POST /api/v1/retrieve  (JWT, like incidents)
+src/aegis/api/rag/schemas.py             # query, filters, top_k; hits with citation
+tests/integration/api/test_retrieve.py
+tests/unit/rag/test_retrieve_scoring.py  # merge BM25 + kNN without a live cluster if you isolate it
+```
+
+**What to build:**
+
+- `POST /api/v1/retrieve` (JWT + permission — not HMAC). Body: `query`, optional `filters` (`service`, `doc_type`, `scenario`, date range), `top_k` (default 5, max 20).
+- Hybrid: keyword `match` on `text` **and** kNN on `embedding`. Merge scores simply (e.g. weighted sum or RRF). No extra rerank model.
+- Each hit: `text`, `score`, **citation** `{ document: source_path, section, chunk_id }`.
+- Apply filters as OpenSearch `filter` clauses (FR-042).
+- Retrieved text is **data**. Do not send it to Claude in this step.
+
+**Best practices:**
+
+- Same error envelope as incidents. Request id on the response.
+- Score `evaluation/datasets/rag/queries.jsonl` as a **script or test**: for each row, expected_docs must appear in top_k (or top_8 if you document that). That is RAG eval, not FR-090 RCA eval.
+
+**Do NOT:**
+
+- Call Claude / start LangGraph
+- Use JWT on a webhook path
+- Return raw embeddings to the client
+- Treat `queries.jsonl` as an indexed document
+
+**Tests:**
+
+- Integration: ingest + retrieve “Why is PostgreSQL the system of record?” → hit contains `docs/adr/ADR-002-postgresql.md`
+- Filter `scenario=latency_spike` + `doc_type=runbook` → `payment-latency-spike.md`, not `payment-db-exhaustion.md`
+- Unauthenticated → 401
+
+**Verification:**
+
+```bash
+uv run pytest tests/integration/api/test_retrieve.py tests/unit/rag/ -v
+# with AEGIS + OpenSearch up:
+# POST /api/v1/retrieve with Bearer token; inspect citations
+```
+
+**Done checklist:**
+
+- [ ] JWT retrieve route documented on AEGIS `/docs` (port 8000)
+- [ ] Citations include document + section + chunk_id
+- [ ] Metadata filters work
+- [ ] At least the ADR-002 and latency_spike golden queries pass
+
+---
+
+### Step 3.6 — Re-indexing on document change
+
+
+|                   |                                                                                                                                       |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| **Goal**          | Changing an allowlisted file updates (or replaces) its chunks without a full mystery rebuild                                          |
+| **Why**           | [FR-045](requirements/functional-requirements.md)                                                                                     |
+| **When**          | After 3.4–3.5 work. Operator or CI runs ingest; optional file mtime / hash skip.                                                      |
+| **Documentation** | [FR-045](requirements/functional-requirements.md) · [Platform overview §5](architecture/platform-overview.md) (refreshed on re-index) |
+| **Implements**    | FR-045                                                                                                                                |
+
+
+**Files to create / modify:**
+
+```text
+src/aegis/application/rag/ingest.py      # --files path or hash manifest
+tests/integration/rag/test_reindex.py
+```
+
+**What to build:**
+
+- Re-run ingest for one file: delete old chunks for that `source_path` **or** overwrite by `chunk_id`; new headings must appear in retrieve.
+- Optional: manifest of `source_path → content_hash`; unchanged files skipped.
+- Document the operator command in README (same ingest module as 3.4).
+
+**Best practices:**
+
+- Idempotent. Two ingests of an unchanged file → same chunk ids, same count.
+- Do not require EventBridge (that is Phase 4 / 6). A CLI is enough for v0.4.
+
+**Do NOT:**
+
+- Auto-watch the filesystem in production (out of scope)
+- Re-index `src/` on every commit
+- Close RISK-007 (RCA **scoring** is still Phase 7)
+
+**Tests:**
+
+- Edit a temp copy or monkeypatch one allowlisted file’s text → reingest → retrieve finds the new phrase; old-only phrase gone or unranked
+
+**Verification:**
+
+```bash
+uv run pytest tests/integration/rag/test_reindex.py -v
+```
+
+**Done checklist:**
+
+- [ ] Single-file re-ingest updates chunks
+- [ ] Unchanged files do not explode document count
+- [ ] FR-045 verified by a test, not only a comment
+
+---
+
+### Step 3.7 — Historical incidents in the knowledge index (FR-041)
+
+
+|                   |                                                                                                                            |
+| ----------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| **Goal**          | Closed **written** RCAs (`docs/knowledge/incidents/INC-*.md`) are retrievable as `doc_type=incident_report`                |
+| **Why**           | [FR-041](requirements/functional-requirements.md) · [Incident flow learning loop](architecture/incident-flow.md)           |
+| **When**          | After 3.5. This is a **gate** that the six INC-* files (from 3.0) are in `aegis-knowledge`, not a new live-Postgres crawl. |
+| **Documentation** | [Incident flow § Phase 6](architecture/incident-flow.md) · [RISK-007](requirements/risk-register.md)                       |
+| **Implements**    | FR-041 (historical **reports**). Does **not** close FR-090 / RISK-007.                                                     |
+
+
+**Files to create / modify:**
+
+```text
+tests/integration/rag/test_historical_incidents.py
+docs/releases/v0.4.md                    # optional short note: RAG v0.4, what is / is not indexed
+```
+
+**What to build:**
+
+- Prove retrieve with `filters.doc_type=incident_report` and `scenario=db_exhaustion` returns `INC-2026-0511-…`.
+- Prove a live-shaped webhook title (“Latency spike on payment”) is **not** required for that hit — the **markdown RCA** is the document.
+- Optional: v0.4 release note (out of scope: agents, EventBridge, code index, golden RCA **scorer**).
+
+**Best practices:**
+
+- FR-041 = **narratives in git**. Future closed incidents become new markdown (or a later exporter), then 3.6 re-index.
+- RISK-007 stays Partial until Phase 7 scores agent RCA against labels.
+
+**Do NOT:**
+
+- `SELECT * FROM incidents` into OpenSearch
+- Start Step 4.1 (EventBridge) in the same change
+- Mark RISK-007 Closed
+- Index GitHub / `src/`
+
+**Tests:**
+
+- `test_historical_incidents.py` — all six `INC-2026-*` `source_path` values exist in the index; filter by `scenario` returns the matching report
+
+**Verification:**
+
+```bash
+uv run pytest tests/integration/rag/test_historical_incidents.py -v
+```
+
+**Done checklist:**
+
+- [ ] Six written RCAs retrievable with citations
+- [ ] Filters `doc_type=incident_report` work
+- [ ] Live webhook rows are not in the index
+- [ ] RISK-007 still not Closed
+
+---
 
 ## Phase 4 — v0.5 Multi-agent investigation
 
@@ -1745,8 +2228,6 @@ tests/unit/knowledge/test_corpus.py
 
 ---
 
-
-
 ## Phase 5 — v0.6 Tool gateway & MCP
 
 **Release goal:** All agent tools pass through policy-enforced gateway.
@@ -1765,8 +2246,6 @@ tests/unit/knowledge/test_corpus.py
 
 
 ---
-
-
 
 ## Phase 6 — v0.7 AWS deployment
 
@@ -1788,8 +2267,6 @@ tests/unit/knowledge/test_corpus.py
 
 ---
 
-
-
 ## Phase 7 — v0.8 Observability & evaluation
 
 
@@ -1803,8 +2280,6 @@ tests/unit/knowledge/test_corpus.py
 
 
 ---
-
-
 
 ## Phase 8 — v0.9 Controlled remediation
 
@@ -1820,8 +2295,6 @@ tests/unit/knowledge/test_corpus.py
 
 
 ---
-
-
 
 ## 15. Traceability quick reference
 
@@ -1843,8 +2316,6 @@ Code location (src/aegis/...)
 Test location (tests/...)
 ```
 
-
-
 ### v0.2 traceability example
 
 ```text
@@ -1858,8 +2329,6 @@ Tests:    tests/unit/domain/ + tests/integration/api/
 ```
 
 ---
-
-
 
 ## 16. Per-step template
 
@@ -1887,8 +2356,6 @@ Copy this template when you start any new step:
 
 ---
 
-
-
 ## Related documents
 
 - [Documentation index](README.md)
@@ -1897,8 +2364,6 @@ Copy this template when you start any new step:
 - [Product vision](product/product-vision.md) — why we're building this
 
 ---
-
-
 
 ## Next action
 
