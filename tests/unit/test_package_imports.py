@@ -13,6 +13,9 @@ _FORBIDDEN_FOR_DOMAIN = (
     "aegis.application",
     "fastapi",
     "sqlalchemy",
+    "langgraph",
+    "langchain",
+    "langchain_core",
 )
 _FORBIDDEN_FOR_APPLICATION = (
     "aegis.infrastructure",

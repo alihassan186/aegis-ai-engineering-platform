@@ -31,7 +31,11 @@ This is the **master step-by-step guide** for turning AEGIS documentation into w
 
 ---
 
+
+
 ## 1. How to use this guide
+
+
 
 ### Your workflow for every step
 
@@ -44,6 +48,8 @@ VERIFY → Run commands in "Verification" section
 MARK  → Check off Done checklist
 NEXT  → Only then proceed to next step
 ```
+
+
 
 ### What each step contains
 
@@ -64,6 +70,8 @@ NEXT  → Only then proceed to next step
 
 
 ---
+
+
 
 ## 2. Documentation map
 
@@ -93,6 +101,8 @@ Use this table to know **which document answers which question** while coding.
 
 ---
 
+
+
 ## 3. Current codebase state
 
 
@@ -111,12 +121,15 @@ Use this table to know **which document answers which question** while coding.
 | Production simulator    | v0.3 complete   | `apps/simulator/` + webhook ingest + FR-007    |
 | RAG knowledge corpus    | Step 3.0        | `docs/knowledge/` + `evaluation/datasets/rag/` |
 | OpenSearch (local)      | Step 3.1        | `docker/` · empty index `aegis-knowledge`      |
+| LangGraph (learning)    | Skeleton only   | `src/aegis/application/investigation/` — no Claude, no retrieve |
 | Agents, AWS, ingest     | Not implemented | Step 3.2+                                      |
 
 
 **You are here:** Step 3.1 implemented — run `sudo bash scripts/docker-up.sh` and the curl checks in that step, then [Step 3.2 — Document ingestion pipeline](#step-32--document-ingestion-pipeline-parse-chunk-metadata).
 
 ---
+
+
 
 ## 4. Implementation principles
 
@@ -131,6 +144,8 @@ These come from [Product vision §8](product/product-vision.md) and [ADR-001 bou
 7. **Conventional commits** — `feat:`, `fix:`, `test:` per README Git workflow.
 8. **No secrets in code** — use `.env` and [Threat model §10](security/threat-model.md).
 
+
+
 ### Layer responsibilities (memorize this)
 
 ```text
@@ -141,6 +156,8 @@ main.py + routes → HTTP interface (thin — delegates to application layer)
 ```
 
 ---
+
+
 
 ## 5. Release roadmap overview
 
@@ -160,9 +177,13 @@ main.py + routes → HTTP interface (thin — delegates to application layer)
 
 ---
 
+
+
 ## Phase 0 — Complete v0.1 foundation
 
 > **Status:** Mostly complete. Run verification below. Skip to Phase 1 if all checks pass.
+
+
 
 ### Step 0.1 — Verify bootstrap
 
@@ -193,6 +214,8 @@ curl http://127.0.0.1:8000/health
 
 ---
 
+
+
 ## Phase 1 — v0.2 Core backend
 
 **Release goal:** Engineers can create, list, filter, and manage incidents via a secured REST API backed by PostgreSQL.
@@ -200,6 +223,8 @@ curl http://127.0.0.1:8000/health
 **Architecture reference:** [Platform overview §3, §5, §6](architecture/platform-overview.md)
 
 ---
+
+
 
 ### Step 1.1 — Create layered package structure
 
@@ -260,6 +285,8 @@ uv run mypy src
 
 ---
 
+
+
 ### Step 1.2 — Extend configuration for database
 
 
@@ -312,6 +339,8 @@ uv run pytest tests/unit/test_settings.py
 
 ---
 
+
+
 ### Step 1.3 — Add PostgreSQL via Docker Compose
 
 
@@ -359,6 +388,8 @@ docker compose -f docker/docker-compose.yml ps   # postgres healthy
 - [x] Can connect with `psql` or GUI tool
 
 ---
+
+
 
 ### Step 1.4 — Add SQLAlchemy, Alembic, and database session
 
@@ -419,6 +450,8 @@ uv run pytest tests/integration/test_database_connection.py
 - [x] Integration test connects to Postgres
 
 ---
+
+
 
 ### Step 1.5 — Implement Incident domain model
 
@@ -506,6 +539,8 @@ uv run mypy src/aegis/domain
 
 ---
 
+
+
 ### Step 1.6 — PostgreSQL schema and repository
 
 
@@ -578,6 +613,8 @@ uv run pytest tests/integration/repositories/ -v
 
 ---
 
+
+
 ### Step 1.7 — Application use cases
 
 
@@ -634,6 +671,8 @@ uv run pytest tests/unit/application/ -v
 - [x] Transition delegates to domain state machine
 
 ---
+
+
 
 ### Step 1.8 — REST API routes
 
@@ -707,6 +746,8 @@ uv run pytest tests/integration/api/ tests/contract/ -v
 
 ---
 
+
+
 ### Step 1.9 — Authentication and RBAC
 
 
@@ -769,6 +810,8 @@ uv run pytest tests/integration/api/test_auth.py tests/security/ -v
 
 ---
 
+
+
 ### Step 1.10 — v0.2 quality gate and release checklist
 
 
@@ -817,6 +860,8 @@ uv run pytest -v
 
 ---
 
+
+
 ## Phase 2 — v0.3 Production simulator
 
 **Release goal:** Synthetic multi-service environment that generates incidents for AEGIS to consume.
@@ -849,6 +894,8 @@ src/aegis/          → 2.5–2.6  (consumer: webhook ingest + dedup)
 The simulator is **inside the AEGIS system boundary** as a dev/test tool ([System boundaries §1](architecture/system-boundaries.md)). It is **not** a layer inside `src/aegis/domain`. Do not import FastAPI routes from the simulator into domain.
 
 ---
+
+
 
 ### Step 2.1 — Simulator service skeleton
 
@@ -911,6 +958,8 @@ uv run pytest tests/unit/simulator/ -v
 
 ---
 
+
+
 ### Step 2.2 — Model five services
 
 
@@ -971,6 +1020,8 @@ curl http://127.0.0.1:8001/services   # if you exposed HTTP
 
 ---
 
+
+
 ### Step 2.3 — Generate logs, metrics, and traces
 
 
@@ -1025,6 +1076,8 @@ uv run pytest tests/unit/simulator/test_signals.py -v
 - [x] No observability vendor SDKs required
 
 ---
+
+
 
 ### Step 2.4 — Configurable failure scenarios
 
@@ -1092,6 +1145,8 @@ uv run pytest tests/unit/simulator/test_scenarios.py -v
 - [x] No real resource-exhaustion side effects
 
 ---
+
+
 
 ### Step 2.5 — Webhook emission to AEGIS API
 
@@ -1181,6 +1236,8 @@ uv run pytest tests/integration/api/test_webhook_ingest.py tests/unit/simulator/
 
 ---
 
+
+
 ### Step 2.6 — Incident deduplication in AEGIS
 
 
@@ -1246,6 +1303,8 @@ uv run pytest tests/unit/domain/incidents/test_fingerprint.py \
 
 ---
 
+
+
 ### Step 2.7 — v0.3 quality gate
 
 
@@ -1282,6 +1341,8 @@ This step is a **gate**, not a new feature. Implement **2.7.1 then 2.7.2 then 2.
 - [x] Git tag `v0.3.0` (when you are ready — 2.7.5)
 
 ---
+
+
 
 #### Step 2.7.1 — Trace every v0.3 FR to code and tests
 
@@ -1345,6 +1406,8 @@ test -f docs/releases/v0.3-fr-traceability.md
 
 ---
 
+
+
 #### Step 2.7.2 — Show webhook ingest on AEGIS `/docs`
 
 
@@ -1399,6 +1462,8 @@ curl -s http://127.0.0.1:8000/openapi.json | python3 -c "import sys,json; p=json
 - [x] Manual `POST /api/v1/incidents` still documented separately and still JWT
 
 ---
+
+
 
 #### Step 2.7.3 — Demo: scenario → webhook → one incident (duplicate emit stays one)
 
@@ -1470,6 +1535,8 @@ uv run pytest tests/integration/api/test_webhook_ingest.py -v
 
 ---
 
+
+
 #### Step 2.7.4 — Full suite, lint, types, and version stamp
 
 
@@ -1527,6 +1594,8 @@ uv run pytest -v
 - [x] OpenAPI / FastAPI version is `0.3.0`
 
 ---
+
+
 
 #### Step 2.7.5 — RISK-007, release note, tag when ready
 
@@ -1592,6 +1661,8 @@ test -f docs/releases/v0.3.md
 
 ---
 
+
+
 ## Phase 3 — v0.4 RAG platform
 
 **Release goal:** Ingest documentation, index in OpenSearch, retrieve with citations.
@@ -1615,7 +1686,7 @@ Implement **3.0 → 3.7 in order**. Do not start Phase 4 until 3.5 works against
 | 3.7  | Confirm historical RCAs are in the knowledge index   | FR-041         | [Incident flow § Phase 6](architecture/incident-flow.md)      |
 
 
-**Index allowlist (exactly 24 files — do not add `src/`):**
+**Index allowlist (exactly 24 files — do not add** `src/`**):**
 
 ```text
 docs/knowledge/catalog/service-map.md
@@ -1635,6 +1706,8 @@ docs/releases/v0.3.md
 ```
 
 ---
+
+
 
 ### Step 3.0 — Knowledge corpus (runbooks, RCAs, RAG eval)
 
@@ -1699,6 +1772,8 @@ test -f evaluation/datasets/rag/queries.jsonl
 - [x] No OpenSearch / Bedrock in this slice
 
 ---
+
+
 
 ### Step 3.1 — OpenSearch local setup (Docker)
 
@@ -1850,6 +1925,8 @@ Expected: `test_cluster_health_is_yellow_or_green PASSED`, `test_knowledge_index
 
 ---
 
+
+
 ### Step 3.2 — Document ingestion pipeline (parse, chunk, metadata)
 
 
@@ -1910,6 +1987,8 @@ uv run pytest tests/unit/rag/ -v
 - [ ] No network calls
 
 ---
+
+
 
 ### Step 3.3 — Bedrock Titan embeddings (+ local fake)
 
@@ -1972,6 +2051,8 @@ uv run pytest tests/unit/rag/test_embedder.py -v
 
 ---
 
+
+
 ### Step 3.4 — Index to OpenSearch (vector + keyword)
 
 
@@ -2031,6 +2112,8 @@ uv run pytest tests/integration/rag/test_ingest.py -v
 - [ ] Fake embedder used in CI/local default
 
 ---
+
+
 
 ### Step 3.5 — Retrieval API with citations
 
@@ -2097,6 +2180,8 @@ uv run pytest tests/integration/api/test_retrieve.py tests/unit/rag/ -v
 
 ---
 
+
+
 ### Step 3.6 — Re-indexing on document change
 
 
@@ -2150,6 +2235,8 @@ uv run pytest tests/integration/rag/test_reindex.py -v
 - [ ] FR-045 verified by a test, not only a comment
 
 ---
+
+
 
 ### Step 3.7 — Historical incidents in the knowledge index (FR-041)
 
@@ -2207,6 +2294,8 @@ uv run pytest tests/integration/rag/test_historical_incidents.py -v
 
 ---
 
+
+
 ## Phase 4 — v0.5 Multi-agent investigation
 
 **Release goal:** Automated investigation from incident open to RCA report.
@@ -2229,6 +2318,8 @@ uv run pytest tests/integration/rag/test_historical_incidents.py -v
 
 ---
 
+
+
 ## Phase 5 — v0.6 Tool gateway & MCP
 
 **Release goal:** All agent tools pass through policy-enforced gateway.
@@ -2247,6 +2338,8 @@ uv run pytest tests/integration/rag/test_historical_incidents.py -v
 
 
 ---
+
+
 
 ## Phase 6 — v0.7 AWS deployment
 
@@ -2268,6 +2361,8 @@ uv run pytest tests/integration/rag/test_historical_incidents.py -v
 
 ---
 
+
+
 ## Phase 7 — v0.8 Observability & evaluation
 
 
@@ -2281,6 +2376,8 @@ uv run pytest tests/integration/rag/test_historical_incidents.py -v
 
 
 ---
+
+
 
 ## Phase 8 — v0.9 Controlled remediation
 
@@ -2296,6 +2393,8 @@ uv run pytest tests/integration/rag/test_historical_incidents.py -v
 
 
 ---
+
+
 
 ## 15. Traceability quick reference
 
@@ -2317,6 +2416,8 @@ Code location (src/aegis/...)
 Test location (tests/...)
 ```
 
+
+
 ### v0.2 traceability example
 
 ```text
@@ -2330,6 +2431,8 @@ Tests:    tests/unit/domain/ + tests/integration/api/
 ```
 
 ---
+
+
 
 ## 16. Per-step template
 
@@ -2357,6 +2460,8 @@ Copy this template when you start any new step:
 
 ---
 
+
+
 ## Related documents
 
 - [Documentation index](README.md)
@@ -2365,6 +2470,8 @@ Copy this template when you start any new step:
 - [Product vision](product/product-vision.md) — why we're building this
 
 ---
+
+
 
 ## Next action
 
