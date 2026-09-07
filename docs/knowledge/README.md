@@ -1,6 +1,6 @@
 # Knowledge corpus (RAG)
 
-**Status:** v0.4 Step 3.1 — OpenSearch index `aegis-knowledge` reserved; files not ingested yet  
+**Status:** v0.4 Step 3.2 — 24 allowlisted files chunk in memory; not embedded or indexed yet  
 **Owner:** Engineering / on-call
 
 This directory is the **first-class RAG corpus** for AEGIS. Index these files (plus `docs/adr/` and `docs/architecture/`) in OpenSearch. Do **not** index live webhook incidents or simulator `/signals` ticks.

@@ -122,10 +122,11 @@ Use this table to know **which document answers which question** while coding.
 | RAG knowledge corpus    | Step 3.0        | `docs/knowledge/` + `evaluation/datasets/rag/` |
 | OpenSearch (local)      | Step 3.1        | `docker/` · empty index `aegis-knowledge`      |
 | LangGraph (learning)    | Skeleton only   | `src/aegis/application/investigation/` — no Claude, no retrieve |
-| Agents, AWS, ingest     | Not implemented | Step 3.2+                                      |
+| RAG chunking            | Step 3.2        | `src/aegis/application/rag/` — 24 files, no embed |
+| Agents, AWS, ingest     | Not implemented | Step 3.3+                                      |
 
 
-**You are here:** Step 3.1 implemented — run `sudo bash scripts/docker-up.sh` and the curl checks in that step, then [Step 3.2 — Document ingestion pipeline](#step-32--document-ingestion-pipeline-parse-chunk-metadata).
+**You are here:** Step 3.2 complete → next [Step 3.3 — Bedrock Titan embeddings](#step-33--bedrock-titan-embeddings--local-fake).
 
 ---
 
@@ -1981,10 +1982,10 @@ uv run pytest tests/unit/rag/ -v
 
 **Done checklist:**
 
-- [ ] Allowlist is exactly the 24 files
-- [ ] Chunks carry `service` / `doc_type` when frontmatter exists
-- [ ] `section` + `source_path` set (needed for FR-044 citations)
-- [ ] No network calls
+- [x] Allowlist is exactly the 24 files
+- [x] Chunks carry `service` / `doc_type` when frontmatter exists
+- [x] `section` + `source_path` set (needed for FR-044 citations)
+- [x] No network calls
 
 ---
 
