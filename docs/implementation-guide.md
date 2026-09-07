@@ -1955,7 +1955,7 @@ tests/unit/rag/test_allowlist.py
 
 - **Allowlist module** that lists exactly the 24 paths. Ingest refuses anything else.
 - Parse markdown: strip or preserve frontmatter; copy `doc_type`, `service`, `date`, `scenario` onto every chunk from that file. ADRs without frontmatter: set `doc_type` from path (`adr`, `architecture`, …), `service=platform`.
-- Chunk by **headings** first, then by size (target ~400–800 tokens / ~1500–3000 characters, overlap ~10–15%). Each chunk: `chunk_id`, `source_path`, `section` (heading), `text`, metadata.
+- Chunk **parent–child**: each markdown heading is a **parent** (citation + later LLM context); size-split that parent into **children** (~800–1200 characters, ~12% overlap) for search. Metadata includes `role` (`parent`|`child`) and `parent_id`. Each chunk: `chunk_id`, `source_path`, `section`, `text`.
 - Pure function: `path → list[Chunk]`. Deterministic given the same file.
 
 **Best practices:**

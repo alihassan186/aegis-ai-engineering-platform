@@ -6,7 +6,12 @@ from aegis.application.rag.allowlist import (
     is_allowlisted,
     iter_allowlisted_paths,
 )
-from aegis.application.rag.chunking import chunk_allowlisted_corpus, chunk_document
+from aegis.application.rag.chunking import (
+    chunk_allowlisted_corpus,
+    chunk_document,
+    parent_chunks,
+    retrieval_chunks,
+)
 from aegis.application.rag.models import Chunk
 
 __all__ = [
@@ -17,4 +22,6 @@ __all__ = [
     "chunk_document",
     "is_allowlisted",
     "iter_allowlisted_paths",
+    "parent_chunks",
+    "retrieval_chunks",
 ]

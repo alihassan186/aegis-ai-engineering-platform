@@ -8,7 +8,10 @@ from typing import Mapping
 
 @dataclass(frozen=True, slots=True)
 class Chunk:
-    """One retrieval unit. ``section`` is the markdown heading (citation heading)."""
+    """One retrieval unit. ``section`` is the markdown heading (citation heading).
+
+    ``metadata`` includes frontmatter plus ``role`` (parent|child) and ``parent_id``.
+    """
 
     chunk_id: str
     text: str
@@ -18,4 +21,5 @@ class Chunk:
 
     @property
     def heading(self) -> str:
+        """Section heading. Same as ``section``."""
         return self.section

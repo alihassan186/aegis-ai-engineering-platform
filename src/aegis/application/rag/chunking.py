@@ -1,6 +1,7 @@
-"""Parse markdown and emit deterministic chunks (Step 3.2).
+"""Parse markdown into parent/child chunks (Step 3.2).
 
-Heading-first, then size. No network, no embeddings, no OpenSearch write.
+Parents are heading sections (citation + LLM context). Children are smaller
+windows of a parent (hybrid search). No network, no embeddings, no OpenSearch.
 """
 
 from __future__ import annotations
@@ -17,17 +18,22 @@ from aegis.application.rag.allowlist import (
 )
 from aegis.application.rag.models import Chunk
 
-# ~400–800 tokens ≈ 1500–3000 characters; overlap ~12%.
-TARGET_CHARS = 2200
-MAX_CHARS = 3000
-OVERLAP_CHARS = 280
+# Parent ≈ one heading (or a large slice of it) — context for the Knowledge Agent.
+PARENT_TARGET_CHARS = 3500
+PARENT_MAX_CHARS = 5000
+PARENT_OVERLAP_CHARS = 400
+
+# Child ≈ 200–400 tokens — what 3.4 embeds and 3.5 searches.
+CHILD_TARGET_CHARS = 800
+CHILD_MAX_CHARS = 1200
+CHILD_OVERLAP_CHARS = 100
 
 _HEADING = re.compile(r"^(#{1,6})\s+(.+?)\s*$")
 _FRONTMATTER = re.compile(r"^---\n(.*?)\n---\n?", re.DOTALL)
 
 
 def chunk_document(path: Path | str, *, repo_root: Path | None = None) -> list[Chunk]:
-    """``path → list[Chunk]``. Same file always yields the same chunks."""
+    """``path → list[Chunk]`` (parents and children). Same file → same ids."""
     root = (repo_root or repository_root()).resolve()
     rel = assert_allowlisted(path, repo_root=root)
     source = root / rel
@@ -36,11 +42,47 @@ def chunk_document(path: Path | str, *, repo_root: Path | None = None) -> list[C
     metadata = _document_metadata(rel, file_meta)
     sections = _split_by_heading(body)
     chunks: list[Chunk] = []
-    index = 0
+    parent_index = 0
+    child_index = 0
     for heading, section_text in sections:
-        for piece in _split_by_size(section_text):
-            chunks.append(_make_chunk(index, piece, rel, heading, metadata))
-            index += 1
+        parent_windows = _split_by_size(
+            section_text,
+            target=PARENT_TARGET_CHARS,
+            max_chars=PARENT_MAX_CHARS,
+            overlap=PARENT_OVERLAP_CHARS,
+        )
+        for parent_text in parent_windows:
+            parent_id = _chunk_id("p", parent_index, rel, heading, parent_text)
+            parent_meta = {**metadata, "role": "parent", "parent_id": parent_id}
+            chunks.append(
+                Chunk(
+                    chunk_id=parent_id,
+                    text=parent_text,
+                    source_path=rel,
+                    section=heading,
+                    metadata=parent_meta,
+                )
+            )
+            parent_index += 1
+            child_windows = _split_by_size(
+                parent_text,
+                target=CHILD_TARGET_CHARS,
+                max_chars=CHILD_MAX_CHARS,
+                overlap=CHILD_OVERLAP_CHARS,
+            )
+            for child_text in child_windows:
+                child_id = _chunk_id("c", child_index, rel, heading, child_text)
+                child_meta = {**metadata, "role": "child", "parent_id": parent_id}
+                chunks.append(
+                    Chunk(
+                        chunk_id=child_id,
+                        text=child_text,
+                        source_path=rel,
+                        section=heading,
+                        metadata=child_meta,
+                    )
+                )
+                child_index += 1
     return chunks
 
 
@@ -53,21 +95,18 @@ def chunk_allowlisted_corpus(*, repo_root: Path | None = None) -> list[Chunk]:
     return chunks
 
 
-def _make_chunk(
-    index: int,
-    text: str,
-    source_path: str,
-    section: str,
-    metadata: Mapping[str, str],
-) -> Chunk:
+def retrieval_chunks(chunks: list[Chunk]) -> list[Chunk]:
+    """Children only — the units Step 3.4 should embed and Step 3.5 should search."""
+    return [chunk for chunk in chunks if chunk.metadata.get("role") == "child"]
+
+
+def parent_chunks(chunks: list[Chunk]) -> list[Chunk]:
+    return [chunk for chunk in chunks if chunk.metadata.get("role") == "parent"]
+
+
+def _chunk_id(kind: str, index: int, source_path: str, section: str, text: str) -> str:
     digest = hashlib.sha256(f"{source_path}\0{section}\0{text}".encode("utf-8")).hexdigest()[:16]
-    return Chunk(
-        chunk_id=f"{source_path}#{index:04d}-{digest}",
-        text=text,
-        source_path=source_path,
-        section=section,
-        metadata=dict(metadata),
-    )
+    return f"{source_path}#{kind}{index:04d}-{digest}"
 
 
 def _parse_frontmatter(raw: str) -> tuple[str, dict[str, str]]:
@@ -125,11 +164,17 @@ def _split_by_heading(body: str) -> list[tuple[str, str]]:
     return sections or [("lead", body.strip())] if body.strip() else []
 
 
-def _split_by_size(text: str) -> list[str]:
+def _split_by_size(
+    text: str,
+    *,
+    target: int,
+    max_chars: int,
+    overlap: int,
+) -> list[str]:
     text = text.strip()
     if not text:
         return []
-    if len(text) <= MAX_CHARS:
+    if len(text) <= max_chars:
         return [text]
 
     paragraphs = [part.strip() for part in text.split("\n\n") if part.strip()]
@@ -142,24 +187,24 @@ def _split_by_size(text: str) -> list[str]:
         if not buf:
             return
         windows.append("\n\n".join(buf))
-        overlap: list[str] = []
+        overlap_parts: list[str] = []
         acc = 0
         for prev in reversed(buf):
-            extra = len(prev) if not overlap else len(prev) + 2
-            if acc + extra > OVERLAP_CHARS:
+            extra = len(prev) if not overlap_parts else len(prev) + 2
+            if acc + extra > overlap:
                 break
-            overlap.append(prev)
+            overlap_parts.append(prev)
             acc += extra
-        buf = list(reversed(overlap))
+        buf = list(reversed(overlap_parts))
         buf_len = sum(len(p) for p in buf) + 2 * max(0, len(buf) - 1)
 
     for para in paragraphs:
-        if len(para) > MAX_CHARS:
+        if len(para) > max_chars:
             emit()
-            windows.extend(_hard_split(para))
+            windows.extend(_hard_split(para, target=target, overlap=overlap))
             continue
         added = len(para) + (2 if buf else 0)
-        if buf and buf_len + added > TARGET_CHARS:
+        if buf and buf_len + added > target:
             emit()
         buf.append(para)
         buf_len += len(para) + (2 if buf_len else 0)
@@ -167,21 +212,21 @@ def _split_by_size(text: str) -> list[str]:
     return [part for part in windows if part]
 
 
-def _hard_split(text: str) -> list[str]:
+def _hard_split(text: str, *, target: int, overlap: int) -> list[str]:
     parts: list[str] = []
     start = 0
     length = len(text)
     while start < length:
-        end = min(start + TARGET_CHARS, length)
+        end = min(start + target, length)
         if end < length:
             window = text[start:end]
             brk = window.rfind("\n")
-            if brk >= TARGET_CHARS // 2:
+            if brk >= target // 2:
                 end = start + brk
         piece = text[start:end].strip()
         if piece:
             parts.append(piece)
         if end >= length:
             break
-        start = max(end - OVERLAP_CHARS, start + 1)
+        start = max(end - overlap, start + 1)
     return parts
