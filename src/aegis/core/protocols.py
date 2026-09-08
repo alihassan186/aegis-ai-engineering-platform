@@ -7,11 +7,21 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Protocol
+from typing import Protocol, runtime_checkable
 from uuid import UUID
 
 from aegis.domain.incidents.entity import Incident
 from aegis.domain.incidents.enums import IncidentState, Severity
+
+
+@runtime_checkable
+class Embedder(Protocol):
+    """Turns texts into dense vectors (FR-040). Implementations live in infrastructure.
+
+    Dimension is Titan Text Embeddings V2 size **1024**. No boto3 in this module.
+    """
+
+    def embed_texts(self, texts: list[str]) -> list[list[float]]: ...
 
 
 @dataclass(frozen=True, slots=True)

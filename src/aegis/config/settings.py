@@ -50,6 +50,8 @@ class Settings:
     jwt_expire_seconds: int = 3600
     webhook_secret: str = ""
     opensearch_url: str = ""
+    embedder: str = "fake"
+    aws_region: str = ""
 
     @classmethod
     def from_env(cls) -> Settings:
@@ -70,6 +72,10 @@ class Settings:
         )
         webhook_secret = os.getenv("AEGIS_WEBHOOK_SECRET", "").strip()
         opensearch_url = os.getenv("AEGIS_OPENSEARCH_URL", "").strip().rstrip("/")
+        embedder = _parse_embedder_name(os.getenv("AEGIS_EMBEDDER"))
+        aws_region = (
+            os.getenv("AEGIS_AWS_REGION", "").strip() or os.getenv("AWS_REGION", "").strip()
+        )
 
         if environment == "production" and not database_url:
             raise ValueError("AEGIS_DATABASE_URL is required when AEGIS_ENV=production (NFR-060).")
@@ -90,6 +96,8 @@ class Settings:
             jwt_expire_seconds=jwt_expire_seconds,
             webhook_secret=webhook_secret,
             opensearch_url=opensearch_url,
+            embedder=embedder,
+            aws_region=aws_region,
         )
 
 
@@ -105,3 +113,13 @@ def _parse_positive_int(raw: str | None, *, default: int) -> int:
     except ValueError:
         return default
     return value if value > 0 else default
+
+
+def _parse_embedder_name(raw: str | None) -> str:
+    """Default fake so tests and local ingest run without AWS (Step 3.3)."""
+    name = (raw or "").strip().lower()
+    if not name:
+        return "fake"
+    if name in {"fake", "titan"}:
+        return name
+    raise ValueError("AEGIS_EMBEDDER must be 'fake' or 'titan'.")

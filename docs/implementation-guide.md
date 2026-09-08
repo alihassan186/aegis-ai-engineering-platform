@@ -122,11 +122,12 @@ Use this table to know **which document answers which question** while coding.
 | RAG knowledge corpus    | Step 3.0        | `docs/knowledge/` + `evaluation/datasets/rag/` |
 | OpenSearch (local)      | Step 3.1        | `docker/` · empty index `aegis-knowledge`      |
 | LangGraph (learning)    | Skeleton only   | `src/aegis/application/investigation/` — no Claude, no retrieve |
-| RAG chunking            | Step 3.2        | `src/aegis/application/rag/` — 24 files, no embed |
-| Agents, AWS, ingest     | Not implemented | Step 3.3+                                      |
+| RAG chunking            | Step 3.2        | `src/aegis/application/rag/` — 24 files, parent–child |
+| RAG embeddings          | Step 3.3        | `FakeEmbedder` / Titan 1024-d — no OpenSearch write |
+| Agents, ingest          | Not implemented | Step 3.4+                                      |
 
 
-**You are here:** Step 3.2 complete → next [Step 3.3 — Bedrock Titan embeddings](#step-33--bedrock-titan-embeddings--local-fake).
+**You are here:** Step 3.3 complete → next [Step 3.4 — Index to OpenSearch](#step-34--index-to-opensearch-vector--keyword).
 
 ---
 
@@ -2038,17 +2039,44 @@ tests/unit/rag/test_embedder.py                # fake is deterministic; same tex
 
 **Verification:**
 
+This step is done when every non-empty string can be turned into a **1024-d** vector without calling Claude or writing OpenSearch. Default embedder is **fake** (no AWS). Titan is opt-in.
+
+**1. Fake path (required — CI and local Phase 3)**
+
 ```bash
-uv run pytest tests/unit/rag/test_embedder.py -v
-# AEGIS_EMBEDDER=fake is enough for the rest of Phase 3
+# from the repository root
+AEGIS_SKIP_DOTENV=1 AEGIS_EMBEDDER=fake \
+  uv run pytest tests/unit/rag/test_embedder.py tests/unit/test_settings.py -v
 ```
+
+Pass when:
+
+- `test_fake_identical_text_identical_vector` — same string → same vector, `len == 1024`
+- empty / whitespace strings raise `ValueError` (we reject; we do not store a silent zero-vector)
+- `build_embedder` with default settings returns `FakeEmbedder`
+- settings: unset `AEGIS_EMBEDDER` → `fake`; `AEGIS_EMBEDDER=titan` + `AEGIS_AWS_REGION=eu-west-1` loads
+
+No network. `AEGIS_EMBEDDER=fake` is enough for the rest of Phase 3 (ingest 3.4 can use fake vectors in local OpenSearch).
+
+**2. Titan unit path (no AWS)**
+
+`test_titan_parses_invoke_model_without_network` injects a fake Bedrock client. `test_titan_requires_region` fails clearly if `AEGIS_EMBEDDER=titan` and region is empty. No access keys in source.
+
+**3. Optional live Titan**
+
+```bash
+AEGIS_RUN_TITAN_TEST=1 AEGIS_EMBEDDER=titan AEGIS_AWS_REGION=eu-west-1 \
+  uv run pytest tests/unit/rag/test_embedder.py::test_titan_live_skipped_without_opt_in -v
+```
+
+Skipped unless `AEGIS_RUN_TITAN_TEST=1` and credentials come from the AWS chain (profile / instance role). Never put keys in git.
 
 **Done checklist:**
 
-- [ ] `Embedder` protocol exists
-- [ ] Fake embedder is the test default
-- [ ] Titan path uses IAM / env, no hardcoded secrets
-- [ ] Dimension documented (1024)
+- [x] `Embedder` protocol exists
+- [x] Fake embedder is the test default
+- [x] Titan path uses IAM / env, no hardcoded secrets
+- [x] Dimension documented (1024)
 
 ---
 
