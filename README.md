@@ -382,6 +382,8 @@ Environment variables are loaded from `.env` or the process environment.
 | `AEGIS_JWT_EXPIRE_SECONDS` | `3600` | Access token lifetime |
 | `AEGIS_WEBHOOK_SECRET` | empty | HMAC secret for `POST /api/v1/webhooks/incidents` (required in production; THR-002) |
 | `AEGIS_OPENSEARCH_URL` | empty | Local OpenSearch HTTP URL (Step 3.1). Empty means RAG store unset; tests skip the cluster ping |
+| `AEGIS_EMBEDDER` | `fake` | `fake` (hash, 1024-d, no AWS) or `titan` (Bedrock `amazon.titan-embed-text-v2:0`) |
+| `AEGIS_AWS_REGION` | empty | Bedrock region when `AEGIS_EMBEDDER=titan` (else `AWS_REGION`) |
 
 ### Integrations
 

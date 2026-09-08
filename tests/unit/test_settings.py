@@ -18,6 +18,9 @@ def test_defaults_when_env_unset(monkeypatch: pytest.MonkeyPatch) -> None:
         "AEGIS_JWT_EXPIRE_SECONDS",
         "AEGIS_WEBHOOK_SECRET",
         "AEGIS_OPENSEARCH_URL",
+        "AEGIS_EMBEDDER",
+        "AEGIS_AWS_REGION",
+        "AWS_REGION",
     ):
         monkeypatch.delenv(name, raising=False)
 
@@ -32,6 +35,8 @@ def test_defaults_when_env_unset(monkeypatch: pytest.MonkeyPatch) -> None:
     assert settings.jwt_expire_seconds == 3600
     assert settings.webhook_secret == ""
     assert settings.opensearch_url == ""
+    assert settings.embedder == "fake"
+    assert settings.aws_region == ""
 
 
 def test_loads_database_url_from_env(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -132,6 +137,25 @@ def test_loads_opensearch_url_from_env(monkeypatch: pytest.MonkeyPatch) -> None:
     settings = Settings.from_env()
 
     assert settings.opensearch_url == "http://127.0.0.1:9200"
+
+
+def test_loads_embedder_and_region_from_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("AEGIS_EMBEDDER", "titan")
+    monkeypatch.setenv("AEGIS_AWS_REGION", "eu-west-1")
+    monkeypatch.delenv("AEGIS_DATABASE_URL", raising=False)
+
+    settings = Settings.from_env()
+
+    assert settings.embedder == "titan"
+    assert settings.aws_region == "eu-west-1"
+
+
+def test_unknown_embedder_is_rejected(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("AEGIS_EMBEDDER", "openai")
+    monkeypatch.delenv("AEGIS_DATABASE_URL", raising=False)
+
+    with pytest.raises(ValueError, match="fake"):
+        Settings.from_env()
 
 
 def test_database_url_must_use_asyncpg_prefix(monkeypatch: pytest.MonkeyPatch) -> None:
