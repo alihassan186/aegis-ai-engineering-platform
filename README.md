@@ -303,15 +303,22 @@ Register a server with host `postgres`, port `5432`, database/user/password `aeg
 
 ### Local OpenSearch
 
-Port **9200** is the OpenSearch HTTP port (do not collide with 5434 / 8000 / 8001). The same `scripts/docker-up.sh` start brings up a **single-node** container with the security plugin disabled (local only). It creates an empty index `aegis-knowledge`. No documents are ingested in Step 3.1.
+Port **9200** is the OpenSearch HTTP port (do not collide with 5434 / 8000 / 8001). The same `scripts/docker-up.sh` start brings up a **single-node** container with the security plugin disabled (local only). It creates `aegis-knowledge` with BM25 `text` + 1024-d `knn_vector` (FR-043). Documents arrive only via ingest — not from live incidents, logs, or `src/`.
 
 ```bash
-# already done if you ran docker-up.sh above
+# cluster (already done if you ran docker-up.sh above)
 curl -s http://127.0.0.1:9200/_cluster/health
 curl -s http://127.0.0.1:9200/aegis-knowledge
+
+# first full ingest of the 24 allowlisted knowledge files (offline fake vectors)
+AEGIS_EMBEDDER=fake AEGIS_OPENSEARCH_URL=http://127.0.0.1:9200 \
+  uv run python -m aegis.rag.ingest
+curl -s http://127.0.0.1:9200/aegis-knowledge/_count
 ```
 
-Set `AEGIS_OPENSEARCH_URL=http://127.0.0.1:9200` in the repo-root `.env` so AEGIS can reach the cluster. Leave it empty in CI; integration tests skip when the URL is unset.
+Same command again overwrites by `chunk_id` (needed for later reindex). Equivalent CLI: `uv run aegis-ingest`.
+
+Set `AEGIS_OPENSEARCH_URL=http://127.0.0.1:9200` in the repo-root `.env` so AEGIS can reach the cluster. Leave it empty in CI; integration tests skip when the URL is unset. Pytest does not load `.env` (`AEGIS_SKIP_DOTENV=1`), so pass the URL on the pytest command for live ingest tests.
 
 **OpenSearch Dashboards** (local GUI, no login): [http://127.0.0.1:5601](http://127.0.0.1:5601).  
 Menu → **Dev Tools** → Console to run `_cat/indices`, `_search`, `_count`. After ingest (Step 3.4), **Discover** → create an index pattern `aegis-knowledge`. This is not pgAdmin — Postgres stays at [http://127.0.0.1:5051](http://127.0.0.1:5051).
