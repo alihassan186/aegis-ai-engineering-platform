@@ -5,7 +5,7 @@ from __future__ import annotations
 import ast
 from pathlib import Path
 
-from aegis.core.protocols import IncidentRepository
+from aegis.core.protocols import Embedder, IncidentRepository
 from aegis.shared.exceptions import DomainError, NotFoundError, ValidationError
 
 _FORBIDDEN_FOR_DOMAIN = (
@@ -16,11 +16,13 @@ _FORBIDDEN_FOR_DOMAIN = (
     "langgraph",
     "langchain",
     "langchain_core",
+    "boto3",
 )
 _FORBIDDEN_FOR_APPLICATION = (
     "aegis.infrastructure",
     "fastapi",
     "sqlalchemy",
+    "boto3",
 )
 
 
@@ -82,3 +84,7 @@ def test_exception_hierarchy() -> None:
 
 def test_incident_repository_is_a_protocol() -> None:
     assert getattr(IncidentRepository, "_is_protocol", False)
+
+
+def test_embedder_is_a_protocol() -> None:
+    assert getattr(Embedder, "_is_protocol", False)
