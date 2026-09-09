@@ -43,11 +43,13 @@ if ! curl -sf "http://127.0.0.1:${OS_PORT}/_cluster/health" >/dev/null; then
   echo "OpenSearch did not become healthy. If Linux reports max virtual memory: sudo sysctl -w vm.max_map_count=262144" >&2
   exit 1
 fi
-# Empty knowledge index only (FR-040 store). No documents. aegis-logs is not created.
+# Knowledge index (FR-043 mapping). No documents. aegis-logs is not created.
+# An existing 3.1 empty index (no knn) is upgraded on ingest, not here.
+MAPPINGS="$ROOT/src/aegis/infrastructure/rag/mappings.json"
 if ! curl -sf "http://127.0.0.1:${OS_PORT}/aegis-knowledge" >/dev/null; then
   curl -sf -X PUT "http://127.0.0.1:${OS_PORT}/aegis-knowledge" \
     -H 'Content-Type: application/json' \
-    -d '{"settings":{"number_of_shards":1,"number_of_replicas":0}}' >/dev/null
+    --data-binary @"$MAPPINGS" >/dev/null
 fi
 
 echo
@@ -55,5 +57,5 @@ docker-compose -f "$COMPOSE_FILE" --project-directory "$PROJECT_DIR" ps
 echo
 echo "Postgres:    127.0.0.1:5434  (user/password/db: aegis)"
 echo "pgAdmin:     http://127.0.0.1:5051  (admin@example.com / admin)"
-echo "OpenSearch:  http://127.0.0.1:${OS_PORT}  (index aegis-knowledge, empty)"
+echo "OpenSearch:  http://127.0.0.1:${OS_PORT}  (index aegis-knowledge; ingest to fill)"
 echo "Dashboards:  http://127.0.0.1:5601  (no login; Dev Tools for _cat / _search)"

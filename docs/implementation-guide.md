@@ -120,14 +120,16 @@ Use this table to know **which document answers which question** while coding.
 | Incident API            | Implemented     | `src/aegis/api/` · `/api/v1/incidents`         |
 | Production simulator    | v0.3 complete   | `apps/simulator/` + webhook ingest + FR-007    |
 | RAG knowledge corpus    | Step 3.0        | `docs/knowledge/` + `evaluation/datasets/rag/` |
-| OpenSearch (local)      | Step 3.1        | `docker/` · empty index `aegis-knowledge`      |
+| OpenSearch (local)      | Step 3.1 + 3.4  | `docker/` · hybrid index `aegis-knowledge`     |
 | LangGraph (learning)    | Skeleton only   | `src/aegis/application/investigation/` — no Claude, no retrieve |
 | RAG chunking            | Step 3.2        | `src/aegis/application/rag/` — 24 files, parent–child |
 | RAG embeddings          | Step 3.3        | `FakeEmbedder` / Titan 1024-d — no OpenSearch write |
-| Agents, ingest          | Not implemented | Step 3.4+                                      |
+| RAG ingest              | Step 3.4        | allowlist → chunk → embed → bulk (`aegis.rag.ingest`) |
+| Retrieval API           | Not implemented | Step 3.5                                       |
+| Agents                  | Not implemented | Phase 4                                        |
 
 
-**You are here:** Step 3.3 complete → next [Step 3.4 — Index to OpenSearch](#step-34--index-to-opensearch-vector--keyword).
+**You are here:** Step 3.4 complete → next [Step 3.5 — Retrieval API with citations](#step-35--retrieval-api-with-citations).
 
 ---
 
@@ -2127,18 +2129,54 @@ tests/integration/rag/test_ingest.py             # needs OpenSearch + fake embed
 
 **Verification:**
 
+This step is done when the 24 allowlisted files are **retrieval children** in `aegis-knowledge`, each with BM25 `text` and a 1024-d `knn_vector`. Query merge / HTTP retrieve is Step 3.5. Default embedder stays **fake** (no AWS).
+
+**1. Unit path (required — CI, no OpenSearch)**
+
 ```bash
-AEGIS_EMBEDDER=fake AEGIS_OPENSEARCH_URL=http://127.0.0.1:9200 uv run python -m aegis.rag.ingest
-curl -s 'http://127.0.0.1:9200/aegis-knowledge/_count'
-uv run pytest tests/integration/rag/test_ingest.py -v
+# from the repository root
+AEGIS_SKIP_DOTENV=1 AEGIS_EMBEDDER=fake \
+  uv run pytest tests/unit/rag/test_ingest.py tests/unit/rag/test_mappings.py tests/unit/test_package_imports.py -v
 ```
+
+Pass when:
+
+- mapping JSON has `text` (analyzer `standard`) + `embedding` `knn_vector` dimension **1024**
+- ingest indexes **children only**; `files == 24`; chunk count ≥ 24
+- a second ingest overwrites the same `chunk_id` set (no unbounded growth)
+- a missing allowlist file raises `FileNotFoundError` before any index write
+- `application/rag/ingest.py` does not import `aegis.infrastructure` or `opensearchpy`
+
+**2. Live OpenSearch (local Docker from 3.1)**
+
+```bash
+# from the repository root — OpenSearch already up on 9200
+AEGIS_EMBEDDER=fake AEGIS_OPENSEARCH_URL=http://127.0.0.1:9200 \
+  uv run python -m aegis.rag.ingest
+# equivalent: uv run aegis-ingest
+curl -s 'http://127.0.0.1:9200/aegis-knowledge/_count'
+curl -s 'http://127.0.0.1:9200/aegis-knowledge/_mapping' | python3 -m json.tool | head
+AEGIS_OPENSEARCH_URL=http://127.0.0.1:9200 AEGIS_EMBEDDER=fake \
+  uv run pytest tests/integration/rag/test_ingest.py -v
+```
+
+Pass when:
+
+- CLI prints `"files": 24` and `"chunks"` / `"indexed"` equal and ≥ 24
+- `_count` matches that chunk count (not 0, not 24 unless every file is a single child)
+- mapping shows `knn_vector` + `text`; a `match` on distinctive runbook text finds `docs/knowledge/runbooks/payment-latency-spike.md`
+- re-running ingest keeps the same `_count` (document `_id` = `chunk_id`)
+
+Pytest sets `AEGIS_SKIP_DOTENV=1`, so pass `AEGIS_OPENSEARCH_URL` on the pytest command even if it lives in `.env`. Tests skip cleanly when the URL is unset.
+
+A 3.1 index created **without** knn is deleted and recreated on first ingest. New `docker-up.sh` clusters PUT the hybrid mapping from `mappings.json` (still zero documents until ingest).
 
 **Done checklist:**
 
-- [ ] Mapping has text + knn_vector
-- [ ] 24 files ingested (chunk count ≥ 24)
-- [ ] Re-running ingest does not duplicate forever (same chunk_id)
-- [ ] Fake embedder used in CI/local default
+- [x] Mapping has text + knn_vector
+- [x] 24 files ingested (chunk count ≥ 24)
+- [x] Re-running ingest does not duplicate forever (same chunk_id)
+- [x] Fake embedder used in CI/local default
 
 ---
 
