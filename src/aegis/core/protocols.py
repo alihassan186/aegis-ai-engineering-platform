@@ -5,9 +5,10 @@ Concrete implementations belong in ``aegis.infrastructure`` (Step 1.6).
 
 from __future__ import annotations
 
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Protocol, runtime_checkable
+from typing import Any, Protocol, runtime_checkable
 from uuid import UUID
 
 from aegis.domain.incidents.entity import Incident
@@ -22,6 +23,28 @@ class Embedder(Protocol):
     """
 
     def embed_texts(self, texts: list[str]) -> list[list[float]]: ...
+
+
+@runtime_checkable
+class KnowledgeStore(Protocol):
+    """Hybrid knowledge index (FR-043). Implementations live in infrastructure.
+
+    No opensearchpy in this module. Application ingest takes this port, not a client.
+    """
+
+    def ensure_hybrid_index(self) -> None: ...
+
+    def bulk_upsert(self, documents: Sequence[Mapping[str, Any]]) -> int: ...
+
+    def count(self) -> int: ...
+
+    def search_match(
+        self,
+        *,
+        text: str,
+        source_path: str | None = None,
+        size: int = 5,
+    ) -> list[dict[str, Any]]: ...
 
 
 @dataclass(frozen=True, slots=True)

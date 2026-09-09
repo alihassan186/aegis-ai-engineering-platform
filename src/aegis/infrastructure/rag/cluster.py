@@ -30,7 +30,11 @@ def cluster_health(base_url: str, *, timeout_seconds: float = 5.0) -> dict[str, 
 
 
 def ensure_knowledge_index(base_url: str, *, timeout_seconds: float = 5.0) -> None:
-    """Create ``aegis-knowledge`` if missing. No documents, no knn mapping (Step 3.4)."""
+    """Create ``aegis-knowledge`` if missing. Empty settings only (Step 3.1).
+
+    Step 3.4 ``OpenSearchKnowledgeStore.ensure_hybrid_index`` recreates this index
+    when ``text`` / ``knn_vector`` mappings are missing.
+    """
     root = base_url.rstrip("/")
     index_url = f"{root}/{KNOWLEDGE_INDEX}"
     get = urllib.request.Request(index_url, method="GET")
