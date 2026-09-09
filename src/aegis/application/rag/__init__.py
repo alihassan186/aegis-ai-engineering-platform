@@ -12,14 +12,17 @@ from aegis.application.rag.chunking import (
     parent_chunks,
     retrieval_chunks,
 )
+from aegis.application.rag.ingest import IngestResult, ingest_knowledge_corpus
 from aegis.application.rag.models import Chunk
 
 __all__ = [
     "ALLOWED_RELATIVE_PATHS",
     "Chunk",
+    "IngestResult",
     "assert_allowlisted",
     "chunk_allowlisted_corpus",
     "chunk_document",
+    "ingest_knowledge_corpus",
     "is_allowlisted",
     "iter_allowlisted_paths",
     "parent_chunks",
