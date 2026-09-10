@@ -230,6 +230,8 @@ coverage/
 # -----------------------------
 # Misc
 # -----------------------------
+# Local ingest hash manifest (Step 3.6). Not secrets — skip unchanged files.
+.aegis/
 .DS_Store
 Thumbs.db
 desktop.ini

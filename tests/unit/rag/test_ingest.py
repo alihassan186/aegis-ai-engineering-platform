@@ -33,6 +33,16 @@ class MemoryKnowledgeStore:
     def count(self) -> int:
         return len(self.documents)
 
+    def delete_by_source_path(self, source_path: str) -> int:
+        rel = source_path.strip()
+        before = len(self.documents)
+        self.documents = {
+            chunk_id: document
+            for chunk_id, document in self.documents.items()
+            if document.get("source_path") != rel
+        }
+        return before - len(self.documents)
+
     def search_match(
         self,
         *,

@@ -54,6 +54,19 @@ class OpenSearchKnowledgeStore:
         self._request("POST", f"/{KNOWLEDGE_INDEX}/_refresh")
         return written
 
+    def delete_by_source_path(self, source_path: str) -> int:
+        """Remove every chunk for one allowlisted file (FR-045)."""
+        rel = source_path.strip()
+        if not rel:
+            raise ValueError("source_path is required to delete chunks.")
+        payload = self._request(
+            "POST",
+            f"/{KNOWLEDGE_INDEX}/_delete_by_query?refresh=true&conflicts=proceed",
+            body={"query": {"term": {"source_path": rel}}},
+        )
+        deleted = payload.get("deleted", 0) if isinstance(payload, dict) else 0
+        return int(deleted) if isinstance(deleted, int) else 0
+
     def count(self) -> int:
         payload = self._request("GET", f"/{KNOWLEDGE_INDEX}/_count")
         count = payload.get("count") if isinstance(payload, dict) else None

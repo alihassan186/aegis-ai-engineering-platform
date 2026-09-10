@@ -314,9 +314,15 @@ curl -s http://127.0.0.1:9200/aegis-knowledge
 AEGIS_EMBEDDER=fake AEGIS_OPENSEARCH_URL=http://127.0.0.1:9200 \
   uv run python -m aegis.rag.ingest
 curl -s http://127.0.0.1:9200/aegis-knowledge/_count
+
+# re-index one allowlisted file after you edit it (FR-045). Not src/, not a watcher.
+AEGIS_EMBEDDER=fake AEGIS_OPENSEARCH_URL=http://127.0.0.1:9200 \
+  uv run python -m aegis.rag.ingest --files docs/knowledge/runbooks/payment-latency-spike.md
+# force every selected file (ignore content-hash skip):
+# uv run python -m aegis.rag.ingest --no-skip
 ```
 
-Same command again overwrites by `chunk_id` (needed for later reindex). Equivalent CLI: `uv run aegis-ingest`.
+Unchanged files are skipped via `.aegis/rag-ingest-manifest.json` (gitignored). The same command with no `--files` re-ingests the full allowlist. Equivalent CLI: `uv run aegis-ingest`. Chunk ids stay stable when the file bytes do not change; a text edit deletes that `source_path` then writes new children so stale phrases do not linger.
 
 Set `AEGIS_OPENSEARCH_URL=http://127.0.0.1:9200` in the repo-root `.env` so AEGIS can reach the cluster. Leave it empty in CI; integration tests skip when the URL is unset. Pytest does not load `.env` (`AEGIS_SKIP_DOTENV=1`), so pass the URL on the pytest command for live ingest tests.
 

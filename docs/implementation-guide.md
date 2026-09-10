@@ -124,12 +124,12 @@ Use this table to know **which document answers which question** while coding.
 | LangGraph (learning)    | Skeleton only   | `src/aegis/application/investigation/` — no Claude; does not call retrieve yet |
 | RAG chunking            | Step 3.2        | `src/aegis/application/rag/` — 24 files, parent–child           |
 | RAG embeddings          | Step 3.3        | `FakeEmbedder` / Titan 1024-d — no OpenSearch write             |
-| RAG ingest              | Step 3.4        | allowlist → chunk → embed → bulk (`aegis.rag.ingest`)           |
+| RAG ingest              | Step 3.4 + 3.6  | allowlist ingest + `--files` reindex (`aegis.rag.ingest`)       |
 | Retrieval API           | Step 3.5        | `POST /api/v1/retrieve` JWT + citations (FR-042, FR-044)        |
 | Agents                  | Not implemented | Phase 4                                                         |
 
 
-**You are here:** Step 3.5 complete → next [Step 3.6 — Re-indexing on document change](#step-36--re-indexing-on-document-change).
+**You are here:** Step 3.6 complete → next [Step 3.7 — Historical incidents in the knowledge index](#step-37--historical-incidents-in-the-knowledge-index-fr-041).
 
 ---
 
@@ -2262,14 +2262,18 @@ Pass when:
 
 ```bash
 # from the repository root (not scripts/)
-TOKEN=$(curl -s -X POST http://127.0.0.1:8000/api/v1/auth/token \
+# AEGIS API must already be running:  uv run uvicorn aegis.main:app --reload
+curl -sf http://127.0.0.1:8000/health
+TOKEN=$(curl -sf -X POST http://127.0.0.1:8000/api/v1/auth/token \
   -H 'Content-Type: application/json' \
   -d '{"username":"ali","role":"engineer"}' | python3 -c 'import json,sys; print(json.load(sys.stdin)["access_token"])')
-curl -s -X POST http://127.0.0.1:8000/api/v1/retrieve \
+curl -sf -X POST http://127.0.0.1:8000/api/v1/retrieve \
   -H "Authorization: Bearer $TOKEN" \
   -H 'Content-Type: application/json' \
   -d '{"query":"Why is PostgreSQL the system of record for incidents and audit logs?","top_k":8}'
 # OpenAPI: http://127.0.0.1:8000/docs  → POST /api/v1/retrieve
+
+# eval talks to OpenSearch only (does not need port 8000)
 AEGIS_EMBEDDER=fake AEGIS_OPENSEARCH_URL=http://127.0.0.1:9200 \
   uv run python -m aegis.rag.eval
 ```
@@ -2327,15 +2331,39 @@ tests/integration/rag/test_reindex.py
 
 **Verification:**
 
+This step is done when an operator can re-ingest **one allowlisted file** after an edit, retrieve sees the new heading/phrase, stale chunks for that `source_path` are gone, and a second ingest of unchanged bytes does not grow `_count`. No filesystem watcher. No EventBridge. RISK-007 stays open.
+
+**1. Unit path (required — CI, no OpenSearch)**
+
 ```bash
-uv run pytest tests/integration/rag/test_reindex.py -v
+# from the repository root (not scripts/)
+AEGIS_SKIP_DOTENV=1 uv run pytest tests/unit/rag/test_reindex.py tests/unit/rag/test_ingest.py -v
+```
+
+Pass when `--files src/aegis/main.py` is refused, a content-hash skip leaves count unchanged, and an orphan chunk for the same `source_path` is deleted on reingest.
+
+**2. Live OpenSearch (from the repository root)**
+
+```bash
+cd ~/Videos/aegis-ai-engineering-platform
+AEGIS_OPENSEARCH_URL=http://127.0.0.1:9200 AEGIS_EMBEDDER=fake \
+  uv run pytest tests/integration/rag/test_reindex.py -v
+```
+
+Pass when the probe phrase is retrievable after edit+`--files`, gone after restore+`--files`, and a skip-unchanged second pass indexes 0 extra documents.
+
+Operator (same module as 3.4):
+
+```bash
+AEGIS_EMBEDDER=fake AEGIS_OPENSEARCH_URL=http://127.0.0.1:9200 \
+  uv run python -m aegis.rag.ingest --files docs/knowledge/runbooks/payment-latency-spike.md
 ```
 
 **Done checklist:**
 
-- [ ] Single-file re-ingest updates chunks
-- [ ] Unchanged files do not explode document count
-- [ ] FR-045 verified by a test, not only a comment
+- [x] Single-file re-ingest updates chunks
+- [x] Unchanged files do not explode document count
+- [x] FR-045 verified by a test, not only a comment
 
 ---
 

@@ -1,6 +1,6 @@
 # Knowledge corpus (RAG)
 
-**Status:** v0.4 Step 3.5 — retrieve via `POST /api/v1/retrieve` (JWT + citations). Corpus is still the 24 allowlisted files only.  
+**Status:** v0.4 Step 3.6 — re-ingest an allowlisted file with `uv run python -m aegis.rag.ingest --files …` (hash skip for unchanged). Retrieve remains `POST /api/v1/retrieve`.  
 **Owner:** Engineering / on-call
 
 This directory is the **first-class RAG corpus** for AEGIS. Index these files (plus `docs/adr/` and `docs/architecture/`) in OpenSearch. Do **not** index live webhook incidents or simulator `/signals` ticks.

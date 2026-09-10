@@ -49,6 +49,8 @@ class KnowledgeStore(Protocol):
 
     def count(self) -> int: ...
 
+    def delete_by_source_path(self, source_path: str) -> int: ...
+
     def search_match(
         self,
         *,
