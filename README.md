@@ -351,6 +351,7 @@ Incident routes need `AEGIS_DATABASE_URL` and a Bearer JWT (`AEGIS_JWT_SECRET`).
 | Health check | [http://127.0.0.1:8000/health](http://127.0.0.1:8000/health) |
 | Dev token | [http://127.0.0.1:8000/api/v1/auth/token](http://127.0.0.1:8000/api/v1/auth/token) |
 | Incidents API | [http://127.0.0.1:8000/api/v1/incidents](http://127.0.0.1:8000/api/v1/incidents) |
+| Retrieve (RAG) | `POST` [http://127.0.0.1:8000/api/v1/retrieve](http://127.0.0.1:8000/api/v1/retrieve) (JWT, not HMAC) |
 | Incident webhooks | [http://127.0.0.1:8000/api/v1/webhooks/incidents](http://127.0.0.1:8000/api/v1/webhooks/incidents) (HMAC `X-Aegis-Signature`, not JWT) |
 | OpenAPI docs | [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs) |
 | ReDoc | [http://127.0.0.1:8000/redoc](http://127.0.0.1:8000/redoc) |
@@ -366,6 +367,11 @@ TOKEN=$(curl -s http://127.0.0.1:8000/api/v1/auth/token \
 
 curl http://127.0.0.1:8000/api/v1/incidents \
   -H "Authorization: Bearer $TOKEN"
+
+curl -s -X POST http://127.0.0.1:8000/api/v1/retrieve \
+  -H "Authorization: Bearer $TOKEN" \
+  -H 'Content-Type: application/json' \
+  -d '{"query":"Why is PostgreSQL the system of record for incidents and audit logs?","top_k":8}'
 ```
 
 In `/docs`, use **Authorize** and paste `Bearer <token>` (or the token alone, depending on the UI). `/health` stays unauthenticated.

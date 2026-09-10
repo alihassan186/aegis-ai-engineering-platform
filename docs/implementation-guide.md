@@ -106,30 +106,30 @@ Use this table to know **which document answers which question** while coding.
 ## 3. Current codebase state
 
 
-| Component               | Status          | Location                                       |
-| ----------------------- | --------------- | ---------------------------------------------- |
-| FastAPI app + `/health` | Implemented     | `src/aegis/main.py`                            |
-| Settings                | Implemented     | `src/aegis/config/settings.py`                 |
-| Domain layer            | Implemented     | `src/aegis/domain/incidents/`                  |
-| Application layer       | Implemented     | `src/aegis/application/incidents/`             |
-| Database session        | Implemented     | `src/aegis/infrastructure/database/`           |
-| PostgreSQL (Docker)     | Implemented     | `docker/` · `scripts/docker-up.sh`             |
-| Alembic migrations      | Implemented     | `alembic/` (incidents schema)                  |
-| Incident repository     | Implemented     | `src/aegis/infrastructure/repositories/`       |
-| Authentication          | Implemented     | `src/aegis/api/auth/` · JWT + RBAC             |
-| Incident API            | Implemented     | `src/aegis/api/` · `/api/v1/incidents`         |
-| Production simulator    | v0.3 complete   | `apps/simulator/` + webhook ingest + FR-007    |
-| RAG knowledge corpus    | Step 3.0        | `docs/knowledge/` + `evaluation/datasets/rag/` |
-| OpenSearch (local)      | Step 3.1 + 3.4  | `docker/` · hybrid index `aegis-knowledge`     |
-| LangGraph (learning)    | Skeleton only   | `src/aegis/application/investigation/` — no Claude, no retrieve |
-| RAG chunking            | Step 3.2        | `src/aegis/application/rag/` — 24 files, parent–child |
-| RAG embeddings          | Step 3.3        | `FakeEmbedder` / Titan 1024-d — no OpenSearch write |
-| RAG ingest              | Step 3.4        | allowlist → chunk → embed → bulk (`aegis.rag.ingest`) |
-| Retrieval API           | Not implemented | Step 3.5                                       |
-| Agents                  | Not implemented | Phase 4                                        |
+| Component               | Status          | Location                                                        |
+| ----------------------- | --------------- | --------------------------------------------------------------- |
+| FastAPI app + `/health` | Implemented     | `src/aegis/main.py`                                             |
+| Settings                | Implemented     | `src/aegis/config/settings.py`                                  |
+| Domain layer            | Implemented     | `src/aegis/domain/incidents/`                                   |
+| Application layer       | Implemented     | `src/aegis/application/incidents/`                              |
+| Database session        | Implemented     | `src/aegis/infrastructure/database/`                            |
+| PostgreSQL (Docker)     | Implemented     | `docker/` · `scripts/docker-up.sh`                              |
+| Alembic migrations      | Implemented     | `alembic/` (incidents schema)                                   |
+| Incident repository     | Implemented     | `src/aegis/infrastructure/repositories/`                        |
+| Authentication          | Implemented     | `src/aegis/api/auth/` · JWT + RBAC                              |
+| Incident API            | Implemented     | `src/aegis/api/` · `/api/v1/incidents`                          |
+| Production simulator    | v0.3 complete   | `apps/simulator/` + webhook ingest + FR-007                     |
+| RAG knowledge corpus    | Step 3.0        | `docs/knowledge/` + `evaluation/datasets/rag/`                  |
+| OpenSearch (local)      | Step 3.1 + 3.4  | `docker/` · hybrid index `aegis-knowledge`                      |
+| LangGraph (learning)    | Skeleton only   | `src/aegis/application/investigation/` — no Claude; does not call retrieve yet |
+| RAG chunking            | Step 3.2        | `src/aegis/application/rag/` — 24 files, parent–child           |
+| RAG embeddings          | Step 3.3        | `FakeEmbedder` / Titan 1024-d — no OpenSearch write             |
+| RAG ingest              | Step 3.4        | allowlist → chunk → embed → bulk (`aegis.rag.ingest`)           |
+| Retrieval API           | Step 3.5        | `POST /api/v1/retrieve` JWT + citations (FR-042, FR-044)        |
+| Agents                  | Not implemented | Phase 4                                                         |
 
 
-**You are here:** Step 3.4 complete → next [Step 3.5 — Retrieval API with citations](#step-35--retrieval-api-with-citations).
+**You are here:** Step 3.5 complete → next [Step 3.6 — Re-indexing on document change](#step-36--re-indexing-on-document-change).
 
 ---
 
@@ -2232,18 +2232,54 @@ tests/unit/rag/test_retrieve_scoring.py  # merge BM25 + kNN without a live clust
 
 **Verification:**
 
+This step is done when `POST /api/v1/retrieve` (JWT, not HMAC) returns ranked children with **document + section + chunk_id**, filters restrict results, and the two golden queries pass. Retrieved text is **data**. No Claude. Eval uses `top_k=8` against `evaluation/datasets/rag/queries.jsonl` (not indexed).
+
+**1. Unit path (required — CI, no OpenSearch)**
+
 ```bash
-uv run pytest tests/integration/api/test_retrieve.py tests/unit/rag/ -v
-# with AEGIS + OpenSearch up:
-# POST /api/v1/retrieve with Bearer token; inspect citations
+# from the repository root (not scripts/)
+AEGIS_SKIP_DOTENV=1 uv run pytest tests/unit/rag/test_retrieve_scoring.py tests/unit/test_package_imports.py tests/unit/domain/auth/test_permissions.py -v
+```
+
+Pass when RRF merge is deterministic, citations have document/section/chunk_id, empty query raises, `queries.jsonl` is not an expected indexed path, and `RETRIEVE_KNOWLEDGE` is granted to every role including viewer.
+
+**2. Live retrieve (OpenSearch + ingest from 3.4; from the repository root)**
+
+```bash
+cd ~/Videos/aegis-ai-engineering-platform
+AEGIS_OPENSEARCH_URL=http://127.0.0.1:9200 AEGIS_EMBEDDER=fake \
+  uv run pytest tests/integration/api/test_retrieve.py tests/unit/rag/test_retrieve_scoring.py -v
+```
+
+Pass when:
+
+- no token → 401 `UNAUTHENTICATED` with `request_id`
+- “Why is PostgreSQL the system of record…?” → a hit cites `docs/adr/ADR-002-postgresql.md`
+- `filters.scenario=latency_spike` + `doc_type=runbook` → `payment-latency-spike.md`, not `payment-db-exhaustion.md`
+- all 16 `queries.jsonl` rows have `expected_docs` in **top_8**
+
+**3. Manual HTTP (AEGIS on 8000, OpenSearch on 9200, corpus ingested)**
+
+```bash
+# from the repository root (not scripts/)
+TOKEN=$(curl -s -X POST http://127.0.0.1:8000/api/v1/auth/token \
+  -H 'Content-Type: application/json' \
+  -d '{"username":"ali","role":"engineer"}' | python3 -c 'import json,sys; print(json.load(sys.stdin)["access_token"])')
+curl -s -X POST http://127.0.0.1:8000/api/v1/retrieve \
+  -H "Authorization: Bearer $TOKEN" \
+  -H 'Content-Type: application/json' \
+  -d '{"query":"Why is PostgreSQL the system of record for incidents and audit logs?","top_k":8}'
+# OpenAPI: http://127.0.0.1:8000/docs  → POST /api/v1/retrieve
+AEGIS_EMBEDDER=fake AEGIS_OPENSEARCH_URL=http://127.0.0.1:9200 \
+  uv run python -m aegis.rag.eval
 ```
 
 **Done checklist:**
 
-- [ ] JWT retrieve route documented on AEGIS `/docs` (port 8000)
-- [ ] Citations include document + section + chunk_id
-- [ ] Metadata filters work
-- [ ] At least the ADR-002 and latency_spike golden queries pass
+- [x] JWT retrieve route documented on AEGIS `/docs` (port 8000)
+- [x] Citations include document + section + chunk_id
+- [x] Metadata filters work
+- [x] At least the ADR-002 and latency_spike golden queries pass
 
 ---
 

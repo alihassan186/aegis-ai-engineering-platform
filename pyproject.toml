@@ -21,6 +21,7 @@ dependencies = [
 
 [project.scripts]
 aegis-ingest = "aegis.rag.ingest:main"
+aegis-rag-eval = "aegis.rag.eval:main"
 
 [dependency-groups]
 dev = [
