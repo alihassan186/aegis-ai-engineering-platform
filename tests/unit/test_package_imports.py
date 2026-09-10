@@ -5,7 +5,7 @@ from __future__ import annotations
 import ast
 from pathlib import Path
 
-from aegis.core.protocols import Embedder, IncidentRepository, KnowledgeStore
+from aegis.core.protocols import Embedder, IncidentRepository, KnowledgeHit, KnowledgeStore
 from aegis.shared.exceptions import DomainError, NotFoundError, ValidationError
 
 _FORBIDDEN_FOR_DOMAIN = (
@@ -94,3 +94,4 @@ def test_embedder_is_a_protocol() -> None:
 
 def test_knowledge_store_is_a_protocol() -> None:
     assert getattr(KnowledgeStore, "_is_protocol", False)
+    assert KnowledgeHit.__dataclass_fields__

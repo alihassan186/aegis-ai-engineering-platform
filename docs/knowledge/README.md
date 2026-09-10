@@ -1,6 +1,6 @@
 # Knowledge corpus (RAG)
 
-**Status:** v0.4 Step 3.4 — 24 allowlisted files chunk, embed (fake/Titan), and bulk-index into `aegis-knowledge`  
+**Status:** v0.4 Step 3.5 — retrieve via `POST /api/v1/retrieve` (JWT + citations). Corpus is still the 24 allowlisted files only.  
 **Owner:** Engineering / on-call
 
 This directory is the **first-class RAG corpus** for AEGIS. Index these files (plus `docs/adr/` and `docs/architecture/`) in OpenSearch. Do **not** index live webhook incidents or simulator `/signals` ticks.

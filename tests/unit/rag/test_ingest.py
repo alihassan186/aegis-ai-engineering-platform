@@ -78,6 +78,7 @@ def test_ingest_indexes_retrieval_children_only() -> None:
         "scenario",
         "date",
         "chunk_id",
+        "incident_id",
     }
 
 
