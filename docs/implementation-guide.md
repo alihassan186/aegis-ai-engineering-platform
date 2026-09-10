@@ -2,7 +2,7 @@
 
 **Document owner:** Engineering  
 **Status:** Active  
-**Last updated:** 2026-09-05
+**Last updated:** 2026-09-10
 
 This is the **master step-by-step guide** for turning AEGIS documentation into working code. Every implementation step links back to the requirement, architecture decision, or design document that justifies it.
 
@@ -20,8 +20,8 @@ This is the **master step-by-step guide** for turning AEGIS documentation into w
 6. [Phase 0 — Complete v0.1 foundation](#phase-0--complete-v01-foundation)
 7. [Phase 1 — v0.2 Core backend](#phase-1--v02-core-backend)
 8. [Phase 2 — v0.3 Production simulator](#phase-2--v03-production-simulator)
-9. [Phase 3 — v0.4 RAG platform](#phase-3--v04-rag-platform) ← **YOU ARE HERE**
-10. [Phase 4 — v0.5 Multi-agent investigation](#phase-4--v05-multi-agent-investigation)
+9. [Phase 3 — v0.4 RAG platform](#phase-3--v04-rag-platform)
+10. [Phase 4 — v0.5 Multi-agent investigation](#phase-4--v05-multi-agent-investigation) ← **YOU ARE HERE**
 11. [Phase 5 — v0.6 Tool gateway & MCP](#phase-5--v06-tool-gateway--mcp)
 12. [Phase 6 — v0.7 AWS deployment](#phase-6--v07-aws-deployment)
 13. [Phase 7 — v0.8 Observability & evaluation](#phase-7--v08-observability--evaluation)
@@ -126,10 +126,11 @@ Use this table to know **which document answers which question** while coding.
 | RAG embeddings          | Step 3.3        | `FakeEmbedder` / Titan 1024-d — no OpenSearch write             |
 | RAG ingest              | Step 3.4 + 3.6  | allowlist ingest + `--files` reindex (`aegis.rag.ingest`)       |
 | Retrieval API           | Step 3.5        | `POST /api/v1/retrieve` JWT + citations (FR-042, FR-044)        |
+| Historical RCAs (FR-041)| Step 3.7 gate   | six `INC-2026-*.md` in `aegis-knowledge` as `incident_report`   |
 | Agents                  | Not implemented | Phase 4                                                         |
 
 
-**You are here:** Step 3.6 complete → next [Step 3.7 — Historical incidents in the knowledge index](#step-37--historical-incidents-in-the-knowledge-index-fr-041).
+**You are here:** Step 3.7 complete (v0.4 RAG gate) → next [Phase 4 — v0.5 Multi-agent investigation](#phase-4--v05-multi-agent-investigation) / [Step 4.1](#phase-4--v05-multi-agent-investigation).
 
 ---
 
@@ -2412,16 +2413,36 @@ docs/releases/v0.4.md                    # optional short note: RAG v0.4, what i
 
 **Verification:**
 
+This step is a **gate**, not a new crawler. Done when the six git RCAs are retrievable as `incident_report`, scenario filters pick the matching report, and nothing in the index looks like a live Postgres / webhook row. RISK-007 stays Partial (no FR-090 scorer).
+
+**1. Corpus (CI, no OpenSearch)**
+
 ```bash
-uv run pytest tests/integration/rag/test_historical_incidents.py -v
+# from the repository root (not scripts/)
+AEGIS_SKIP_DOTENV=1 uv run pytest tests/unit/knowledge/test_corpus.py tests/unit/rag/test_allowlist.py tests/integration/rag/test_historical_incidents.py::test_allowlist_has_exactly_six_written_rcas -v
 ```
+
+**2. Live index (from the repository root)**
+
+```bash
+cd ~/Videos/aegis-ai-engineering-platform
+AEGIS_OPENSEARCH_URL=http://127.0.0.1:9200 AEGIS_EMBEDDER=fake \
+  uv run pytest tests/integration/rag/test_historical_incidents.py -v
+```
+
+Pass when:
+
+- each `docs/knowledge/incidents/INC-2026-*.md` `source_path` is in `aegis-knowledge`
+- `doc_type=incident_report` + `scenario=db_exhaustion` cites `INC-2026-0511-db-exhaustion.md`, not the runbook and not the latency RCA
+- query “Latency spike on payment” still cites the **markdown** latency RCA, not a UUID / `/api/v1/incidents/...` path
+- `docs/releases/v0.4.md` exists; RISK-007 is still not Closed
 
 **Done checklist:**
 
-- [ ] Six written RCAs retrievable with citations
-- [ ] Filters `doc_type=incident_report` work
-- [ ] Live webhook rows are not in the index
-- [ ] RISK-007 still not Closed
+- [x] Six written RCAs retrievable with citations
+- [x] Filters `doc_type=incident_report` work
+- [x] Live webhook rows are not in the index
+- [x] RISK-007 still not Closed
 
 ---
 

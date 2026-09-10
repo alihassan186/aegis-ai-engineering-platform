@@ -1,6 +1,6 @@
 # Knowledge corpus (RAG)
 
-**Status:** v0.4 Step 3.6 — re-ingest an allowlisted file with `uv run python -m aegis.rag.ingest --files …` (hash skip for unchanged). Retrieve remains `POST /api/v1/retrieve`.  
+**Status:** v0.4 complete (Step 3.7) — six closed RCAs are retrievable as `incident_report`; live Postgres incidents are not indexed.  
 **Owner:** Engineering / on-call
 
 This directory is the **first-class RAG corpus** for AEGIS. Index these files (plus `docs/adr/` and `docs/architecture/`) in OpenSearch. Do **not** index live webhook incidents or simulator `/signals` ticks.

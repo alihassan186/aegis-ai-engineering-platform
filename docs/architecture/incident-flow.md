@@ -243,6 +243,8 @@ Post-incident report generated
 
 ### Phase 6 — Learning loop
 
+**v0.4 (Step 3.7):** closed markdown RCAs in `docs/knowledge/incidents/` are retrievable from `aegis-knowledge` as `doc_type=incident_report`. Live Postgres / webhook incident rows are **not** exported into the index. Golden RCA scoring stays later (RISK-007).
+
 ```text
 Incident closed
          │
