@@ -12,19 +12,43 @@ from aegis.application.rag.chunking import (
     parent_chunks,
     retrieval_chunks,
 )
+from aegis.application.rag.eval import (
+    EVAL_TOP_K,
+    load_eval_cases,
+    score_eval_case,
+    score_eval_dataset,
+)
 from aegis.application.rag.ingest import IngestResult, ingest_knowledge_corpus
 from aegis.application.rag.models import Chunk
+from aegis.application.rag.retrieve import (
+    Citation,
+    RetrieveFilters,
+    RetrieveHit,
+    RetrieveKnowledge,
+    RetrieveResult,
+    merge_hybrid_rankings,
+)
 
 __all__ = [
     "ALLOWED_RELATIVE_PATHS",
+    "Citation",
     "Chunk",
+    "EVAL_TOP_K",
     "IngestResult",
+    "RetrieveFilters",
+    "RetrieveHit",
+    "RetrieveKnowledge",
+    "RetrieveResult",
     "assert_allowlisted",
     "chunk_allowlisted_corpus",
     "chunk_document",
     "ingest_knowledge_corpus",
     "is_allowlisted",
     "iter_allowlisted_paths",
+    "load_eval_cases",
+    "merge_hybrid_rankings",
     "parent_chunks",
     "retrieval_chunks",
+    "score_eval_case",
+    "score_eval_dataset",
 ]

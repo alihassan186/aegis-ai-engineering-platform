@@ -32,6 +32,7 @@
       "scenario": { "type": "keyword" },
       "date": { "type": "keyword" },
       "chunk_id": { "type": "keyword" },
+      "incident_id": { "type": "keyword" },
       "role": { "type": "keyword" },
       "parent_id": { "type": "keyword" }
     }

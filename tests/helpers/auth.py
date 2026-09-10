@@ -17,6 +17,8 @@ def api_test_settings(
     jwt_secret: str = TEST_JWT_SECRET,
     jwt_expire_seconds: int = 3600,
     webhook_secret: str = TEST_WEBHOOK_SECRET,
+    opensearch_url: str = "",
+    embedder: str = "fake",
 ) -> Settings:
     return Settings(
         environment=environment,
@@ -24,6 +26,8 @@ def api_test_settings(
         jwt_secret=jwt_secret,
         jwt_expire_seconds=jwt_expire_seconds,
         webhook_secret=webhook_secret,
+        opensearch_url=opensearch_url,
+        embedder=embedder,
     )
 
 

@@ -25,6 +25,7 @@ REQUIRED_SOURCE_FIELDS = (
     "scenario",
     "date",
     "chunk_id",
+    "incident_id",
 )
 
 

@@ -2,7 +2,8 @@
 
 This package teaches LangGraph against AEGIS vocabulary. It does **not**
 replace Phase 3 RAG, call OpenSearch, or invoke Bedrock. The Knowledge
-node is a stub until ``POST /api/v1/retrieve`` exists (Step 3.5).
+node is a stub; ``POST /api/v1/retrieve`` exists (Step 3.5) but this graph
+does not call it yet.
 
 The webhook path (HMAC → Postgres) is unchanged. Phase 4 will hang this
 graph off the investigation worker (ADR-003), not off ``/emit``.

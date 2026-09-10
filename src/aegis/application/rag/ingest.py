@@ -88,6 +88,7 @@ def _document_from_chunk(chunk: Chunk, embedding: Sequence[float]) -> dict[str, 
         "service": meta.get("service", ""),
         "scenario": meta.get("scenario", ""),
         "date": meta.get("date", ""),
+        "incident_id": meta.get("incident_id", ""),
         "role": meta.get("role", "child"),
         "parent_id": meta.get("parent_id", ""),
     }

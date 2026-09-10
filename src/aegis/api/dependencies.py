@@ -9,7 +9,12 @@ from fastapi import Depends, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from aegis.api.exceptions import AuthenticationError, AuthorizationError, DatabaseNotConfiguredError
+from aegis.api.exceptions import (
+    AuthenticationError,
+    AuthorizationError,
+    DatabaseNotConfiguredError,
+    OpenSearchNotConfiguredError,
+)
 from aegis.application.incidents import (
     CreateIncident,
     GetIncident,
@@ -17,6 +22,7 @@ from aegis.application.incidents import (
     TransitionIncident,
 )
 from aegis.application.incidents.ingest_signal import IngestIncidentSignal
+from aegis.application.rag.retrieve import RetrieveKnowledge
 from aegis.config.settings import Settings
 from aegis.core.protocols import IncidentRepository
 from aegis.domain.auth.enums import Role
@@ -90,6 +96,18 @@ def get_transition_incident(
     repos: Repositories = Depends(get_repositories),
 ) -> TransitionIncident:
     return TransitionIncident(repos.incidents)
+
+
+def get_retrieve_knowledge(request: Request) -> RetrieveKnowledge:
+    """Compose retrieve from app.state (wired in ``create_app``). No HMAC."""
+    store = getattr(request.app.state, "knowledge_store", None)
+    embedder = getattr(request.app.state, "embedder", None)
+    if store is None or embedder is None:
+        raise OpenSearchNotConfiguredError(
+            "OpenSearch is not configured. Set AEGIS_OPENSEARCH_URL and ingest the "
+            "knowledge corpus (uv run python -m aegis.rag.ingest)."
+        )
+    return RetrieveKnowledge(embedder=embedder, store=store)
 
 
 def get_current_user(

@@ -10,15 +10,17 @@ class Permission(StrEnum):
     CREATE_INCIDENT = "create_incident"
     READ_INCIDENT = "read_incident"
     TRANSITION_INCIDENT = "transition_incident"
+    RETRIEVE_KNOWLEDGE = "retrieve_knowledge"
 
 
 ROLE_PERMISSIONS: Mapping[Role, frozenset[Permission]] = {
-    Role.VIEWER: frozenset({Permission.READ_INCIDENT}),
+    Role.VIEWER: frozenset({Permission.READ_INCIDENT, Permission.RETRIEVE_KNOWLEDGE}),
     Role.ENGINEER: frozenset(
         {
             Permission.CREATE_INCIDENT,
             Permission.READ_INCIDENT,
             Permission.TRANSITION_INCIDENT,
+            Permission.RETRIEVE_KNOWLEDGE,
         }
     ),
     Role.APPROVER: frozenset(
@@ -26,6 +28,7 @@ ROLE_PERMISSIONS: Mapping[Role, frozenset[Permission]] = {
             Permission.CREATE_INCIDENT,
             Permission.READ_INCIDENT,
             Permission.TRANSITION_INCIDENT,
+            Permission.RETRIEVE_KNOWLEDGE,
         }
     ),
     Role.ADMIN: frozenset(
@@ -33,6 +36,7 @@ ROLE_PERMISSIONS: Mapping[Role, frozenset[Permission]] = {
             Permission.CREATE_INCIDENT,
             Permission.READ_INCIDENT,
             Permission.TRANSITION_INCIDENT,
+            Permission.RETRIEVE_KNOWLEDGE,
         }
     ),
 }

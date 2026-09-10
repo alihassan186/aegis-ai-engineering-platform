@@ -10,6 +10,7 @@ from aegis.api.exceptions import (
     AuthenticationError,
     AuthorizationError,
     DatabaseNotConfiguredError,
+    OpenSearchNotConfiguredError,
     WebhookNotConfiguredError,
 )
 from aegis.api.request_id import request_id_from
@@ -73,6 +74,23 @@ def register_exception_handlers(application: FastAPI) -> None:
         return JSONResponse(
             status_code=503,
             content=error_body(request, "DATABASE_NOT_CONFIGURED", str(exc)),
+        )
+
+    @application.exception_handler(OpenSearchNotConfiguredError)
+    async def opensearch_not_configured_handler(
+        request: Request,
+        exc: OpenSearchNotConfiguredError,
+    ) -> JSONResponse:
+        return JSONResponse(
+            status_code=503,
+            content=error_body(request, "SEARCH_NOT_CONFIGURED", str(exc)),
+        )
+
+    @application.exception_handler(ConnectionError)
+    async def search_unavailable_handler(request: Request, exc: ConnectionError) -> JSONResponse:
+        return JSONResponse(
+            status_code=503,
+            content=error_body(request, "SEARCH_UNAVAILABLE", str(exc)),
         )
 
     @application.exception_handler(NotFoundError)

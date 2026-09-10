@@ -5,6 +5,10 @@ class DatabaseNotConfiguredError(RuntimeError):
     """Raised when a route needs Postgres but no engine was configured."""
 
 
+class OpenSearchNotConfiguredError(RuntimeError):
+    """Raised when retrieve needs OpenSearch but AEGIS_OPENSEARCH_URL is empty."""
+
+
 class AuthenticationError(Exception):
     """Missing or invalid credentials (HTTP 401)."""
 

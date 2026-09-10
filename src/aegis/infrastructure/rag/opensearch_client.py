@@ -8,6 +8,7 @@ import urllib.request
 from collections.abc import Mapping, Sequence
 from typing import Any
 
+from aegis.core.protocols import KnowledgeHit
 from aegis.infrastructure.rag.cluster import KNOWLEDGE_INDEX
 from aegis.infrastructure.rag.embedder import EMBEDDING_DIMENSION
 from aegis.infrastructure.rag.mappings import knowledge_index_body
@@ -94,6 +95,58 @@ class OpenSearchKnowledgeStore:
                 sources.append(source)
         return sources
 
+    def search_text(
+        self,
+        *,
+        query: str,
+        filters: Mapping[str, str],
+        size: int,
+    ) -> list[KnowledgeHit]:
+        """BM25 match on ``text`` with FR-042 filter clauses. Embeddings excluded."""
+        body = {
+            "query": {
+                "bool": {
+                    "must": [{"match": {"text": query}}],
+                    "filter": _filter_clauses(filters),
+                }
+            },
+            "size": size,
+            "_source": {"excludes": ["embedding"]},
+        }
+        payload = self._request("POST", f"/{KNOWLEDGE_INDEX}/_search", body=body)
+        return _hits_from_search(payload)
+
+    def search_knn(
+        self,
+        *,
+        embedding: Sequence[float],
+        filters: Mapping[str, str],
+        size: int,
+    ) -> list[KnowledgeHit]:
+        """kNN on ``embedding`` with the same filters. Embeddings excluded from _source."""
+        k = max(1, size)
+        body = {
+            "size": k,
+            "query": {
+                "bool": {
+                    "must": [
+                        {
+                            "knn": {
+                                "embedding": {
+                                    "vector": [float(value) for value in embedding],
+                                    "k": k,
+                                }
+                            }
+                        }
+                    ],
+                    "filter": _filter_clauses(filters),
+                }
+            },
+            "_source": {"excludes": ["embedding"]},
+        }
+        payload = self._request("POST", f"/{KNOWLEDGE_INDEX}/_search", body=body)
+        return _hits_from_search(payload)
+
     def mapping_properties(self) -> dict[str, Any]:
         payload = self._request("GET", f"/{KNOWLEDGE_INDEX}/_mapping")
         index = payload.get(KNOWLEDGE_INDEX, payload) if isinstance(payload, dict) else {}
@@ -170,6 +223,7 @@ def _is_hybrid_mapping(payload: dict[str, Any]) -> bool:
         and embedding.get("dimension") == EMBEDDING_DIMENSION
         and isinstance(text, dict)
         and text.get("type") == "text"
+        and "incident_id" in properties
     )
 
 
@@ -203,3 +257,46 @@ def _raise_if_bulk_errors(payload: Mapping[str, Any]) -> None:
             break
     joined = "; ".join(details) if details else json.dumps(dict(payload))[:1000]
     raise ConnectionError(f"OpenSearch bulk indexing failed: {joined}")
+
+
+def _filter_clauses(filters: Mapping[str, str]) -> list[dict[str, Any]]:
+    clauses: list[dict[str, Any]] = [{"term": {"role": "child"}}]
+    for field in ("service", "doc_type", "scenario", "incident_id", "source_path"):
+        value = str(filters.get(field, "")).strip()
+        if value:
+            clauses.append({"term": {field: value}})
+    date_from = str(filters.get("date_from", "")).strip()
+    date_to = str(filters.get("date_to", "")).strip()
+    if date_from or date_to:
+        bounds: dict[str, str] = {}
+        if date_from:
+            bounds["gte"] = date_from
+        if date_to:
+            bounds["lte"] = date_to
+        clauses.append({"range": {"date": bounds}})
+    return clauses
+
+
+def _hits_from_search(payload: Mapping[str, Any]) -> list[KnowledgeHit]:
+    raw_hits = payload.get("hits", {}).get("hits", []) if isinstance(payload, dict) else []
+    hits: list[KnowledgeHit] = []
+    for item in raw_hits:
+        if not isinstance(item, dict):
+            continue
+        source = item.get("_source")
+        if not isinstance(source, dict):
+            continue
+        chunk_id = str(source.get("chunk_id") or item.get("_id") or "")
+        if not chunk_id:
+            continue
+        score = item.get("_score")
+        hits.append(
+            KnowledgeHit(
+                chunk_id=chunk_id,
+                text=str(source.get("text") or ""),
+                source_path=str(source.get("source_path") or ""),
+                section=str(source.get("section") or ""),
+                score=float(score) if isinstance(score, (int, float)) else 0.0,
+            )
+        )
+    return hits

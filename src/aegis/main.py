@@ -17,6 +17,8 @@ from aegis.api.request_id import add_request_id_middleware
 from aegis.api.router import api_v1_router
 from aegis.config.settings import Settings, get_settings
 from aegis.infrastructure.database.session import start_database, stop_database
+from aegis.infrastructure.rag.embedder import build_embedder
+from aegis.infrastructure.rag.opensearch_client import OpenSearchKnowledgeStore
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
@@ -48,6 +50,12 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         lifespan=lifespan,
     )
     application.state.settings = resolved
+    if resolved.opensearch_url:
+        application.state.knowledge_store = OpenSearchKnowledgeStore(resolved.opensearch_url)
+        application.state.embedder = build_embedder(resolved)
+    else:
+        application.state.knowledge_store = None
+        application.state.embedder = None
     add_request_id_middleware(application)
     register_exception_handlers(application)
     application.include_router(_health_router())

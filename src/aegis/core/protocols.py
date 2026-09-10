@@ -25,11 +25,22 @@ class Embedder(Protocol):
     def embed_texts(self, texts: list[str]) -> list[list[float]]: ...
 
 
+@dataclass(frozen=True, slots=True)
+class KnowledgeHit:
+    """One search hit without the embedding vector (FR-044 citations later)."""
+
+    chunk_id: str
+    text: str
+    source_path: str
+    section: str
+    score: float
+
+
 @runtime_checkable
 class KnowledgeStore(Protocol):
     """Hybrid knowledge index (FR-043). Implementations live in infrastructure.
 
-    No opensearchpy in this module. Application ingest takes this port, not a client.
+    No opensearchpy in this module. Application ingest/retrieve take this port.
     """
 
     def ensure_hybrid_index(self) -> None: ...
@@ -45,6 +56,22 @@ class KnowledgeStore(Protocol):
         source_path: str | None = None,
         size: int = 5,
     ) -> list[dict[str, Any]]: ...
+
+    def search_text(
+        self,
+        *,
+        query: str,
+        filters: Mapping[str, str],
+        size: int,
+    ) -> list[KnowledgeHit]: ...
+
+    def search_knn(
+        self,
+        *,
+        embedding: Sequence[float],
+        filters: Mapping[str, str],
+        size: int,
+    ) -> list[KnowledgeHit]: ...
 
 
 @dataclass(frozen=True, slots=True)
