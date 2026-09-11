@@ -21,6 +21,9 @@ def test_defaults_when_env_unset(monkeypatch: pytest.MonkeyPatch) -> None:
         "AEGIS_EMBEDDER",
         "AEGIS_AWS_REGION",
         "AWS_REGION",
+        "AEGIS_AWS_ENDPOINT",
+        "AEGIS_EVENT_BUS_NAME",
+        "AEGIS_INVESTIGATION_QUEUE_NAME",
     ):
         monkeypatch.delenv(name, raising=False)
 
@@ -37,6 +40,9 @@ def test_defaults_when_env_unset(monkeypatch: pytest.MonkeyPatch) -> None:
     assert settings.opensearch_url == ""
     assert settings.embedder == "fake"
     assert settings.aws_region == ""
+    assert settings.aws_endpoint == ""
+    assert settings.event_bus_name == "aegis-events"
+    assert settings.investigation_queue_name == "investigation-workflow"
 
 
 def test_loads_database_url_from_env(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -163,3 +169,25 @@ def test_database_url_must_use_asyncpg_prefix(monkeypatch: pytest.MonkeyPatch) -
 
     with pytest.raises(ValueError, match="postgresql\\+asyncpg://"):
         Settings.from_env()
+
+
+def test_messaging_disabled_when_endpoint_unset(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("AEGIS_AWS_ENDPOINT", raising=False)
+    monkeypatch.delenv("AEGIS_DATABASE_URL", raising=False)
+
+    settings = Settings.from_env()
+
+    assert settings.aws_endpoint == ""
+
+
+def test_loads_aws_endpoint_and_bus_from_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("AEGIS_AWS_ENDPOINT", "http://127.0.0.1:4566/")
+    monkeypatch.setenv("AEGIS_EVENT_BUS_NAME", "aegis-events")
+    monkeypatch.setenv("AEGIS_INVESTIGATION_QUEUE_NAME", "investigation-workflow")
+    monkeypatch.delenv("AEGIS_DATABASE_URL", raising=False)
+
+    settings = Settings.from_env()
+
+    assert settings.aws_endpoint == "http://127.0.0.1:4566"
+    assert settings.event_bus_name == "aegis-events"
+    assert settings.investigation_queue_name == "investigation-workflow"

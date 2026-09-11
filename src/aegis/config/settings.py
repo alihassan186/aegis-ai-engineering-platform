@@ -52,6 +52,9 @@ class Settings:
     opensearch_url: str = ""
     embedder: str = "fake"
     aws_region: str = ""
+    aws_endpoint: str = ""
+    event_bus_name: str = "aegis-events"
+    investigation_queue_name: str = "investigation-workflow"
 
     @classmethod
     def from_env(cls) -> Settings:
@@ -76,6 +79,11 @@ class Settings:
         aws_region = (
             os.getenv("AEGIS_AWS_REGION", "").strip() or os.getenv("AWS_REGION", "").strip()
         )
+        aws_endpoint = os.getenv("AEGIS_AWS_ENDPOINT", "").strip().rstrip("/")
+        event_bus_name = os.getenv("AEGIS_EVENT_BUS_NAME", "").strip() or "aegis-events"
+        investigation_queue_name = (
+            os.getenv("AEGIS_INVESTIGATION_QUEUE_NAME", "").strip() or "investigation-workflow"
+        )
 
         if environment == "production" and not database_url:
             raise ValueError("AEGIS_DATABASE_URL is required when AEGIS_ENV=production (NFR-060).")
@@ -98,6 +106,9 @@ class Settings:
             opensearch_url=opensearch_url,
             embedder=embedder,
             aws_region=aws_region,
+            aws_endpoint=aws_endpoint,
+            event_bus_name=event_bus_name,
+            investigation_queue_name=investigation_queue_name,
         )
 
 

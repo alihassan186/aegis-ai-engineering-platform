@@ -11,6 +11,7 @@ from datetime import datetime
 from typing import Any, Protocol, runtime_checkable
 from uuid import UUID
 
+from aegis.core.events import DomainEvent
 from aegis.domain.incidents.entity import Incident
 from aegis.domain.incidents.enums import IncidentState, Severity
 
@@ -74,6 +75,16 @@ class KnowledgeStore(Protocol):
         filters: Mapping[str, str],
         size: int,
     ) -> list[KnowledgeHit]: ...
+
+
+@runtime_checkable
+class EventPublisher(Protocol):
+    """Publishes versioned domain events (ADR-003). Implementations live in infrastructure.
+
+    No boto3 in this module. Application (Step 4.2 webhook) will take this port.
+    """
+
+    def publish(self, event: DomainEvent) -> None: ...
 
 
 @dataclass(frozen=True, slots=True)

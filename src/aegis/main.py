@@ -17,6 +17,7 @@ from aegis.api.request_id import add_request_id_middleware
 from aegis.api.router import api_v1_router
 from aegis.config.settings import Settings, get_settings
 from aegis.infrastructure.database.session import start_database, stop_database
+from aegis.infrastructure.messaging.publisher import build_event_publisher
 from aegis.infrastructure.rag.embedder import build_embedder
 from aegis.infrastructure.rag.opensearch_client import OpenSearchKnowledgeStore
 
@@ -56,6 +57,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     else:
         application.state.knowledge_store = None
         application.state.embedder = None
+    application.state.event_publisher = build_event_publisher(resolved)
     add_request_id_middleware(application)
     register_exception_handlers(application)
     application.include_router(_health_router())
