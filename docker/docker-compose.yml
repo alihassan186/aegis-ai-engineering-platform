@@ -79,7 +79,32 @@ services:
     depends_on:
       - opensearch
 
+  # Local EventBridge + SQS (Step 4.1 / ADR-003). Not real AWS.
+  # Test credentials only. Production bus/queues are Phase 6.
+  localstack:
+    image: localstack/localstack:3.8.1
+    container_name: aegis-localstack
+    restart: unless-stopped
+    environment:
+      - SERVICES=events,sqs
+      - DEFAULT_REGION=eu-west-1
+      - DEBUG=0
+      - EAGER_SERVICE_LOADING=1
+      - HOSTNAME_EXTERNAL=127.0.0.1
+      - SQS_ENDPOINT_STRATEGY=off
+    ports:
+      - "${LOCALSTACK_HOST_PORT:-4566}:4566"
+    volumes:
+      - aegis_localstack_data:/var/lib/localstack
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:4566/_localstack/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 25s
+
 volumes:
   aegis_postgres_data:
   aegis_pgadmin_data:
   aegis_opensearch_data:
+  aegis_localstack_data:

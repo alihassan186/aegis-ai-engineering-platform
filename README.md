@@ -256,7 +256,7 @@ aegis-ai-engineering-platform/
 | Python | 3.12 |
 | [uv](https://docs.astral.sh/uv/getting-started/installation/) | Latest |
 | Git | 2.x+ |
-| Docker | 24+ (local PostgreSQL + OpenSearch) |
+| Docker | 24+ (local PostgreSQL + OpenSearch + LocalStack) |
 
 ### Installation
 
@@ -283,13 +283,13 @@ cp docker/.env.example docker/.env
 sudo bash scripts/docker-up.sh
 ```
 
-That script deletes leftover AEGIS containers first. **docker-compose 1.29 + Docker 29 cannot recreate containers** (`KeyError: 'ContainerConfig'`). Never run `up -d` against existing AEGIS containers after a compose change; remove them first.
+That script deletes leftover AEGIS containers first. **docker-compose 1.29 + Docker 29 cannot recreate containers** (`KeyError: 'ContainerConfig'`). Never run `up -d` against existing AEGIS containers after a compose change; remove them first. The same script starts **LocalStack** on **4566** (EventBridge bus `aegis-events` + SQS `investigation-workflow`, Step 4.1).
 
 Manual equivalent:
 
 ```bash
-sudo docker rm -f aegis-postgres aegis-pgadmin aegis-opensearch aegis-opensearch-dashboards
-sudo docker ps -aq --filter name=aegis-postgres --filter name=aegis-pgadmin --filter name=aegis-opensearch | xargs -r sudo docker rm -f
+sudo docker rm -f aegis-postgres aegis-pgadmin aegis-opensearch aegis-opensearch-dashboards aegis-localstack
+sudo docker ps -aq --filter name=aegis-postgres --filter name=aegis-pgadmin --filter name=aegis-opensearch --filter name=aegis-localstack | xargs -r sudo docker rm -f
 sudo docker volume rm docker_aegis_pgadmin_data
 sudo docker-compose -f docker/docker-compose.yml --project-directory docker up -d
 ```
@@ -330,6 +330,24 @@ Set `AEGIS_OPENSEARCH_URL=http://127.0.0.1:9200` in the repo-root `.env` so AEGI
 Menu → **Dev Tools** → Console to run `_cat/indices`, `_search`, `_count`. After ingest (Step 3.4), **Discover** → create an index pattern `aegis-knowledge`. This is not pgAdmin — Postgres stays at [http://127.0.0.1:5051](http://127.0.0.1:5051).
 
 Linux: if the OpenSearch container exits on start, raise the mmap limit once: `sudo sysctl -w vm.max_map_count=262144`. Production Amazon OpenSearch is Phase 6.
+
+### Local EventBridge + SQS (LocalStack)
+
+Port **4566** emulates Amazon EventBridge and SQS (ADR-003). `docker-up.sh` creates bus `aegis-events`, queue `investigation-workflow`, DLQ (`investigation-workflow-dlq`, visibility 300s, `maxReceiveCount` 3), and a rule that routes `incident.opened.v1`. This is **not** real AWS. Dummy credentials are `test` / `test`. The investigation worker (Step 4.2) is not started here.
+
+Envelope (Detail): `event_id`, `event_type`, `schema_version`, `timestamp`, `correlation_id`, `incident_id`.
+
+If Postgres and OpenSearch are already running, start **only** LocalStack so you do not recreate those containers:
+
+```bash
+sudo docker-compose -f docker/docker-compose.yml --project-directory docker up -d localstack
+sudo bash scripts/localstack-init.sh
+curl -s http://127.0.0.1:4566/_localstack/health
+AEGIS_AWS_ENDPOINT=http://127.0.0.1:4566 \
+  uv run pytest tests/integration/messaging/test_localstack.py -v
+```
+
+Set `AEGIS_AWS_ENDPOINT=http://127.0.0.1:4566` in `.env` when the API should publish (Step 4.2). Empty means messaging unset.
 
 ### Database migrations
 
@@ -402,7 +420,10 @@ Environment variables are loaded from `.env` or the process environment.
 | `AEGIS_WEBHOOK_SECRET` | empty | HMAC secret for `POST /api/v1/webhooks/incidents` (required in production; THR-002) |
 | `AEGIS_OPENSEARCH_URL` | empty | Local OpenSearch HTTP URL (Step 3.1). Empty means RAG store unset; tests skip the cluster ping |
 | `AEGIS_EMBEDDER` | `fake` | `fake` (hash, 1024-d, no AWS) or `titan` (Bedrock `amazon.titan-embed-text-v2:0`) |
-| `AEGIS_AWS_REGION` | empty | Bedrock region when `AEGIS_EMBEDDER=titan` (else `AWS_REGION`) |
+| `AEGIS_AWS_REGION` | empty | Bedrock region when `AEGIS_EMBEDDER=titan` (else `AWS_REGION`); LocalStack default `eu-west-1` |
+| `AEGIS_AWS_ENDPOINT` | empty | LocalStack URL (`http://127.0.0.1:4566`). Empty = EventBridge/SQS unset; tests skip |
+| `AEGIS_EVENT_BUS_NAME` | `aegis-events` | EventBridge bus (not `default`) |
+| `AEGIS_INVESTIGATION_QUEUE_NAME` | `investigation-workflow` | SQS queue name (URL resolved at runtime) |
 
 ### Integrations
 
