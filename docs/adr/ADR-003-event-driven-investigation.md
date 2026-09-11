@@ -145,12 +145,12 @@ Use PostgreSQL table as a job queue with `SELECT FOR UPDATE SKIP LOCKED`.
 2. SQS visibility timeout: 300 seconds (5 minutes) — revisit when agent steps are measured
 3. Max receive count: 3 before DLQ
 4. EventBridge event bus: dedicated `aegis-events` bus (not default)
-5. All events include: `event_id`, `event_type`, `schema_version`, `timestamp`, `correlation_id`
+5. All events include: `event_id`, `event_type`, `schema_version`, `timestamp`, `correlation_id`, `incident_id`
 6. Investigation worker logs `correlation_id` on every step for distributed tracing
 
 ### Local development
 
-Use LocalStack or ElasticMQ Docker container for local SQS/EventBridge emulation. Document setup in `docs/runbooks/local-development.md` (future).
+Use LocalStack (`scripts/docker-up.sh`, host port **4566**) for EventBridge + SQS. Dummy credentials are `test` / `test`. Do not point a laptop at real AWS for local work. Production IAM is Phase 6.
 
 ---
 

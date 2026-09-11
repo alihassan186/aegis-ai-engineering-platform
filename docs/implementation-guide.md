@@ -129,10 +129,11 @@ Use this table to know **which document answers which question** while coding.
 | RAG ingest              | Step 3.4 + 3.6  | allowlist ingest + `--files` reindex (`aegis.rag.ingest`)       |
 | Retrieval API           | Step 3.5        | `POST /api/v1/retrieve` JWT + citations (FR-042, FR-044)        |
 | Historical RCAs (FR-041)| Step 3.7 gate   | six `INC-2026-*.md` in `aegis-knowledge` as `incident_report`   |
-| Agents / worker         | Phase 4 next    | EventBridge+SQS → worker → LangGraph; Claude only in 4.8        |
+| EventBridge + SQS local | Step 4.1        | LocalStack `:4566` · bus `aegis-events` · queue + DLQ           |
+| Agents / worker         | Step 4.2 next   | consume `incident.opened.v1`; Claude only in 4.8                |
 
 
-**You are here:** Step 3.7 complete (v0.4 RAG gate) → next [Step 4.1 — EventBridge + SQS local setup](#step-41--eventbridge--sqs-local-setup-localstack).
+**You are here:** Step 4.1 complete → next [Step 4.2 — Investigation worker](#step-42--investigation-worker-async-consumer).
 
 ---
 
@@ -2585,7 +2586,11 @@ This step is done when LocalStack answers on **4566**, `aegis-events` and `inves
 
 ```bash
 # from the repository root (not scripts/)
+# Full stack (recreates AEGIS containers — Compose 1.29 workaround):
 sudo bash scripts/docker-up.sh
+# If Postgres/OpenSearch are already up, start only LocalStack instead:
+# sudo docker-compose -f docker/docker-compose.yml --project-directory docker up -d localstack
+# sudo bash scripts/localstack-init.sh
 curl -sf http://127.0.0.1:4566/_localstack/health
 AEGIS_SKIP_DOTENV=1 uv run pytest tests/unit/test_settings.py tests/unit/test_package_imports.py -v
 AEGIS_AWS_ENDPOINT=http://127.0.0.1:4566 \
@@ -2594,10 +2599,10 @@ AEGIS_AWS_ENDPOINT=http://127.0.0.1:4566 \
 
 **Done checklist:**
 
-- [ ] LocalStack in `docker-compose` + `docker-up.sh` waits for 4566
-- [ ] Bus `aegis-events`, queue + DLQ created idempotently
-- [ ] `EventPublisher` port exists; boto3 stays in infrastructure
-- [ ] No LangGraph invoke and no Claude
+- [x] LocalStack in `docker-compose` + `docker-up.sh` waits for 4566
+- [x] Bus `aegis-events`, queue + DLQ created idempotently
+- [x] `EventPublisher` port exists; boto3 stays in infrastructure
+- [x] No LangGraph invoke and no Claude
 
 **Learn / interview:**
 
@@ -5782,6 +5787,6 @@ Copy this template when you start any new step:
 
 ## Next action
 
-**Start here:** [Step 4.1 — EventBridge + SQS local setup](#step-41--eventbridge--sqs-local-setup-localstack)
+**Start here:** [Step 4.2 — Investigation worker](#step-42--investigation-worker-async-consumer)
 
-When ready, ask: *"Implement Step 4.1"* and we will code it together with full engineering reasoning. Do not skip to Claude, the tool gateway, or remediation.
+When ready, ask: *"Implement Step 4.2"* and we will code it together with full engineering reasoning. Do not skip to Claude, the tool gateway, or remediation.

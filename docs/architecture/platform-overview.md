@@ -2,7 +2,7 @@
 
 **Document owner:** Architecture  
 **Status:** Draft  
-**Last updated:** 2026-08-26
+**Last updated:** 2026-09-11
 
 This document provides **visual architecture diagrams** for the full AEGIS platform — services, integrations, databases, agents, events, and data flows.
 
@@ -593,6 +593,19 @@ flowchart LR
     Q2 -.-> DLQ
     Q3 -.-> DLQ
 ```
+
+### Event envelope (v1)
+
+Every bus event carries this Detail object. Types are versioned (`*.v1`); do not mutate a published schema in place. First type: `incident.opened.v1`. Publish from the webhook is Step 4.2.
+
+| Field | Meaning |
+|---|---|
+| `event_id` | Unique id for this emission (idempotency / logs) |
+| `event_type` | Versioned name, e.g. `incident.opened.v1` |
+| `schema_version` | Envelope version (`1`) |
+| `timestamp` | UTC ISO-8601 (`…Z`) |
+| `correlation_id` | Request / trace id (NFR-070) |
+| `incident_id` | Postgres incident UUID |
 
 ### Event catalog (quick reference)
 
