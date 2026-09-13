@@ -1,4 +1,4 @@
-"""Re-export of the domain event envelope (Step 4.1 / 4.2)."""
+"""Domain event contracts. No boto3 (ADR-001)."""
 
 from aegis.domain.events.envelope import (
     EVENT_SOURCE,

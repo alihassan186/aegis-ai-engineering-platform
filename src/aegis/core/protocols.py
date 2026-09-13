@@ -11,7 +11,7 @@ from datetime import datetime
 from typing import Any, Protocol, runtime_checkable
 from uuid import UUID
 
-from aegis.core.events import DomainEvent
+from aegis.domain.events.envelope import DomainEvent
 from aegis.domain.incidents.entity import Incident
 from aegis.domain.incidents.enums import IncidentState, Severity
 
@@ -85,6 +85,32 @@ class EventPublisher(Protocol):
     """
 
     def publish(self, event: DomainEvent) -> None: ...
+
+
+@runtime_checkable
+class ProcessedEventStore(Protocol):
+    """Inbox for ``incident_id`` + ``event_type`` + ``schema_version`` (ADR-003).
+
+    ``record_once`` is True only for the first insert. Used so two workers
+    cannot both start an investigation. No boto3 in this module.
+    """
+
+    async def record_once(
+        self,
+        *,
+        incident_id: UUID,
+        event_type: str,
+        schema_version: str,
+        event_id: str,
+        correlation_id: str,
+    ) -> bool: ...
+
+
+@runtime_checkable
+class InvestigationRunner(Protocol):
+    """Starts specialist work after ``open`` → ``investigating``. Stub in 4.2."""
+
+    def start(self, event: DomainEvent) -> None: ...
 
 
 @dataclass(frozen=True, slots=True)
