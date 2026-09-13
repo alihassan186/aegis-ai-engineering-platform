@@ -333,7 +333,7 @@ Linux: if the OpenSearch container exits on start, raise the mmap limit once: `s
 
 ### Local EventBridge + SQS (LocalStack)
 
-Port **4566** emulates Amazon EventBridge and SQS (ADR-003). `docker-up.sh` creates bus `aegis-events`, queue `investigation-workflow`, DLQ (`investigation-workflow-dlq`, visibility 300s, `maxReceiveCount` 3), and a rule that routes `incident.opened.v1`. This is **not** real AWS. Dummy credentials are `test` / `test`. The investigation worker (Step 4.2) is not started here.
+Port **4566** emulates Amazon EventBridge and SQS (ADR-003). `docker-up.sh` creates bus `aegis-events`, queue `investigation-workflow`, DLQ (`investigation-workflow-dlq`, visibility 300s, `maxReceiveCount` 3), and a rule that routes `incident.opened.v1`. This is **not** real AWS. Dummy credentials are `test` / `test`. The investigation worker is a **separate process** (`uv run python -m aegis.worker`), not this container.
 
 Envelope (Detail): `event_id`, `event_type`, `schema_version`, `timestamp`, `correlation_id`, `incident_id`.
 
@@ -367,6 +367,18 @@ uv run uvicorn aegis.main:app --reload
 ```
 
 Incident routes need `AEGIS_DATABASE_URL` and a Bearer JWT (`AEGIS_JWT_SECRET`). Copy `config/.env.example` to `.env` at the repo root (the app loads it on startup). Postgres must already be running on port 5434.
+
+### Run the investigation worker
+
+A second process long-polls SQS and moves `open` → `investigating`. It does **not** run LangGraph or Claude. Requires Postgres, LocalStack, `AEGIS_DATABASE_URL`, and `AEGIS_AWS_ENDPOINT`. Apply migrations first (`processed_events` inbox).
+
+```bash
+uv run alembic upgrade head
+uv run python -m aegis.worker
+# equivalent: uv run aegis-worker
+```
+
+Create or webhook an incident (API stays `open` in the HTTP response). The worker then transitions it. `GET /api/v1/incidents/{id}` should show `investigating`. Duplicate SQS delivery is a no-op.
 
 `POST /api/v1/auth/token` is a **development/test login only**. Production authenticates through an identity provider; that route is not registered when `AEGIS_ENV=production`.
 
