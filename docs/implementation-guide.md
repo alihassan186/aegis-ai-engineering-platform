@@ -130,10 +130,10 @@ Use this table to know **which document answers which question** while coding.
 | Retrieval API           | Step 3.5        | `POST /api/v1/retrieve` JWT + citations (FR-042, FR-044)        |
 | Historical RCAs (FR-041)| Step 3.7 gate   | six `INC-2026-*.md` in `aegis-knowledge` as `incident_report`   |
 | EventBridge + SQS local | Step 4.1        | LocalStack `:4566` · bus `aegis-events` · queue + DLQ           |
-| Agents / worker         | Step 4.2 next   | consume `incident.opened.v1`; Claude only in 4.8                |
+| Agents / worker         | Step 4.2        | consume `incident.opened.v1`; Claude only in 4.8                |
 
 
-**You are here:** Step 4.1 complete → next [Step 4.2 — Investigation worker](#step-42--investigation-worker-async-consumer).
+**You are here:** Step 4.2 complete → next [Step 4.3 — LangGraph orchestrator skeleton](#step-43--langgraph-orchestrator-skeleton).
 
 ---
 
@@ -2680,23 +2680,28 @@ tests/integration/worker/test_worker_idempotency.py
 - Integration: publish via LocalStack → worker (or use-case called as the worker would) → GET incident is `investigating`
 - Package import test still forbids application → infrastructure
 
+**Publish choice:** after the incident row **commits**, the API flushes a buffered `PutEvents`. If EventBridge fails we **log and still return 201** (NFR-011). That is dual-write: a down bus can lose the event. A transactional outbox is the grown-up follow-up; not added in 4.2 to keep the slice small. Consume idempotency is a `processed_events` row keyed by `incident_id` + `event_type` + `schema_version`.
+
 **Verification:**
 
 ```bash
 # from the repository root
+uv run alembic upgrade head
 AEGIS_SKIP_DOTENV=1 uv run pytest tests/unit/application/investigation/test_consume_opened.py -v
-# live (API + worker + LocalStack + Postgres)
+AEGIS_AWS_ENDPOINT=http://127.0.0.1:4566 \
+  uv run pytest tests/integration/worker/test_worker_idempotency.py -v
+# live: API + `uv run python -m aegis.worker` + LocalStack + Postgres
 # 1) create/webhook an incident  2) worker logs the event  3) GET /api/v1/incidents/{id} state=investigating
-# 4) publish the same event_id again — still one investigation
+# 4) publish the same event again — still one investigation
 ```
 
 **Done checklist:**
 
-- [ ] Worker is a separate process / module
-- [ ] Webhook/API publish `incident.opened.v1` after persist
-- [ ] Duplicate message is safe
-- [ ] Incident becomes `investigating`
-- [ ] API latency path does not run the graph
+- [x] Worker is a separate process / module
+- [x] Webhook/API publish `incident.opened.v1` after persist
+- [x] Duplicate message is safe
+- [x] Incident becomes `investigating`
+- [x] API latency path does not run the graph
 
 **Learn / interview:**
 
@@ -5787,6 +5792,6 @@ Copy this template when you start any new step:
 
 ## Next action
 
-**Start here:** [Step 4.2 — Investigation worker](#step-42--investigation-worker-async-consumer)
+**Start here:** [Step 4.3 — LangGraph orchestrator skeleton](#step-43--langgraph-orchestrator-skeleton)
 
-When ready, ask: *"Implement Step 4.2"* and we will code it together with full engineering reasoning. Do not skip to Claude, the tool gateway, or remediation.
+When ready, ask: *"Implement Step 4.3"* and we will code it together with full engineering reasoning. Do not skip to Claude, the tool gateway, or remediation.

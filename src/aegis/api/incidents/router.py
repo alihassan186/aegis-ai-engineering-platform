@@ -70,7 +70,8 @@ async def create_incident(
             severity=body.severity,
             description=body.description,
             owner_id=body.owner_id,
-        )
+        ),
+        correlation_id=request_id_from(request),
     )
     request_id = request_id_from(request)
     response.headers["Location"] = f"/api/v1/incidents/{dto.id}"

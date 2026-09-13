@@ -9,6 +9,7 @@ from fastapi import Depends, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from aegis.api.event_publish import RequestEventBuffer, flush_pending_domain_events
 from aegis.api.exceptions import (
     AuthenticationError,
     AuthorizationError,
@@ -60,9 +61,14 @@ async def get_db(request: Request) -> AsyncIterator[AsyncSession]:
         )
 
     session: AsyncSession = factory()
+    request.state.event_buffer = RequestEventBuffer()
     try:
         yield session
         await session.commit()
+        flush_pending_domain_events(
+            request.state.event_buffer,
+            getattr(request.app.state, "event_publisher", None),
+        )
     except Exception:
         await session.rollback()
         raise
@@ -74,14 +80,23 @@ async def get_repositories(session: AsyncSession = Depends(get_db)) -> Repositor
     return Repositories(incidents=SqlAlchemyIncidentRepository(session))
 
 
-def get_create_incident(repos: Repositories = Depends(get_repositories)) -> CreateIncident:
-    return CreateIncident(repos.incidents)
+def _request_publisher(request: Request) -> RequestEventBuffer | None:
+    buffer = getattr(request.state, "event_buffer", None)
+    return buffer if isinstance(buffer, RequestEventBuffer) else None
+
+
+def get_create_incident(
+    request: Request,
+    repos: Repositories = Depends(get_repositories),
+) -> CreateIncident:
+    return CreateIncident(repos.incidents, publisher=_request_publisher(request))
 
 
 def get_ingest_incident_signal(
+    request: Request,
     repos: Repositories = Depends(get_repositories),
 ) -> IngestIncidentSignal:
-    return IngestIncidentSignal(repos.incidents)
+    return IngestIncidentSignal(repos.incidents, publisher=_request_publisher(request))
 
 
 def get_get_incident(repos: Repositories = Depends(get_repositories)) -> GetIncident:

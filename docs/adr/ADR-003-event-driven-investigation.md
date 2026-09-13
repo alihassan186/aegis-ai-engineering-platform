@@ -141,7 +141,7 @@ Use PostgreSQL table as a job queue with `SELECT FOR UPDATE SKIP LOCKED`.
 
 ### Implementation rules
 
-1. Every event handler checks idempotency key (`incident_id` + `event_type` + `step_id`) before processing
+1. Every event handler checks idempotency key (`incident_id` + `event_type` + `schema_version`) before processing (`processed_events` inbox). `step_id` arrives when the graph has steps (4.3+)
 2. SQS visibility timeout: 300 seconds (5 minutes) — revisit when agent steps are measured
 3. Max receive count: 3 before DLQ
 4. EventBridge event bus: dedicated `aegis-events` bus (not default)
