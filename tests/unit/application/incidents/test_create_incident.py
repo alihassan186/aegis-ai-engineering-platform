@@ -7,7 +7,7 @@ import pytest
 from aegis.application.incidents import CreateIncident, CreateIncidentCommand
 from aegis.domain.incidents import IncidentState, Severity
 from aegis.shared.exceptions import ValidationError
-from tests.unit.application.incidents.fakes import FakeIncidentRepository
+from tests.unit.application.incidents.fakes import FakeEventPublisher, FakeIncidentRepository
 
 
 async def test_create_opens_incident_with_timestamp() -> None:
@@ -34,6 +34,27 @@ async def test_create_opens_incident_with_timestamp() -> None:
     assert len(repo.created) == 1
     assert repo.created[0].id == result.id
     assert repo.created[0].state is IncidentState.OPEN
+
+
+async def test_create_publishes_incident_opened_after_persist() -> None:
+    repo = FakeIncidentRepository()
+    publisher = FakeEventPublisher()
+    use_case = CreateIncident(repo, publisher=publisher)
+
+    result = await use_case.execute(
+        CreateIncidentCommand(
+            title="Checkout latency",
+            affected_service="payments-api",
+            severity=Severity.HIGH,
+        ),
+        correlation_id="req-42",
+    )
+
+    assert len(publisher.events) == 1
+    event = publisher.events[0]
+    assert event.event_type == "incident.opened.v1"
+    assert event.incident_id == str(result.id)
+    assert event.correlation_id == "req-42"
 
 
 async def test_create_rejects_blank_title() -> None:

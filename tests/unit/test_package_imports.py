@@ -9,8 +9,10 @@ from aegis.core.protocols import (
     Embedder,
     EventPublisher,
     IncidentRepository,
+    InvestigationRunner,
     KnowledgeHit,
     KnowledgeStore,
+    ProcessedEventStore,
 )
 from aegis.shared.exceptions import DomainError, NotFoundError, ValidationError
 
@@ -105,3 +107,11 @@ def test_knowledge_store_is_a_protocol() -> None:
 
 def test_event_publisher_is_a_protocol() -> None:
     assert getattr(EventPublisher, "_is_protocol", False)
+
+
+def test_processed_event_store_is_a_protocol() -> None:
+    assert getattr(ProcessedEventStore, "_is_protocol", False)
+
+
+def test_investigation_runner_is_a_protocol() -> None:
+    assert getattr(InvestigationRunner, "_is_protocol", False)

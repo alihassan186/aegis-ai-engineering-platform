@@ -89,3 +89,28 @@ def test_naive_timestamp_is_rejected() -> None:
             severity=Severity.HIGH,
             created_at=datetime(2026, 8, 28, 12, 0),
         )
+
+
+def test_start_investigation_is_idempotent() -> None:
+    incident = Incident.create(
+        title="Latency",
+        affected_service="payments",
+        severity=Severity.HIGH,
+    )
+    assert incident.start_investigation() is True
+    assert incident.state is IncidentState.INVESTIGATING
+    assert incident.start_investigation() is False
+    assert incident.state is IncidentState.INVESTIGATING
+    assert len(incident.state_history) == 1
+
+
+def test_start_investigation_noops_when_identified() -> None:
+    incident = Incident.create(
+        title="Latency",
+        affected_service="payments",
+        severity=Severity.HIGH,
+    )
+    incident.transition_to(IncidentState.INVESTIGATING)
+    incident.transition_to(IncidentState.IDENTIFIED)
+    assert incident.start_investigation() is False
+    assert incident.state is IncidentState.IDENTIFIED

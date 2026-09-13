@@ -184,3 +184,14 @@ class Incident:
         )
         self._state = new_state
         self._updated_at = moment
+
+    def start_investigation(self, *, occurred_at: datetime | None = None) -> bool:
+        """Idempotent ``open`` → ``investigating``. No-op if already past ``open``.
+
+        Competing consumers call this after claiming the processed-event key.
+        A second delivery must not create another investigation thread.
+        """
+        if self._state is not IncidentState.OPEN:
+            return False
+        self.transition_to(IncidentState.INVESTIGATING, occurred_at=occurred_at)
+        return True

@@ -11,7 +11,7 @@ from aegis.application.incidents import (
     IngestIncidentSignalCommand,
 )
 from aegis.domain.incidents import IncidentState, Severity
-from tests.unit.application.incidents.fakes import FakeIncidentRepository
+from tests.unit.application.incidents.fakes import FakeEventPublisher, FakeIncidentRepository
 
 _NOW = datetime(2026, 9, 2, 14, 30, tzinfo=UTC)
 
@@ -48,6 +48,20 @@ async def test_ingest_creates_open_incident_for_service() -> None:
     assert len(repo.created) == 1
     assert repo.created[0].state is IncidentState.OPEN
     assert repo.created[0].fingerprint == "v1|payment|latency_spike|2026-09-02T14"
+
+
+async def test_ingest_publishes_only_on_create() -> None:
+    repo = FakeIncidentRepository()
+    publisher = FakeEventPublisher()
+    use_case = IngestIncidentSignal(repo, clock=lambda: _NOW, publisher=publisher)
+
+    first = await use_case.execute(_command(), correlation_id="hook-1")
+    await use_case.execute(_command(), correlation_id="hook-2")
+
+    assert first.created is True
+    assert len(publisher.events) == 1
+    assert publisher.events[0].incident_id == str(first.incident.id)
+    assert publisher.events[0].correlation_id == "hook-1"
 
 
 async def test_second_ingest_returns_same_id() -> None:

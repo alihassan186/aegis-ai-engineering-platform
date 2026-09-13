@@ -5,6 +5,7 @@ from __future__ import annotations
 from uuid import UUID
 
 from aegis.core.protocols import IncidentFilters
+from aegis.domain.events.envelope import DomainEvent
 from aegis.domain.incidents.entity import Incident
 from aegis.domain.incidents.enums import IncidentState
 from aegis.shared.exceptions import NotFoundError
@@ -41,3 +42,31 @@ class FakeIncidentRepository:
             if incident.fingerprint == fingerprint and incident.state is IncidentState.OPEN:
                 return incident
         return None
+
+
+class FakeEventPublisher:
+    def __init__(self) -> None:
+        self.events: list[DomainEvent] = []
+
+    def publish(self, event: DomainEvent) -> None:
+        self.events.append(event)
+
+
+class FakeProcessedEventStore:
+    def __init__(self) -> None:
+        self.keys: set[tuple[UUID, str, str]] = set()
+
+    async def record_once(
+        self,
+        *,
+        incident_id: UUID,
+        event_type: str,
+        schema_version: str,
+        event_id: str,
+        correlation_id: str,
+    ) -> bool:
+        key = (incident_id, event_type, schema_version)
+        if key in self.keys:
+            return False
+        self.keys.add(key)
+        return True
