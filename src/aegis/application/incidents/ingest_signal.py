@@ -12,7 +12,7 @@ from aegis.application.incidents.dto import (
     IngestIncidentSignalCommand,
     IngestIncidentSignalResult,
 )
-from aegis.core.protocols import IncidentRepository
+from aegis.core.protocols import EventPublisher, IncidentRepository
 from aegis.domain.incidents.fingerprint import compute_fingerprint
 
 Clock = Callable[[], datetime]
@@ -24,12 +24,18 @@ class IngestIncidentSignal:
         repository: IncidentRepository,
         *,
         clock: Clock | None = None,
+        publisher: EventPublisher | None = None,
     ) -> None:
         self._repository = repository
-        self._create = CreateIncident(repository)
+        self._create = CreateIncident(repository, publisher=publisher)
         self._clock = clock or (lambda: datetime.now(timezone.utc))
 
-    async def execute(self, command: IngestIncidentSignalCommand) -> IngestIncidentSignalResult:
+    async def execute(
+        self,
+        command: IngestIncidentSignalCommand,
+        *,
+        correlation_id: str = "unknown",
+    ) -> IngestIncidentSignalResult:
         occurred_at = self._clock()
         fingerprint = compute_fingerprint(
             affected_service=command.service,
@@ -52,7 +58,8 @@ class IngestIncidentSignal:
                 severity=command.severity,
                 description=_signal_description(command),
                 fingerprint=fingerprint,
-            )
+            ),
+            correlation_id=correlation_id,
         )
         return IngestIncidentSignalResult(incident=created, created=True)
 

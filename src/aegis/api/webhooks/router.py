@@ -83,7 +83,8 @@ async def ingest_incident_signal(
             summary=body.summary,
             scenario=body.scenario,
             fingerprint=body.fingerprint,
-        )
+        ),
+        correlation_id=request_id_from(request),
     )
     request_id = request_id_from(request)
     if dto_result.created:
