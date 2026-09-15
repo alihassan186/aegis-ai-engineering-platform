@@ -54,20 +54,20 @@ NEXT  → Only then proceed to next step
 ### What each step contains
 
 
-| Field                      | Purpose                                    |
-| -------------------------- | ------------------------------------------ |
-| **Goal**                   | One sentence — what works when you're done |
-| **Why**                    | Business and engineering reason            |
-| **Documentation**          | Exact docs that define this step           |
-| **Implements**             | FR/NFR/ADR/THR IDs                         |
-| **Files to create/modify** | Concrete paths in the repo                 |
-| **What to build**          | Detailed implementation description        |
-| **Best practices**         | Patterns to follow                         |
-| **Do NOT**                 | Scope boundaries — avoid jumping ahead     |
-| **Tests**                  | What to test                               |
-| **Verification**           | Commands to run                            |
-| **Done checklist**         | Gate before next step                      |
-| **Why these files**        | Why each new path exists (Phase 4+)        |
+| Field                      | Purpose                                          |
+| -------------------------- | ------------------------------------------------ |
+| **Goal**                   | One sentence — what works when you're done       |
+| **Why**                    | Business and engineering reason                  |
+| **Documentation**          | Exact docs that define this step                 |
+| **Implements**             | FR/NFR/ADR/THR IDs                               |
+| **Files to create/modify** | Concrete paths in the repo                       |
+| **What to build**          | Detailed implementation description              |
+| **Best practices**         | Patterns to follow                               |
+| **Do NOT**                 | Scope boundaries — avoid jumping ahead           |
+| **Tests**                  | What to test                                     |
+| **Verification**           | Commands to run                                  |
+| **Done checklist**         | Gate before next step                            |
+| **Why these files**        | Why each new path exists (Phase 4+)              |
 | **Learn / interview**      | Concepts + questions this step trains (Phase 4+) |
 
 
@@ -108,29 +108,29 @@ Use this table to know **which document answers which question** while coding.
 ## 3. Current codebase state
 
 
-| Component               | Status          | Location                                                        |
-| ----------------------- | --------------- | --------------------------------------------------------------- |
-| FastAPI app + `/health` | Implemented     | `src/aegis/main.py`                                             |
-| Settings                | Implemented     | `src/aegis/config/settings.py`                                  |
-| Domain layer            | Implemented     | `src/aegis/domain/incidents/`                                   |
-| Application layer       | Implemented     | `src/aegis/application/incidents/`                              |
-| Database session        | Implemented     | `src/aegis/infrastructure/database/`                            |
-| PostgreSQL (Docker)     | Implemented     | `docker/` · `scripts/docker-up.sh`                              |
-| Alembic migrations      | Implemented     | `alembic/` (incidents schema)                                   |
-| Incident repository     | Implemented     | `src/aegis/infrastructure/repositories/`                        |
-| Authentication          | Implemented     | `src/aegis/api/auth/` · JWT + RBAC                              |
-| Incident API            | Implemented     | `src/aegis/api/` · `/api/v1/incidents`                          |
-| Production simulator    | v0.3 complete   | `apps/simulator/` + webhook ingest + FR-007                     |
-| RAG knowledge corpus    | Step 3.0        | `docs/knowledge/` + `evaluation/datasets/rag/`                  |
-| OpenSearch (local)      | Step 3.1 + 3.4  | `docker/` · hybrid index `aegis-knowledge`                      |
-| LangGraph (learning)    | Skeleton only   | `src/aegis/application/investigation/` — no Claude; does not call retrieve yet |
-| RAG chunking            | Step 3.2        | `src/aegis/application/rag/` — 24 files, parent–child           |
-| RAG embeddings          | Step 3.3        | `FakeEmbedder` / Titan 1024-d — no OpenSearch write             |
-| RAG ingest              | Step 3.4 + 3.6  | allowlist ingest + `--files` reindex (`aegis.rag.ingest`)       |
-| Retrieval API           | Step 3.5        | `POST /api/v1/retrieve` JWT + citations (FR-042, FR-044)        |
-| Historical RCAs (FR-041)| Step 3.7 gate   | six `INC-2026-*.md` in `aegis-knowledge` as `incident_report`   |
-| EventBridge + SQS local | Step 4.1        | LocalStack `:4566` · bus `aegis-events` · queue + DLQ           |
-| Agents / worker         | Step 4.2        | consume `incident.opened.v1`; Claude only in 4.8                |
+| Component                | Status         | Location                                                                       |
+| ------------------------ | -------------- | ------------------------------------------------------------------------------ |
+| FastAPI app + `/health`  | Implemented    | `src/aegis/main.py`                                                            |
+| Settings                 | Implemented    | `src/aegis/config/settings.py`                                                 |
+| Domain layer             | Implemented    | `src/aegis/domain/incidents/`                                                  |
+| Application layer        | Implemented    | `src/aegis/application/incidents/`                                             |
+| Database session         | Implemented    | `src/aegis/infrastructure/database/`                                           |
+| PostgreSQL (Docker)      | Implemented    | `docker/` · `scripts/docker-up.sh`                                             |
+| Alembic migrations       | Implemented    | `alembic/` (incidents schema)                                                  |
+| Incident repository      | Implemented    | `src/aegis/infrastructure/repositories/`                                       |
+| Authentication           | Implemented    | `src/aegis/api/auth/` · JWT + RBAC                                             |
+| Incident API             | Implemented    | `src/aegis/api/` · `/api/v1/incidents`                                         |
+| Production simulator     | v0.3 complete  | `apps/simulator/` + webhook ingest + FR-007                                    |
+| RAG knowledge corpus     | Step 3.0       | `docs/knowledge/` + `evaluation/datasets/rag/`                                 |
+| OpenSearch (local)       | Step 3.1 + 3.4 | `docker/` · hybrid index `aegis-knowledge`                                     |
+| LangGraph (learning)     | Skeleton only  | `src/aegis/application/investigation/` — no Claude; does not call retrieve yet |
+| RAG chunking             | Step 3.2       | `src/aegis/application/rag/` — 24 files, parent–child                          |
+| RAG embeddings           | Step 3.3       | `FakeEmbedder` / Titan 1024-d — no OpenSearch write                            |
+| RAG ingest               | Step 3.4 + 3.6 | allowlist ingest + `--files` reindex (`aegis.rag.ingest`)                      |
+| Retrieval API            | Step 3.5       | `POST /api/v1/retrieve` JWT + citations (FR-042, FR-044)                       |
+| Historical RCAs (FR-041) | Step 3.7 gate  | six `INC-2026-*.md` in `aegis-knowledge` as `incident_report`                  |
+| EventBridge + SQS local  | Step 4.1       | LocalStack `:4566` · bus `aegis-events` · queue + DLQ                          |
+| Agents / worker          | Step 4.2       | consume `incident.opened.v1`; Claude only in 4.8                               |
 
 
 **You are here:** Step 4.2 complete → next [Step 4.3 — LangGraph orchestrator skeleton](#step-43--langgraph-orchestrator-skeleton).
@@ -2465,14 +2465,16 @@ Implement **4.1 → 4.11 in order**. Do not start Phase 5 (tool gateway / MCP) o
 
 **Product split (do not mix):**
 
-| Piece | Process | Does |
-| --- | --- | --- |
-| AEGIS API | `uvicorn aegis.main:app` **:8000** | Incidents, JWT retrieve, later progress API. Must return fast ([NFR-011](requirements/non-functional-requirements.md) p99 &lt; 500ms). |
-| Investigation worker | `python -m aegis.worker` (name it in 4.2) | Consumes SQS, runs LangGraph. Same codebase, **separate process**. |
-| Simulator | `uvicorn apps.simulator.main:app` **:8001** | Fake production `/signals`. Must **not** import `aegis.domain` / `application` / `api`. |
-| LocalStack | Docker **:4566** | EventBridge + SQS only in v0.5. Real AWS bus is Phase 6. |
-| OpenSearch | **:9200** | Knowledge RAG. Not a live-incident index. |
-| Postgres | **:5434** | System of record for incidents, evidence, RCA, investigation steps. |
+
+| Piece                | Process                                     | Does                                                                                                                                |
+| -------------------- | ------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| AEGIS API            | `uvicorn aegis.main:app` **:8000**          | Incidents, JWT retrieve, later progress API. Must return fast ([NFR-011](requirements/non-functional-requirements.md) p99 < 500ms). |
+| Investigation worker | `python -m aegis.worker` (name it in 4.2)   | Consumes SQS, runs LangGraph. Same codebase, **separate process**.                                                                  |
+| Simulator            | `uvicorn apps.simulator.main:app` **:8001** | Fake production `/signals`. Must **not** import `aegis.domain` / `application` / `api`.                                             |
+| LocalStack           | Docker **:4566**                            | EventBridge + SQS only in v0.5. Real AWS bus is Phase 6.                                                                            |
+| OpenSearch           | **:9200**                                   | Knowledge RAG. Not a live-incident index.                                                                                           |
+| Postgres             | **:5434**                                   | System of record for incidents, evidence, RCA, investigation steps.                                                                 |
+
 
 **LLM rule:** Steps 4.1–4.7 use **stubs / fake ports**. Claude Sonnet is Step **4.8** (plus a `FakeLlm` like `FakeEmbedder`). Titan embeddings stay on the retrieve path from Phase 3.
 
@@ -2496,21 +2498,23 @@ Implement **4.1 → 4.11 in order**. Do not start Phase 5 (tool gateway / MCP) o
 
 **FR coverage in this phase (do not invent extra steps):**
 
-| FR | Lands in | Note |
-| --- | --- | --- |
-| FR-020 | 4.1 + 4.2 | Open incident → event → worker. Not a sync LangGraph call inside the webhook. |
-| FR-021 | 4.3 + 4.4 | Orchestrator + commander plan/delegate. |
-| FR-010–014 | 4.5 | Observability / deploy history / code **ports**. Read-only. Gateway is Phase 5. |
-| FR-015–016 | 4.5 | Knowledge Agent calls `RetrieveKnowledge` (already built). |
-| FR-017–018 | 4.6 | Evidence rows in Postgres, linked to the incident. |
-| FR-019 | 4.7 | Redact before persist **and** before any LLM context. |
-| FR-023 | 4.3 + 4.9 | LangGraph `interrupt` / resume; HTTP pause/resume later. |
-| FR-024 | 4.9 | Optional `POST` manual evidence (P1). |
-| FR-025–026 | 4.4 + 4.10 | Low confidence / max duration → escalate + notify. |
-| FR-022 | 4.9 | Steps completed / pending / failed. |
-| FR-027–028 | 4.10 | RCA ready / escalation notifications. |
-| FR-030–035 | 4.8 + 4.9 | Structured RCA + accept/reject/amend. |
-| FR-101 | 4.11 | Post-incident report. **Not** auto-index into OpenSearch. |
+
+| FR         | Lands in   | Note                                                                            |
+| ---------- | ---------- | ------------------------------------------------------------------------------- |
+| FR-020     | 4.1 + 4.2  | Open incident → event → worker. Not a sync LangGraph call inside the webhook.   |
+| FR-021     | 4.3 + 4.4  | Orchestrator + commander plan/delegate.                                         |
+| FR-010–014 | 4.5        | Observability / deploy history / code **ports**. Read-only. Gateway is Phase 5. |
+| FR-015–016 | 4.5        | Knowledge Agent calls `RetrieveKnowledge` (already built).                      |
+| FR-017–018 | 4.6        | Evidence rows in Postgres, linked to the incident.                              |
+| FR-019     | 4.7        | Redact before persist **and** before any LLM context.                           |
+| FR-023     | 4.3 + 4.9  | LangGraph `interrupt` / resume; HTTP pause/resume later.                        |
+| FR-024     | 4.9        | Optional `POST` manual evidence (P1).                                           |
+| FR-025–026 | 4.4 + 4.10 | Low confidence / max duration → escalate + notify.                              |
+| FR-022     | 4.9        | Steps completed / pending / failed.                                             |
+| FR-027–028 | 4.10       | RCA ready / escalation notifications.                                           |
+| FR-030–035 | 4.8 + 4.9  | Structured RCA + accept/reject/amend.                                           |
+| FR-101     | 4.11       | Post-incident report. **Not** auto-index into OpenSearch.                       |
+
 
 **How to use Phase 4 for interviews:** each step has **Learn / interview**. Read the ADR/FR first, implement the slice, then answer the questions out loud **without** the notes. The story you want to tell: *webhook returns in milliseconds because work is on a queue; agents are a graph with hop limits; RAG is a tool not memory; evidence is SoR in Postgres; secrets never reach Bedrock; RCA must cite evidence ids; humans accept or we escalate.*
 
@@ -2521,13 +2525,13 @@ Implement **4.1 → 4.11 in order**. Do not start Phase 5 (tool gateway / MCP) o
 ### Step 4.1 — EventBridge + SQS local setup (LocalStack)
 
 
-|                   |                                                                                                                                                         |
-| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Goal**          | Local EventBridge bus + SQS queue + DLQ that AEGIS can publish to and consume from — no investigation logic yet                                         |
-| **Why**           | [FR-020](requirements/functional-requirements.md) starts a workflow when an incident opens; [ADR-003](adr/ADR-003-event-driven-investigation.md)        |
-| **When**          | After 3.7. Same Docker habit as Postgres / OpenSearch (`scripts/docker-up.sh`).                                                                         |
+|                   |                                                                                                                                                                           |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Goal**          | Local EventBridge bus + SQS queue + DLQ that AEGIS can publish to and consume from — no investigation logic yet                                                           |
+| **Why**           | [FR-020](requirements/functional-requirements.md) starts a workflow when an incident opens; [ADR-003](adr/ADR-003-event-driven-investigation.md)                          |
+| **When**          | After 3.7. Same Docker habit as Postgres / OpenSearch (`scripts/docker-up.sh`).                                                                                           |
 | **Documentation** | [ADR-003](adr/ADR-003-event-driven-investigation.md) · [Platform overview §9](architecture/platform-overview.md) · [NFR-011](requirements/non-functional-requirements.md) |
-| **Implements**    | FR-020 (transport only). Not the worker loop, not LangGraph.                                                                                            |
+| **Implements**    | FR-020 (transport only). Not the worker loop, not LangGraph.                                                                                                              |
 
 
 **Files to create / modify:**
@@ -2555,7 +2559,7 @@ tests/unit/test_settings.py
 **What to build:**
 
 - Compose service `localstack` (official image). Host port **4566**. Do not collide with 5434 / 5051 / 8000 / 8001 / 9200 / 5601.
-- Dedicated bus **`aegis-events`** (not `default`). Queue **`investigation-workflow`**. DLQ **`investigation-workflow-dlq`**. Visibility timeout **300s**. `maxReceiveCount` **3** then DLQ (ADR-003).
+- Dedicated bus `aegis-events` (not `default`). Queue `investigation-workflow`. DLQ `investigation-workflow-dlq`. Visibility timeout **300s**. `maxReceiveCount` **3** then DLQ (ADR-003).
 - Settings from env only: endpoint, region (`eu-west-1` is fine locally), bus name. Empty endpoint = messaging unset; tests skip.
 - Event envelope (document now, publish in 4.2): `event_id`, `event_type`, `schema_version`, `timestamp`, `correlation_id`, `incident_id`. First type: `incident.opened.v1`.
 - Health: `GET http://127.0.0.1:4566/_localstack/health` (or equivalent) shows `sqs` / `events` running.
@@ -2622,13 +2626,13 @@ AEGIS_AWS_ENDPOINT=http://127.0.0.1:4566 \
 ### Step 4.2 — Investigation worker (async consumer)
 
 
-|                   |                                                                                                                                      |
-| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| **Goal**          | A separate process receives `incident.opened.v1`, is **idempotent**, moves the incident `open` → `investigating`, acks the message   |
+|                   |                                                                                                                                                                                              |
+| ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Goal**          | A separate process receives `incident.opened.v1`, is **idempotent**, moves the incident `open` → `investigating`, acks the message                                                           |
 | **Why**           | [FR-020](requirements/functional-requirements.md) · [Platform overview §9](architecture/platform-overview.md) · [NFR-004](requirements/non-functional-requirements.md) (retry then escalate) |
-| **When**          | After 4.1 queues exist. Graph can still be a no-op / log stub.                                                                       |
-| **Documentation** | [Incident flow § Phase 2](architecture/incident-flow.md) · ADR-003 implementation rules                                              |
-| **Implements**    | FR-020 (consumer). Not commander intelligence (4.4), not Claude.                                                                     |
+| **When**          | After 4.1 queues exist. Graph can still be a no-op / log stub.                                                                                                                               |
+| **Documentation** | [Incident flow § Phase 2](architecture/incident-flow.md) · ADR-003 implementation rules                                                                                                      |
+| **Implements**    | FR-020 (consumer). Not commander intelligence (4.4), not Claude.                                                                                                                             |
 
 
 **Files to create / modify:**
@@ -2717,17 +2721,16 @@ AEGIS_AWS_ENDPOINT=http://127.0.0.1:4566 \
 
 
 
-
 ### Step 4.3 — LangGraph orchestrator skeleton
 
 
-|                   |                                                                                                                                   |
-| ----------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| **Goal**          | Worker invokes a compiled `StateGraph` for one `thread_id` per incident — still **no Claude**, knowledge still a stub             |
+|                   |                                                                                                                                    |
+| ----------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| **Goal**          | Worker invokes a compiled `StateGraph` for one `thread_id` per incident — still **no Claude**, knowledge still a stub              |
 | **Why**           | [FR-021](requirements/functional-requirements.md) needs an orchestrator; [Platform overview §8](architecture/platform-overview.md) |
 | **When**          | After 4.2 can mark `investigating`. Promote the **existing** learning graph; do not rewrite it.                                    |
-| **Documentation** | Existing package `src/aegis/application/investigation/` · [FR-023](requirements/functional-requirements.md) pause/resume preview  |
-| **Implements**    | FR-021 (graph topology). Commander *policy* is 4.4. Specialists become real in 4.5.                                               |
+| **Documentation** | Existing package `src/aegis/application/investigation/` · [FR-023](requirements/functional-requirements.md) pause/resume preview   |
+| **Implements**    | FR-021 (graph topology). Commander *policy* is 4.4. Specialists become real in 4.5.                                                |
 
 
 **Files to create / modify:**
@@ -2808,13 +2811,13 @@ uv run python -m aegis.application.investigation   # mermaid / demo invoke if yo
 ### Step 4.4 — Incident Commander agent
 
 
-|                   |                                                                                                                           |
-| ----------------- | ------------------------------------------------------------------------------------------------------------------------- |
-| **Goal**          | Commander **plans and delegates**: which specialists, when enough evidence, when to escalate (time / hops / confidence)   |
-| **Why**           | [FR-021](requirements/functional-requirements.md) · [Incident flow § Phase 2](architecture/incident-flow.md)              |
-| **When**          | After 4.3 invoke works. This step is **routing policy**, not new infrastructure.                                          |
+|                   |                                                                                                                                           |
+| ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| **Goal**          | Commander **plans and delegates**: which specialists, when enough evidence, when to escalate (time / hops / confidence)                   |
+| **Why**           | [FR-021](requirements/functional-requirements.md) · [Incident flow § Phase 2](architecture/incident-flow.md)                              |
+| **When**          | After 4.3 invoke works. This step is **routing policy**, not new infrastructure.                                                          |
 | **Documentation** | Incident flow escalation triggers · [FR-025](requirements/functional-requirements.md) · [FR-026](requirements/functional-requirements.md) |
-| **Implements**    | FR-021 (planner). FR-025/026 *decision* here; *notify* is 4.10.                                                           |
+| **Implements**    | FR-021 (planner). FR-025/026 *decision* here; *notify* is 4.10.                                                                           |
 
 
 **Files to create / modify:**
@@ -2893,13 +2896,13 @@ AEGIS_SKIP_DOTENV=1 uv run pytest tests/unit/investigation/test_commander.py tes
 ### Step 4.5 — Observability + Code + Knowledge agents
 
 
-|                   |                                                                                                                                 |
-| ----------------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| **Goal**          | Three specialists collect **structured evidence** through ports: simulator signals, code/deploy search, `RetrieveKnowledge`     |
-| **Why**           | [FR-010–016](requirements/functional-requirements.md) · [Platform overview §8](architecture/platform-overview.md)               |
-| **When**          | After 4.4 routes to named nodes. Persist to Postgres is 4.6; here the graph state must hold real-shaped items.                  |
-| **Documentation** | System boundaries (simulator vs AEGIS) · Knowledge README (RAG is knowledge, not ticks)                                         |
-| **Implements**    | FR-010, FR-011, FR-012 (via simulator, not Datadog), FR-013, FR-014 (port + fake), FR-015, FR-016 (retrieve)                    |
+|                   |                                                                                                                             |
+| ----------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| **Goal**          | Three specialists collect **structured evidence** through ports: simulator signals, code/deploy search, `RetrieveKnowledge` |
+| **Why**           | [FR-010–016](requirements/functional-requirements.md) · [Platform overview §8](architecture/platform-overview.md)           |
+| **When**          | After 4.4 routes to named nodes. Persist to Postgres is 4.6; here the graph state must hold real-shaped items.              |
+| **Documentation** | System boundaries (simulator vs AEGIS) · Knowledge README (RAG is knowledge, not ticks)                                     |
+| **Implements**    | FR-010, FR-011, FR-012 (via simulator, not Datadog), FR-013, FR-014 (port + fake), FR-015, FR-016 (retrieve)                |
 
 
 **Files to create / modify:**
@@ -2919,7 +2922,7 @@ tests/integration/investigation/test_knowledge_uses_retrieve.py
 
 - **Ports** — specialists live in application; HTTP to the simulator and GitHub stay in infrastructure.
 - `simulator_client` — Observability Agent reads **fake production** (`/signals` or the existing emit shape). It must not import `apps.simulator` internals if a public HTTP API exists; do not import `aegis` from the simulator.
-- Knowledge node calls **`RetrieveKnowledge.execute`** (Step 3.5). That is FR-015/016. It does **not** construct an OpenSearch client.
+- Knowledge node calls `RetrieveKnowledge.execute` (Step 3.5). That is FR-015/016. It does **not** construct an OpenSearch client.
 - `FakeCodeSearch` — FR-014 in tests without GitHub tokens. A later Phase 5 tool can wrap the real GitHub API **through the gateway**.
 
 **What to build:**
@@ -2982,13 +2985,13 @@ AEGIS_OPENSEARCH_URL=http://127.0.0.1:9200 AEGIS_EMBEDDER=fake \
 ### Step 4.6 — Evidence model + storage
 
 
-|                   |                                                                                                                    |
-| ----------------- | ------------------------------------------------------------------------------------------------------------------ |
-| **Goal**          | Each collected item is a **Postgres row** linked to the incident, with source, time, content ref, retrieval metadata |
+|                   |                                                                                                                                                                   |
+| ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Goal**          | Each collected item is a **Postgres row** linked to the incident, with source, time, content ref, retrieval metadata                                              |
 | **Why**           | [FR-017](requirements/functional-requirements.md) · [FR-018](requirements/functional-requirements.md) · [Platform overview §6](architecture/platform-overview.md) |
-| **When**          | After 4.5 produces structured items. Graph state is not the system of record.                                      |
-| **Documentation** | ERD: `INCIDENT ||--o{ EVIDENCE` · ADR-002 (Postgres is SoR)                                                        |
-| **Implements**    | FR-017, FR-018. Redaction hook can be a no-op until 4.7.                                                           |
+| **When**          | After 4.5 produces structured items. Graph state is not the system of record.                                                                                     |
+| **Documentation** | ERD: `INCIDENT                                                                                                                                                    |
+| **Implements**    | FR-017, FR-018. Redaction hook can be a no-op until 4.7.                                                                                                          |
 
 
 **Files to create / modify:**
@@ -3070,13 +3073,13 @@ uv run pytest tests/integration/repositories/test_evidence_repository.py -v
 ### Step 4.7 — Secrets redaction pipeline
 
 
-|                   |                                                                                                              |
-| ----------------- | ------------------------------------------------------------------------------------------------------------ |
-| **Goal**          | Detected secrets / sensitive patterns are stripped **before** evidence persist and **before** any LLM context |
+|                   |                                                                                                                                     |
+| ----------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| **Goal**          | Detected secrets / sensitive patterns are stripped **before** evidence persist and **before** any LLM context                       |
 | **Why**           | [FR-019](requirements/functional-requirements.md) · [THR-009](security/threat-model.md) · [RISK-008](requirements/risk-register.md) |
-| **When**          | After 4.6 can write rows. Implement **before** 4.8 Claude.                                                   |
-| **Documentation** | Threat model THR-009 / THR-012 · NFR-036 (retrieved text is untrusted data)                                  |
-| **Implements**    | FR-019. Not a full DLP product.                                                                              |
+| **When**          | After 4.6 can write rows. Implement **before** 4.8 Claude.                                                                          |
+| **Documentation** | Threat model THR-009 / THR-012 · NFR-036 (retrieved text is untrusted data)                                                         |
+| **Implements**    | FR-019. Not a full DLP product.                                                                                                     |
 
 
 **Files to create / modify:**
@@ -3096,7 +3099,7 @@ tests/unit/application/evidence/test_record_evidence.py  # assert redacted persi
 
 **What to build:**
 
-- Patterns (start small, test each): AWS access key (`AKIA...`), PEM / private key blocks, JWT-shaped `eyJ...`, `postgres://` / `postgresql+asyncpg://` URLs with passwords, `Bearer ` tokens, Slack/GitHub PAT-looking strings, email optional.
+- Patterns (start small, test each): AWS access key (`AKIA...`), PEM / private key blocks, JWT-shaped `eyJ...`, `postgres://` / `postgresql+asyncpg://` URLs with passwords, `Bearer`  tokens, Slack/GitHub PAT-looking strings, email optional.
 - Replacement: `[REDACTED:aws_access_key]` (type, not the secret). Count redactions in metadata (`redaction_count`) — never log the pre-image.
 - Apply to: evidence summary/excerpt, retrieve chunk text copied into evidence, future RCA prompt.
 - Fail closed on “looks like a key” rather than fail open.
@@ -3148,13 +3151,13 @@ AEGIS_SKIP_DOTENV=1 uv run pytest tests/unit/application/security/test_redact.py
 ### Step 4.8 — RCA agent + Bedrock integration
 
 
-|                   |                                                                                                           |
-| ----------------- | --------------------------------------------------------------------------------------------------------- |
-| **Goal**          | Structured RCA from evidence: summary, root cause, factors, confidence, **citations**, hypothesis vs confirmed |
+|                   |                                                                                                                                           |
+| ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| **Goal**          | Structured RCA from evidence: summary, root cause, factors, confidence, **citations**, hypothesis vs confirmed                            |
 | **Why**           | [FR-030–035](requirements/functional-requirements.md) · [ADR-004](adr/ADR-004-aws-bedrock.md) · [RISK-001](requirements/risk-register.md) |
-| **When**          | After 4.7. Commander routes to `synthesize` only when evidence rows exist.                                |
-| **Documentation** | [Incident flow § Phase 3](architecture/incident-flow.md) RCA JSON · ADR-004 Sonnet + structured output    |
-| **Implements**    | FR-030–033 here. FR-034/035 accept-amend + versions: persist model now; HTTP in 4.9.                      |
+| **When**          | After 4.7. Commander routes to `synthesize` only when evidence rows exist.                                                                |
+| **Documentation** | [Incident flow § Phase 3](architecture/incident-flow.md) RCA JSON · ADR-004 Sonnet + structured output                                    |
+| **Implements**    | FR-030–033 here. FR-034/035 accept-amend + versions: persist model now; HTTP in 4.9.                                                      |
 
 
 **Files to create / modify:**
@@ -3184,7 +3187,7 @@ tests/unit/infrastructure/llm/test_fake_llm.py
 - Context pack: incident metadata + **redacted** evidence list (id, source, excerpt, citations). Cap tokens ([NFR-045](requirements/non-functional-requirements.md) / [NFR-070](requirements/non-functional-requirements.md) — at least count tokens even if you fake them).
 - Output schema must match incident-flow Phase 3: `summary`, `root_cause`, `contributing_factors`, `confidence`, `status`, `evidence_citations[]` (`evidence_id` required), `recommended_actions`.
 - Reject / retry once if JSON invalid or a citation `evidence_id` is not in the pack (FR-031).
-- Confidence &lt; threshold (e.g. 0.6) → commander/synthesize sets escalate (FR-025), not `identified`.
+- Confidence < threshold (e.g. 0.6) → commander/synthesize sets escalate (FR-025), not `identified`.
 - `FakeLlm` returns a fixture RCA for `latency_spike` that cites the fake evidence ids — default `AEGIS_LLM=fake`.
 - Do not auto-transition to `identified` until a human accepts (FR-034) — 4.9 can expose that; 4.8 can leave RCA `status=pending_review`.
 
@@ -3241,13 +3244,13 @@ AEGIS_SKIP_DOTENV=1 AEGIS_LLM=fake \
 ### Step 4.9 — Investigation progress API
 
 
-|                   |                                                                                                      |
-| ----------------- | ---------------------------------------------------------------------------------------------------- |
-| **Goal**          | JWT API to see steps (completed / pending / failed), current RCA, pause/resume, accept/reject/amend  |
+|                   |                                                                                                                                                           |
+| ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Goal**          | JWT API to see steps (completed / pending / failed), current RCA, pause/resume, accept/reject/amend                                                       |
 | **Why**           | [FR-022](requirements/functional-requirements.md) · [FR-023](requirements/functional-requirements.md) · [FR-034](requirements/functional-requirements.md) |
-| **When**          | After 4.8 can persist an RCA (even from `FakeLlm`).                                                  |
-| **Documentation** | FR-020–028 cluster · existing incident API error envelope                                            |
-| **Implements**    | FR-022, FR-023 (HTTP), FR-024 (optional POST evidence), FR-034, FR-035 (versions)                    |
+| **When**          | After 4.8 can persist an RCA (even from `FakeLlm`).                                                                                                       |
+| **Documentation** | FR-020–028 cluster · existing incident API error envelope                                                                                                 |
+| **Implements**    | FR-022, FR-023 (HTTP), FR-024 (optional POST evidence), FR-034, FR-035 (versions)                                                                         |
 
 
 **Files to create / modify:**
@@ -3328,13 +3331,13 @@ AEGIS_SKIP_DOTENV=1 uv run pytest tests/integration/api/test_investigations_api.
 ### Step 4.10 — Notifications (RCA ready, escalation)
 
 
-|                   |                                                                                                 |
-| ----------------- | ----------------------------------------------------------------------------------------------- |
-| **Goal**          | When RCA is ready for review, or investigation escalates, the assigned engineer is notified     |
+|                   |                                                                                                                                                                  |
+| ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Goal**          | When RCA is ready for review, or investigation escalates, the assigned engineer is notified                                                                      |
 | **Why**           | [FR-027](requirements/functional-requirements.md) · [FR-028](requirements/functional-requirements.md) · [Incident flow § Phase 3](architecture/incident-flow.md) |
-| **When**          | After 4.9 can accept an RCA and 4.4 can escalate.                                               |
-| **Documentation** | Platform overview §9 queue `notification` · event catalog `rca.completed.v1` / `rca.escalated.v1` |
-| **Implements**    | FR-027, FR-028. Not SES/SMS production.                                                         |
+| **When**          | After 4.9 can accept an RCA and 4.4 can escalate.                                                                                                                |
+| **Documentation** | Platform overview §9 queue `notification` · event catalog `rca.completed.v1` / `rca.escalated.v1`                                                                |
+| **Implements**    | FR-027, FR-028. Not SES/SMS production.                                                                                                                          |
 
 
 **Files to create / modify:**
@@ -3407,13 +3410,13 @@ AEGIS_SKIP_DOTENV=1 uv run pytest tests/unit/application/notifications/test_noti
 ### Step 4.11 — Post-incident report
 
 
-|                   |                                                                                              |
-| ----------------- | -------------------------------------------------------------------------------------------- |
-| **Goal**          | After close (or identified+accepted), produce a report: timeline, evidence, RCA, actions     |
+|                   |                                                                                                              |
+| ----------------- | ------------------------------------------------------------------------------------------------------------ |
+| **Goal**          | After close (or identified+accepted), produce a report: timeline, evidence, RCA, actions                     |
 | **Why**           | [FR-101](requirements/functional-requirements.md) · [Incident flow § Phase 6](architecture/incident-flow.md) |
-| **When**          | After 4.8–4.10. This is the **learning-loop document**, not a live-incident dump.            |
-| **Documentation** | Incident flow Phase 6 · Step 3.6 re-index · RISK-007                                         |
-| **Implements**    | FR-101. Does **not** close FR-090 / RISK-007. Does **not** auto-ingest to OpenSearch.        |
+| **When**          | After 4.8–4.10. This is the **learning-loop document**, not a live-incident dump.                            |
+| **Documentation** | Incident flow Phase 6 · Step 3.6 re-index · RISK-007                                                         |
+| **Implements**    | FR-101. Does **not** close FR-090 / RISK-007. Does **not** auto-ingest to OpenSearch.                        |
 
 
 **Files to create / modify:**
@@ -3480,8 +3483,6 @@ AEGIS_SKIP_DOTENV=1 uv run pytest tests/unit/application/reports/test_post_incid
 
 ---
 
-
-
 **Phase 4 exit gate (before Phase 5):**
 
 - [ ] `incident.opened.v1` → worker → graph (not inside the webhook)
@@ -3497,6 +3498,8 @@ When this list is ticked, start [Step 5.1 — Tool gateway core](#step-51--tool-
 
 ---
 
+
+
 ## Phase 5 — v0.6 Tool gateway & MCP
 
 **Release goal:** Every agent tool call is authenticated, classified, policy-checked, rate-limited, redacted, and audited. The LLM does not enforce security.
@@ -3509,28 +3512,30 @@ Implement **5.1 → 5.8 in order**. Do not start Phase 6 (real AWS) or Phase 8 (
 
 **v0.6 execution rule:**
 
-| Class | Gateway in v0.6 |
-| --- | --- |
-| `read` | Execute + log (after policy allow) |
-| `low-risk-write` | Allow only if a policy rule says so; default **deny** until you have a safe demo tool (e.g. “add incident comment”). Prefer deny. |
-| `high-risk-write` | **Do not execute.** Return `requires_approval` / deny. Approval **records + execute** are Phase 8. |
-| `destructive` | **Always deny.** Never execute. Log the attempt (FR-053 preview, [Threat model §7](security/threat-model.md)). |
+
+| Class             | Gateway in v0.6                                                                                                                   |
+| ----------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| `read`            | Execute + log (after policy allow)                                                                                                |
+| `low-risk-write`  | Allow only if a policy rule says so; default **deny** until you have a safe demo tool (e.g. “add incident comment”). Prefer deny. |
+| `high-risk-write` | **Do not execute.** Return `requires_approval` / deny. Approval **records + execute** are Phase 8.                                |
+| `destructive`     | **Always deny.** Never execute. Log the attempt (FR-053 preview, [Threat model §7](security/threat-model.md)).                    |
+
 
 **Product split:** API stays on **:8000**. Worker still runs the graph. Gateway is an **application port** used by nodes — not a second public “agent HTTP API” unless 5.5 MCP needs a bound port (document it; do not collide with 8000/8001/4566/9200).
 
 **What v0.6 does not ship:** RDS/ECS (Phase 6), golden RCA scorer (Phase 7), remediation execute (Phase 8).
 
 
-| Step | Goal                                          | Key FRs                | Key docs                                                                   |
-| ---- | --------------------------------------------- | ---------------------- | -------------------------------------------------------------------------- |
-| 5.1  | Tool gateway core (allow/deny/log)            | FR-060, FR-061, FR-064, FR-067 | [Platform overview §10](architecture/platform-overview.md)          |
-| 5.2  | Policy rule model + admin API                 | FR-066                 | [Threat model §7](security/threat-model.md)                                |
-| 5.3  | Agent service accounts + scoped permissions   | FR-074                 | [FR-074](requirements/functional-requirements.md) · [NFR-033](requirements/non-functional-requirements.md) |
-| 5.4  | Tool implementations (`tools/`)               | FR-060                 | [System boundaries §3](architecture/system-boundaries.md)                  |
-| 5.5  | MCP server exposure                           | FR-065                 | [Platform overview §10](architecture/platform-overview.md)                 |
-| 5.6  | Immutable audit log                           | FR-100, FR-062         | [ADR-002](adr/ADR-002-postgresql.md) · [THR-004](security/threat-model.md) |
-| 5.7  | Rate limiting                                 | FR-063                 | [NFR-043](requirements/non-functional-requirements.md)                     |
-| 5.8  | Security tests (prompt injection, tool abuse) | —                      | [Threat model §10](security/threat-model.md)                               |
+| Step | Goal                                          | Key FRs                        | Key docs                                                                                                   |
+| ---- | --------------------------------------------- | ------------------------------ | ---------------------------------------------------------------------------------------------------------- |
+| 5.1  | Tool gateway core (allow/deny/log)            | FR-060, FR-061, FR-064, FR-067 | [Platform overview §10](architecture/platform-overview.md)                                                 |
+| 5.2  | Policy rule model + admin API                 | FR-066                         | [Threat model §7](security/threat-model.md)                                                                |
+| 5.3  | Agent service accounts + scoped permissions   | FR-074                         | [FR-074](requirements/functional-requirements.md) · [NFR-033](requirements/non-functional-requirements.md) |
+| 5.4  | Tool implementations (`tools/`)               | FR-060                         | [System boundaries §3](architecture/system-boundaries.md)                                                  |
+| 5.5  | MCP server exposure                           | FR-065                         | [Platform overview §10](architecture/platform-overview.md)                                                 |
+| 5.6  | Immutable audit log                           | FR-100, FR-062                 | [ADR-002](adr/ADR-002-postgresql.md) · [THR-004](security/threat-model.md)                                 |
+| 5.7  | Rate limiting                                 | FR-063                         | [NFR-043](requirements/non-functional-requirements.md)                                                     |
+| 5.8  | Security tests (prompt injection, tool abuse) | —                              | [Threat model §10](security/threat-model.md)                                                               |
 
 
 **How to use Phase 5 for interviews:** the sentence you want is *“the model proposes a tool call; the gateway decides.”* Walk allow → deny → audit without mentioning MCP until 5.5.
@@ -3542,13 +3547,13 @@ Implement **5.1 → 5.8 in order**. Do not start Phase 6 (real AWS) or Phase 8 (
 ### Step 5.1 — Tool gateway core (allow / deny / log)
 
 
-|                   |                                                                                                      |
-| ----------------- | ---------------------------------------------------------------------------------------------------- |
-| **Goal**          | One function every specialist must call: `{agent_id, tool, params, incident_id}` → allow/deny + reason |
+|                   |                                                                                                                                                                                                            |
+| ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Goal**          | One function every specialist must call: `{agent_id, tool, params, incident_id}` → allow/deny + reason                                                                                                     |
 | **Why**           | [FR-060](requirements/functional-requirements.md), [FR-061](requirements/functional-requirements.md), [FR-064](requirements/functional-requirements.md), [FR-067](requirements/functional-requirements.md) |
-| **When**          | After 4.5 ports exist. Replace direct port calls in graph nodes with `ToolGateway.invoke`.           |
-| **Documentation** | [Platform overview §10](architecture/platform-overview.md) · [System boundaries §4 tool contract](architecture/system-boundaries.md) |
-| **Implements**    | FR-060, FR-061, FR-064, FR-067 (hardcoded policy is OK). Rules table is 5.2. Audit table is 5.6.     |
+| **When**          | After 4.5 ports exist. Replace direct port calls in graph nodes with `ToolGateway.invoke`.                                                                                                                 |
+| **Documentation** | [Platform overview §10](architecture/platform-overview.md) · [System boundaries §4 tool contract](architecture/system-boundaries.md)                                                                       |
+| **Implements**    | FR-060, FR-061, FR-064, FR-067 (hardcoded policy is OK). Rules table is 5.2. Audit table is 5.6.                                                                                                           |
 
 
 **Files to create / modify:**
@@ -3623,13 +3628,13 @@ AEGIS_SKIP_DOTENV=1 uv run pytest tests/unit/application/gateway/test_invoke_too
 ### Step 5.2 — Policy rule model + admin API
 
 
-|                   |                                                                                         |
-| ----------------- | --------------------------------------------------------------------------------------- |
-| **Goal**          | Admins CRUD policy rules (tool, action class, scope, allow/deny) without a code deploy |
-| **Why**           | [FR-066](requirements/functional-requirements.md)                                       |
+|                   |                                                                                                 |
+| ----------------- | ----------------------------------------------------------------------------------------------- |
+| **Goal**          | Admins CRUD policy rules (tool, action class, scope, allow/deny) without a code deploy          |
+| **Why**           | [FR-066](requirements/functional-requirements.md)                                               |
 | **When**          | After 5.1 hardcoded registry works. Replace constants with DB-backed rules + safe default deny. |
-| **Documentation** | [Threat model §7](security/threat-model.md) · ERD `POLICY_RULE`                         |
-| **Implements**    | FR-066. Evaluation still FR-067.                                                        |
+| **Documentation** | [Threat model §7](security/threat-model.md) · ERD `POLICY_RULE`                                 |
+| **Implements**    | FR-066. Evaluation still FR-067.                                                                |
 
 
 **Files to create / modify:**
@@ -3705,13 +3710,13 @@ AEGIS_SKIP_DOTENV=1 uv run pytest tests/unit/application/policy tests/security/t
 ### Step 5.3 — Agent service accounts + scoped permissions
 
 
-|                   |                                                                                      |
-| ----------------- | ------------------------------------------------------------------------------------ |
-| **Goal**          | Each agent role has an identity (`knowledge`, `observability`, `code`, `commander`, `rca`) with least-privilege tool grants |
+|                   |                                                                                                                                                                |
+| ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Goal**          | Each agent role has an identity (`knowledge`, `observability`, `code`, `commander`, `rca`) with least-privilege tool grants                                    |
 | **Why**           | [FR-074](requirements/functional-requirements.md) · [NFR-033](requirements/non-functional-requirements.md) · [FR-061](requirements/functional-requirements.md) |
-| **When**          | After 5.2 can scope rules by `agent_id`.                                             |
-| **Documentation** | Threat model agent identity · RISK-002                                               |
-| **Implements**    | FR-074. Not AWS IAM roles (those are 6.4 / 6.8).                                     |
+| **When**          | After 5.2 can scope rules by `agent_id`.                                                                                                                       |
+| **Documentation** | Threat model agent identity · RISK-002                                                                                                                         |
+| **Implements**    | FR-074. Not AWS IAM roles (those are 6.4 / 6.8).                                                                                                               |
 
 
 **Files to create / modify:**
@@ -3776,13 +3781,13 @@ AEGIS_SKIP_DOTENV=1 uv run pytest tests/unit/application/gateway/test_agent_scop
 ### Step 5.4 — Tool implementations (`tools/`)
 
 
-|                   |                                                                                   |
-| ----------------- | --------------------------------------------------------------------------------- |
-| **Goal**          | Concrete read tools live behind the gateway: retrieve, simulator signals, code/deploy search |
+|                   |                                                                                                               |
+| ----------------- | ------------------------------------------------------------------------------------------------------------- |
+| **Goal**          | Concrete read tools live behind the gateway: retrieve, simulator signals, code/deploy search                  |
 | **Why**           | [FR-060](requirements/functional-requirements.md) · [System boundaries §3](architecture/system-boundaries.md) |
-| **When**          | After 5.1–5.3. Move 4.5 infrastructure clients to `tools/` (or `infrastructure/tools/`) and register them. |
-| **Documentation** | System boundaries `tools/` vs `mcp/`                                              |
-| **Implements**    | FR-060 (implementations). No new product capability beyond wrapping 4.5.          |
+| **When**          | After 5.1–5.3. Move 4.5 infrastructure clients to `tools/` (or `infrastructure/tools/`) and register them.    |
+| **Documentation** | System boundaries `tools/` vs `mcp/`                                                                          |
+| **Implements**    | FR-060 (implementations). No new product capability beyond wrapping 4.5.                                      |
 
 
 **Files to create / modify:**
@@ -3850,13 +3855,13 @@ AEGIS_SKIP_DOTENV=1 uv run pytest tests/unit/tools tests/unit/application/gatewa
 ### Step 5.5 — MCP server exposure
 
 
-|                   |                                                                              |
-| ----------------- | ---------------------------------------------------------------------------- |
-| **Goal**          | The same gateway tools are available over an MCP-compatible server           |
-| **Why**           | [FR-065](requirements/functional-requirements.md) (P1)                       |
+|                   |                                                                                   |
+| ----------------- | --------------------------------------------------------------------------------- |
+| **Goal**          | The same gateway tools are available over an MCP-compatible server                |
+| **Why**           | [FR-065](requirements/functional-requirements.md) (P1)                            |
 | **When**          | After 5.4 registry works in-process. MCP is a **transport**, not a second policy. |
-| **Documentation** | [Platform overview §10](architecture/platform-overview.md)                   |
-| **Implements**    | FR-065. Optional if you must slip — do not skip 5.6–5.8.                     |
+| **Documentation** | [Platform overview §10](architecture/platform-overview.md)                        |
+| **Implements**    | FR-065. Optional if you must slip — do not skip 5.6–5.8.                          |
 
 
 **Files to create / modify:**
@@ -3921,13 +3926,13 @@ AEGIS_SKIP_DOTENV=1 uv run pytest tests/integration/mcp/test_mcp_policy.py -v
 ### Step 5.6 — Immutable audit log
 
 
-|                   |                                                                                   |
-| ----------------- | --------------------------------------------------------------------------------- |
-| **Goal**          | Every gateway decision (allow, deny, pending) is an append-only Postgres row      |
+|                   |                                                                                                                                                                                                                                                               |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Goal**          | Every gateway decision (allow, deny, pending) is an append-only Postgres row                                                                                                                                                                                  |
 | **Why**           | [FR-100](requirements/functional-requirements.md) · [FR-062](requirements/functional-requirements.md) · [THR-004](security/threat-model.md) · [NFR-035](requirements/non-functional-requirements.md) · [NFR-063](requirements/non-functional-requirements.md) |
-| **When**          | After 5.1 returns decisions. Do this before you trust 5.8 security tests.         |
-| **Documentation** | ADR-002 · ERD `AUDIT_LOG`                                                         |
-| **Implements**    | FR-100, FR-062. Tamper-evidence hash chain optional but good.                     |
+| **When**          | After 5.1 returns decisions. Do this before you trust 5.8 security tests.                                                                                                                                                                                     |
+| **Documentation** | ADR-002 · ERD `AUDIT_LOG`                                                                                                                                                                                                                                     |
+| **Implements**    | FR-100, FR-062. Tamper-evidence hash chain optional but good.                                                                                                                                                                                                 |
 
 
 **Files to create / modify:**
@@ -3999,13 +4004,13 @@ uv run pytest tests/unit/application/audit tests/integration/repositories/test_a
 ### Step 5.7 — Rate limiting
 
 
-|                   |                                                                          |
-| ----------------- | ------------------------------------------------------------------------ |
-| **Goal**          | Per-agent and per-tool rate limits so a loop cannot flood Bedrock/GitHub |
+|                   |                                                                                                                                          |
+| ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| **Goal**          | Per-agent and per-tool rate limits so a loop cannot flood Bedrock/GitHub                                                                 |
 | **Why**           | [FR-063](requirements/functional-requirements.md) (P1) · [RISK-010](requirements/risk-register.md) · [THR-014](security/threat-model.md) |
-| **When**          | After 5.6. Hop cap is not enough if one hop calls a tool 100 times.      |
-| **Documentation** | [NFR-043](requirements/non-functional-requirements.md) queue/tool metrics later in 7.3 |
-| **Implements**    | FR-063. In-memory is OK locally; Redis is the production note (Phase 6 ElastiCache). |
+| **When**          | After 5.6. Hop cap is not enough if one hop calls a tool 100 times.                                                                      |
+| **Documentation** | [NFR-043](requirements/non-functional-requirements.md) queue/tool metrics later in 7.3                                                   |
+| **Implements**    | FR-063. In-memory is OK locally; Redis is the production note (Phase 6 ElastiCache).                                                     |
 
 
 **Files to create / modify:**
@@ -4067,13 +4072,13 @@ AEGIS_SKIP_DOTENV=1 uv run pytest tests/unit/application/gateway/test_rate_limit
 ### Step 5.8 — Security tests (prompt injection, tool abuse)
 
 
-|                   |                                                                       |
-| ----------------- | --------------------------------------------------------------------- |
-| **Goal**          | Automated tests that injection and tool abuse **do not** execute writes |
+|                   |                                                                                                                                                   |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Goal**          | Automated tests that injection and tool abuse **do not** execute writes                                                                           |
 | **Why**           | [Threat model §10](security/threat-model.md) · [RISK-003](requirements/risk-register.md) · [NFR-036](requirements/non-functional-requirements.md) |
-| **When**          | After 5.1–5.7. This is the v0.6 **quality gate**.                     |
-| **Documentation** | THR-003, THR-006, threat-model §10                                    |
-| **Implements**    | No new FR. Proves FR-060/064/067/100.                                 |
+| **When**          | After 5.1–5.7. This is the v0.6 **quality gate**.                                                                                                 |
+| **Documentation** | THR-003, THR-006, threat-model §10                                                                                                                |
+| **Implements**    | No new FR. Proves FR-060/064/067/100.                                                                                                             |
 
 
 **Files to create / modify:**
@@ -4131,8 +4136,6 @@ AEGIS_SKIP_DOTENV=1 uv run pytest tests/security/test_prompt_injection_tools.py 
 
 ---
 
-
-
 **Phase 5 exit gate (before Phase 6):**
 
 - [ ] All specialist I/O goes through the gateway
@@ -4189,13 +4192,13 @@ Implement **6.1 → 6.9 in order**. Do not start golden-eval (7.4) or remediatio
 ### Step 6.1 — AWS CDK project in `infrastructure/cdk/`
 
 
-|                   |                                                                              |
-| ----------------- | ---------------------------------------------------------------------------- |
-| **Goal**          | A CDK app that synths an empty-or-minimal stack; app code still runs locally |
-| **Why**           | IaC for everything that will exist in §12. No click-ops.                     |
+|                   |                                                                                                                       |
+| ----------------- | --------------------------------------------------------------------------------------------------------------------- |
+| **Goal**          | A CDK app that synths an empty-or-minimal stack; app code still runs locally                                          |
+| **Why**           | IaC for everything that will exist in §12. No click-ops.                                                              |
 | **When**          | After 5.8. First AWS step — **do not** create paid domains yet if you cannot afford them; synth + tests are the gate. |
-| **Documentation** | [Platform overview §12](architecture/platform-overview.md)                   |
-| **Implements**    | Topology scaffolding. No FR number.                                          |
+| **Documentation** | [Platform overview §12](architecture/platform-overview.md)                                                            |
+| **Implements**    | Topology scaffolding. No FR number.                                                                                   |
 
 
 **Files to create / modify:**
@@ -4260,13 +4263,13 @@ cd infrastructure/cdk && cdk synth   # or uv run pytest tests/unit/cdk -v
 ### Step 6.2 — VPC, subnets, security groups
 
 
-|                   |                                                                           |
-| ----------------- | ------------------------------------------------------------------------- |
+|                   |                                                                                             |
+| ----------------- | ------------------------------------------------------------------------------------------- |
 | **Goal**          | One VPC: public subnet (ALB only), private subnets (ECS, data), egress via NAT or endpoints |
-| **Why**           | [Platform overview §12](architecture/platform-overview.md) — workers must not be public |
-| **When**          | After 6.1 synth works.                                                    |
-| **Documentation** | §12 diagram · NFR-031 TLS at ALB                                          |
-| **Implements**    | Network only.                                                             |
+| **Why**           | [Platform overview §12](architecture/platform-overview.md) — workers must not be public     |
+| **When**          | After 6.1 synth works.                                                                      |
+| **Documentation** | §12 diagram · NFR-031 TLS at ALB                                                            |
+| **Implements**    | Network only.                                                                               |
 
 
 **Files to create / modify:**
@@ -4327,13 +4330,13 @@ cdk synth && uv run pytest tests/unit/cdk/test_network_stack.py -v
 ### Step 6.3 — RDS PostgreSQL
 
 
-|                   |                                                                        |
-| ----------------- | ---------------------------------------------------------------------- |
-| **Goal**          | Encrypted RDS Postgres; app uses `AEGIS_DATABASE_URL` from Secrets Manager (wired in 6.8) |
+|                   |                                                                                                                                                        |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Goal**          | Encrypted RDS Postgres; app uses `AEGIS_DATABASE_URL` from Secrets Manager (wired in 6.8)                                                              |
 | **Why**           | [ADR-002](adr/ADR-002-postgresql.md) · [NFR-060](requirements/non-functional-requirements.md) · [NFR-065](requirements/non-functional-requirements.md) |
-| **When**          | After 6.2 SGs exist.                                                   |
-| **Documentation** | ADR-002 · NFR-064 encryption                                           |
-| **Implements**    | Production SoR. Alembic still runs as a job/task.                      |
+| **When**          | After 6.2 SGs exist.                                                                                                                                   |
+| **Documentation** | ADR-002 · NFR-064 encryption                                                                                                                           |
+| **Implements**    | Production SoR. Alembic still runs as a job/task.                                                                                                      |
 
 
 **Files to create / modify:**
@@ -4393,13 +4396,13 @@ uv run pytest tests/unit/cdk/test_data_stack.py -v   # if you add it
 ### Step 6.4 — ECS/Fargate for API + worker
 
 
-|                   |                                                                     |
-| ----------------- | ------------------------------------------------------------------- |
-| **Goal**          | Two Fargate services: API (behind ALB) and worker (no public port)  |
+|                   |                                                                        |
+| ----------------- | ---------------------------------------------------------------------- |
+| **Goal**          | Two Fargate services: API (behind ALB) and worker (no public port)     |
 | **Why**           | [ADR-001](adr/ADR-001-modular-monolith.md) — same image, two processes |
-| **When**          | After 6.2–6.3.                                                      |
-| **Documentation** | §12 ECS tasks · NFR-006 drain                                       |
-| **Implements**    | Runtime for `aegis.main` and `aegis.worker`.                        |
+| **When**          | After 6.2–6.3.                                                         |
+| **Documentation** | §12 ECS tasks · NFR-006 drain                                          |
+| **Implements**    | Runtime for `aegis.main` and `aegis.worker`.                           |
 
 
 **Files to create / modify:**
@@ -4458,13 +4461,13 @@ Synth + (optional) deploy to a dev account. Local Docker still used for daily wo
 ### Step 6.5 — OpenSearch domain
 
 
-|                   |                                                                  |
-| ----------------- | ---------------------------------------------------------------- |
+|                   |                                                                         |
+| ----------------- | ----------------------------------------------------------------------- |
 | **Goal**          | Amazon OpenSearch for `aegis-knowledge` (not a public Dashboards party) |
-| **Why**           | [Platform overview §11](architecture/platform-overview.md) / §12 |
-| **When**          | After 6.2 SGs. Costly — fine-grained access + encryption.        |
-| **Documentation** | FR-043 store · NFR-022                                           |
-| **Implements**    | Production RAG store. Ingest still the 24-file allowlist.        |
+| **Why**           | [Platform overview §11](architecture/platform-overview.md) / §12        |
+| **When**          | After 6.2 SGs. Costly — fine-grained access + encryption.               |
+| **Documentation** | FR-043 store · NFR-022                                                  |
+| **Implements**    | Production RAG store. Ingest still the 24-file allowlist.               |
 
 
 **Files to create / modify:**
@@ -4521,13 +4524,13 @@ Ingest playbook: ECS task or one-off `aegis.rag.ingest` with IAM.
 ### Step 6.6 — EventBridge + SQS (AWS)
 
 
-|                   |                                                               |
-| ----------------- | ------------------------------------------------------------- |
+|                   |                                                                                     |
+| ----------------- | ----------------------------------------------------------------------------------- |
 | **Goal**          | Real `aegis-events` bus + `investigation-workflow` + DLQ (same names as LocalStack) |
-| **Why**           | [ADR-003](adr/ADR-003-event-driven-investigation.md)          |
-| **When**          | After 6.4 worker exists. Swap `AEGIS_AWS_ENDPOINT` off.       |
-| **Documentation** | ADR-003 rules: visibility 300s, maxReceive 3, dedicated bus   |
-| **Implements**    | FR-020 in AWS.                                                |
+| **Why**           | [ADR-003](adr/ADR-003-event-driven-investigation.md)                                |
+| **When**          | After 6.4 worker exists. Swap `AEGIS_AWS_ENDPOINT` off.                             |
+| **Documentation** | ADR-003 rules: visibility 300s, maxReceive 3, dedicated bus                         |
+| **Implements**    | FR-020 in AWS.                                                                      |
 
 
 **Files to create / modify:**
@@ -4586,13 +4589,13 @@ Open an incident in the deployed API → worker log → state `investigating`.
 ### Step 6.7 — Bedrock VPC endpoint
 
 
-|                   |                                                            |
-| ----------------- | ---------------------------------------------------------- |
-| **Goal**          | Worker reaches Bedrock Runtime **without** a public internet hop |
+|                   |                                                                                                             |
+| ----------------- | ----------------------------------------------------------------------------------------------------------- |
+| **Goal**          | Worker reaches Bedrock Runtime **without** a public internet hop                                            |
 | **Why**           | [ADR-004](adr/ADR-004-aws-bedrock.md) VPC endpoint · [NFR-034](requirements/non-functional-requirements.md) |
-| **When**          | After 6.2 + 6.4. Models: Titan (already) + Claude (4.8).   |
-| **Documentation** | ADR-004 access pattern                                     |
-| **Implements**    | Private LLM path. `AEGIS_LLM=claude` still opt-in.         |
+| **When**          | After 6.2 + 6.4. Models: Titan (already) + Claude (4.8).                                                    |
+| **Documentation** | ADR-004 access pattern                                                                                      |
+| **Implements**    | Private LLM path. `AEGIS_LLM=claude` still opt-in.                                                          |
 
 
 **Files to create / modify:**
@@ -4649,13 +4652,13 @@ Optional: one `InvokeModel` from a worker task. CI stays fake.
 ### Step 6.8 — Secrets Manager, encryption at rest
 
 
-|                   |                                                         |
-| ----------------- | ------------------------------------------------------- |
-| **Goal**          | DB URL, JWT secret, webhook secret live in Secrets Manager; RDS/OS/S3 encrypted |
+|                   |                                                                                                                                                       |
+| ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Goal**          | DB URL, JWT secret, webhook secret live in Secrets Manager; RDS/OS/S3 encrypted                                                                       |
 | **Why**           | [NFR-064](requirements/non-functional-requirements.md) · [THR-013](security/threat-model.md) · [NFR-032](requirements/non-functional-requirements.md) |
-| **When**          | After 6.3–6.5 resources exist.                          |
-| **Documentation** | Threat model THR-013                                    |
-| **Implements**    | Secret distribution. Rotation can be partial.           |
+| **When**          | After 6.3–6.5 resources exist.                                                                                                                        |
+| **Documentation** | Threat model THR-013                                                                                                                                  |
+| **Implements**    | Secret distribution. Rotation can be partial.                                                                                                         |
 
 
 **Files to create / modify:**
@@ -4715,13 +4718,13 @@ Task definition references SM; `docker` local still uses `.env`.
 ### Step 6.9 — GitHub Actions CI/CD pipeline
 
 
-|                   |                                                      |
-| ----------------- | ---------------------------------------------------- |
+|                   |                                                                                                             |
+| ----------------- | ----------------------------------------------------------------------------------------------------------- |
 | **Goal**          | CI on every PR: lint, typecheck, unit tests; CD deploys image + optional `cdk deploy` to a non-prod account |
-| **Why**           | README CI/CD · [NFR-053](requirements/non-functional-requirements.md) |
-| **When**          | After 6.4 image exists. This is the v0.7 gate.       |
-| **Documentation** | README · this step                                   |
-| **Implements**    | Pipeline. OIDC to AWS — no long-lived GH secrets for AWS keys if you can. |
+| **Why**           | README CI/CD · [NFR-053](requirements/non-functional-requirements.md)                                       |
+| **When**          | After 6.4 image exists. This is the v0.7 gate.                                                              |
+| **Documentation** | README · this step                                                                                          |
+| **Implements**    | Pipeline. OIDC to AWS — no long-lived GH secrets for AWS keys if you can.                                   |
 
 
 **Files to create / modify:**
@@ -4777,8 +4780,6 @@ Open a PR; watch CI. Document the deploy button.
 
 ---
 
-
-
 **Phase 6 exit gate (before Phase 7):**
 
 - [ ] Synth/deploy story for VPC, RDS, ECS API+worker, OS, bus/queue, Bedrock VPCE, SM
@@ -4824,13 +4825,13 @@ Implement **7.1 → 7.5 in order**. Do not start remediation execute (8.4).
 ### Step 7.1 — Structured JSON logging + request IDs
 
 
-|                   |                                                                    |
-| ----------------- | ------------------------------------------------------------------ |
-| **Goal**          | API **and worker** emit JSON logs with `request_id` / `correlation_id` / `incident_id` |
+|                   |                                                                                                                                                                                      |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Goal**          | API **and worker** emit JSON logs with `request_id` / `correlation_id` / `incident_id`                                                                                               |
 | **Why**           | [NFR-040](requirements/non-functional-requirements.md), [NFR-041](requirements/non-functional-requirements.md) — request id already exists on HTTP; this step makes it **universal** |
-| **When**          | After 4.2 correlation_id exists in events. Tighten now.            |
-| **Documentation** | NFR §5 · existing `src/aegis/api/request_id.py`                    |
-| **Implements**    | NFR-040, NFR-041 (complete, not first invent).                     |
+| **When**          | After 4.2 correlation_id exists in events. Tighten now.                                                                                                                              |
+| **Documentation** | NFR §5 · existing `src/aegis/api/request_id.py`                                                                                                                                      |
+| **Implements**    | NFR-040, NFR-041 (complete, not first invent).                                                                                                                                       |
 
 
 **Files to create / modify:**
@@ -4894,13 +4895,13 @@ AEGIS_SKIP_DOTENV=1 uv run pytest tests/unit/test_logging.py tests/test_health.p
 ### Step 7.2 — OpenTelemetry tracing
 
 
-|                   |                                                                 |
-| ----------------- | --------------------------------------------------------------- |
-| **Goal**          | One trace from webhook/API through worker graph nodes           |
-| **Why**           | [NFR-042](requirements/non-functional-requirements.md)          |
-| **When**          | After 7.1 field names exist.                                    |
-| **Documentation** | Platform overview §2                                            |
-| **Implements**    | NFR-042. Export to console locally; OTLP/X-Ray in AWS.          |
+|                   |                                                        |
+| ----------------- | ------------------------------------------------------ |
+| **Goal**          | One trace from webhook/API through worker graph nodes  |
+| **Why**           | [NFR-042](requirements/non-functional-requirements.md) |
+| **When**          | After 7.1 field names exist.                           |
+| **Documentation** | Platform overview §2                                   |
+| **Implements**    | NFR-042. Export to console locally; OTLP/X-Ray in AWS. |
 
 
 **Files to create / modify:**
@@ -4961,13 +4962,13 @@ AEGIS_SKIP_DOTENV=1 AEGIS_OTEL_EXPORTER=none uv run pytest tests/unit/telemetry/
 ### Step 7.3 — CloudWatch metrics + alarms
 
 
-|                   |                                                              |
-| ----------------- | ------------------------------------------------------------ |
-| **Goal**          | Export NFR-043 metrics; alarm on NFR-044 thresholds          |
+|                   |                                                                                                                                                         |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Goal**          | Export NFR-043 metrics; alarm on NFR-044 thresholds                                                                                                     |
 | **Why**           | [NFR-043](requirements/non-functional-requirements.md) · [NFR-044](requirements/non-functional-requirements.md) · [SLOs](requirements/slos-and-slis.md) |
-| **When**          | After 7.2. Needs AWS for real CW; local can emit statsd/OTLP metrics. |
-| **Documentation** | SLO-001–010 · SLI-006/007 gateway                            |
-| **Implements**    | NFR-043, NFR-044.                                            |
+| **When**          | After 7.2. Needs AWS for real CW; local can emit statsd/OTLP metrics.                                                                                   |
+| **Documentation** | SLO-001–010 · SLI-006/007 gateway                                                                                                                       |
+| **Implements**    | NFR-043, NFR-044.                                                                                                                                       |
 
 
 **Files to create / modify:**
@@ -5029,13 +5030,13 @@ uv run pytest tests/unit/telemetry/test_metrics.py -v
 ### Step 7.4 — Golden incident dataset
 
 
-|                   |                                                           |
-| ----------------- | --------------------------------------------------------- |
-| **Goal**          | Labelled incidents with **expected root cause** (and expected evidence kinds) for the six FR-083 scenarios |
+|                   |                                                                                                                |
+| ----------------- | -------------------------------------------------------------------------------------------------------------- |
+| **Goal**          | Labelled incidents with **expected root cause** (and expected evidence kinds) for the six FR-083 scenarios     |
 | **Why**           | [FR-090](requirements/functional-requirements.md) · [Product vision §10](product/product-vision.md) · RISK-007 |
-| **When**          | After you can run a fake investigation end-to-end (Phase 4). Dataset **before** the scorer (7.5). |
-| **Documentation** | Written RCAs in `docs/knowledge/incidents/` · simulator catalog |
-| **Implements**    | FR-090 only. Does **not** close RISK-007 until 7.5 uses it. |
+| **When**          | After you can run a fake investigation end-to-end (Phase 4). Dataset **before** the scorer (7.5).              |
+| **Documentation** | Written RCAs in `docs/knowledge/incidents/` · simulator catalog                                                |
+| **Implements**    | FR-090 only. Does **not** close RISK-007 until 7.5 uses it.                                                    |
 
 
 **Files to create / modify:**
@@ -5100,13 +5101,13 @@ AEGIS_SKIP_DOTENV=1 uv run pytest tests/unit/evaluation/test_golden_dataset.py t
 ### Step 7.5 — Evaluation pipeline (RCA accuracy and friends)
 
 
-|                   |                                                        |
-| ----------------- | ------------------------------------------------------ |
-| **Goal**          | A runner scores agent output vs 7.4 labels and **stores** results by release |
+|                   |                                                                                                                                                                            |
+| ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Goal**          | A runner scores agent output vs 7.4 labels and **stores** results by release                                                                                               |
 | **Why**           | [FR-091](requirements/functional-requirements.md)–[FR-094](requirements/functional-requirements.md) · [RISK-001](requirements/risk-register.md) · vision MTTI/RCA accuracy |
-| **When**          | After 7.4. Default `AEGIS_LLM=fake` so CI has a **smoke** score; Claude job is opt-in. |
-| **Documentation** | SLI-010 · product vision §10                           |
-| **Implements**    | FR-091, FR-092, FR-093, FR-094. **Then** RISK-007 → Mitigated (not forgotten). |
+| **When**          | After 7.4. Default `AEGIS_LLM=fake` so CI has a **smoke** score; Claude job is opt-in.                                                                                     |
+| **Documentation** | SLI-010 · product vision §10                                                                                                                                               |
+| **Implements**    | FR-091, FR-092, FR-093, FR-094. **Then** RISK-007 → Mitigated (not forgotten).                                                                                             |
 
 
 **Files to create / modify:**
@@ -5176,8 +5177,6 @@ AEGIS_SKIP_DOTENV=1 uv run pytest tests/unit/evaluation -v
 
 ---
 
-
-
 **Phase 7 exit gate (before Phase 8):**
 
 - [ ] JSON logs + traces + core alarms
@@ -5229,13 +5228,13 @@ Implement **8.1 → 8.6 in order**. There is no “fully autonomous prod fix” 
 ### Step 8.1 — Remediation recommendation model
 
 
-|                   |                                                      |
-| ----------------- | ---------------------------------------------------- |
-| **Goal**          | From an accepted RCA, propose actions each with FR-052 class — **no execution** |
+|                   |                                                                                                     |
+| ----------------- | --------------------------------------------------------------------------------------------------- |
+| **Goal**          | From an accepted RCA, propose actions each with FR-052 class — **no execution**                     |
 | **Why**           | [FR-050](requirements/functional-requirements.md)–[FR-052](requirements/functional-requirements.md) |
-| **When**          | After 4.8 RCA + 5.1 classification exist.            |
-| **Documentation** | Threat model §7 · incident-flow Phase 4              |
-| **Implements**    | FR-050, FR-051, FR-052.                              |
+| **When**          | After 4.8 RCA + 5.1 classification exist.                                                           |
+| **Documentation** | Threat model §7 · incident-flow Phase 4                                                             |
+| **Implements**    | FR-050, FR-051, FR-052.                                                                             |
 
 
 **Files to create / modify:**
@@ -5305,13 +5304,13 @@ AEGIS_SKIP_DOTENV=1 AEGIS_LLM=fake uv run pytest tests/unit/application/remediat
 ### Step 8.2 — Approval request workflow
 
 
-|                   |                                                     |
-| ----------------- | --------------------------------------------------- |
-| **Goal**          | Each high-risk proposal gets an approval row: pending → approved/rejected/expired |
+|                   |                                                                                                     |
+| ----------------- | --------------------------------------------------------------------------------------------------- |
+| **Goal**          | Each high-risk proposal gets an approval row: pending → approved/rejected/expired                   |
 | **Why**           | [FR-057](requirements/functional-requirements.md)–[FR-059](requirements/functional-requirements.md) |
-| **When**          | After 8.1 can insert proposals.                     |
-| **Documentation** | Incident flow Phase 4 · ERD `APPROVAL_REQUEST`      |
-| **Implements**    | FR-057, FR-058, FR-059. HTTP decide can land in 8.6; domain here. |
+| **When**          | After 8.1 can insert proposals.                                                                     |
+| **Documentation** | Incident flow Phase 4 · ERD `APPROVAL_REQUEST`                                                      |
+| **Implements**    | FR-057, FR-058, FR-059. HTTP decide can land in 8.6; domain here.                                   |
 
 
 **Files to create / modify:**
@@ -5380,13 +5379,13 @@ AEGIS_SKIP_DOTENV=1 uv run pytest tests/unit/application/approval/test_approval.
 ### Step 8.3 — Approver notifications
 
 
-|                   |                                                    |
-| ----------------- | -------------------------------------------------- |
+|                   |                                                                                 |
+| ----------------- | ------------------------------------------------------------------------------- |
 | **Goal**          | Approvers are notified when a high-risk action needs them (and when it expires) |
-| **Why**           | [FR-029](requirements/functional-requirements.md)  |
-| **When**          | After 8.2 creates pending rows. Reuse 4.10 `Notifier`. |
-| **Documentation** | FR-029 · platform overview notify-approver         |
-| **Implements**    | FR-029. Same port as FR-027/028.                   |
+| **Why**           | [FR-029](requirements/functional-requirements.md)                               |
+| **When**          | After 8.2 creates pending rows. Reuse 4.10 `Notifier`.                          |
+| **Documentation** | FR-029 · platform overview notify-approver                                      |
+| **Implements**    | FR-029. Same port as FR-027/028.                                                |
 
 
 **Files to create / modify:**
@@ -5446,13 +5445,13 @@ AEGIS_SKIP_DOTENV=1 uv run pytest tests/unit/application/notifications/test_appr
 ### Step 8.4 — Execute approved actions via gateway
 
 
-|                   |                                                   |
-| ----------------- | ------------------------------------------------- |
-| **Goal**          | Approved high-risk runs **only** through the gateway, once, with the bound payload |
+|                   |                                                                                                       |
+| ----------------- | ----------------------------------------------------------------------------------------------------- |
+| **Goal**          | Approved high-risk runs **only** through the gateway, once, with the bound payload                    |
 | **Why**           | [FR-053](requirements/functional-requirements.md) · [FR-054](requirements/functional-requirements.md) |
-| **When**          | After 8.2–8.3 and Phase 5 gateway.                |
-| **Documentation** | Platform overview §10 APPROVAL branch             |
-| **Implements**    | FR-053, FR-054. Destructive still never runs.     |
+| **When**          | After 8.2–8.3 and Phase 5 gateway.                                                                    |
+| **Documentation** | Platform overview §10 APPROVAL branch                                                                 |
+| **Implements**    | FR-053, FR-054. Destructive still never runs.                                                         |
 
 
 **Files to create / modify:**
@@ -5523,13 +5522,13 @@ AEGIS_SKIP_DOTENV=1 uv run pytest tests/unit/application/remediation/test_execut
 ### Step 8.5 — Verification agent
 
 
-|                   |                                                  |
-| ----------------- | ------------------------------------------------ |
+|                   |                                                                                                          |
+| ----------------- | -------------------------------------------------------------------------------------------------------- |
 | **Goal**          | After execute, check health/signals; success → `resolved`; failure → rollback recommendation or escalate |
-| **Why**           | [FR-055](requirements/functional-requirements.md) · [FR-056](requirements/functional-requirements.md) |
-| **When**          | After 8.4 can mark `executed`.                   |
-| **Documentation** | [Incident flow § Phase 5](architecture/incident-flow.md) |
-| **Implements**    | FR-055, FR-056. Rollback is a **new recommendation** (8.1), not an automatic destructive undo. |
+| **Why**           | [FR-055](requirements/functional-requirements.md) · [FR-056](requirements/functional-requirements.md)    |
+| **When**          | After 8.4 can mark `executed`.                                                                           |
+| **Documentation** | [Incident flow § Phase 5](architecture/incident-flow.md)                                                 |
+| **Implements**    | FR-055, FR-056. Rollback is a **new recommendation** (8.1), not an automatic destructive undo.           |
 
 
 **Files to create / modify:**
@@ -5588,7 +5587,7 @@ AEGIS_SKIP_DOTENV=1 uv run pytest tests/unit/application/remediation/test_verify
 - **Say in an interview:** “After we restart a fake service we re-read signals. If it is still sick we propose rollback — another high-risk approval — we do not keep hammering.”
 - **Likely questions:**
   - *Why not automatic rollback?* — RISK-015. Rollback is also a write. Same four-eyes.
-  - *When do we `close`?* — Human post-incident (4.11 / learning loop), not the verify node.
+  - *When do we* `close`*?* — Human post-incident (4.11 / learning loop), not the verify node.
 
 ---
 
@@ -5597,13 +5596,13 @@ AEGIS_SKIP_DOTENV=1 uv run pytest tests/unit/application/remediation/test_verify
 ### Step 8.6 — RBAC for approver role on remediation
 
 
-|                   |                                                 |
-| ----------------- | ----------------------------------------------- |
-| **Goal**          | Only `approver` and `admin` authorize high-risk remediations; security tests prove it |
+|                   |                                                                                                                                      |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| **Goal**          | Only `approver` and `admin` authorize high-risk remediations; security tests prove it                                                |
 | **Why**           | [FR-073](requirements/functional-requirements.md) · [FR-072](requirements/functional-requirements.md) · threat-model §10 RBAC bypass |
-| **When**          | After 8.2 decide exists. This is the v0.9 **quality gate**. |
-| **Documentation** | Existing JWT roles from 1.9 · FR-073            |
-| **Implements**    | FR-073. Wire HTTP if not done in 8.2.           |
+| **When**          | After 8.2 decide exists. This is the v0.9 **quality gate**.                                                                          |
+| **Documentation** | Existing JWT roles from 1.9 · FR-073                                                                                                 |
+| **Implements**    | FR-073. Wire HTTP if not done in 8.2.                                                                                                |
 
 
 **Files to create / modify:**
@@ -5669,8 +5668,6 @@ AEGIS_SKIP_DOTENV=1 uv run pytest tests/security/test_rbac_remediation.py tests/
 
 ---
 
-
-
 **Phase 8 exit gate (before any “v1.0” talk):**
 
 - [ ] Recommendations are typed (FR-052)
@@ -5685,6 +5682,7 @@ AEGIS_SKIP_DOTENV=1 uv run pytest tests/security/test_rbac_remediation.py tests/
 v1.0 is **not** a step in this guide yet. After 8.6: operate, harden, and only then write a v1.0 checklist (multi-region is still Accepted deferred).
 
 ---
+
 
 
 ## 15. Traceability quick reference
@@ -5721,6 +5719,8 @@ Code:     domain/incidents/ → application/incidents/ → api/incidents/
 Tests:    tests/unit/domain/ + tests/integration/api/
 ```
 
+
+
 ### v0.6 traceability example
 
 ```text
@@ -5732,6 +5732,8 @@ Threat:   THR-003, THR-004, THR-014
 Code:     application/gateway/ → tools/ → domain/audit/
 Tests:    tests/unit/application/gateway/ + tests/security/test_prompt_injection_tools.py
 ```
+
+
 
 ### v0.9 traceability example
 
