@@ -131,9 +131,10 @@ Use this table to know **which document answers which question** while coding.
 | Historical RCAs (FR-041) | Step 3.7 gate  | six `INC-2026-*.md` in `aegis-knowledge` as `incident_report`                  |
 | EventBridge + SQS local  | Step 4.1       | LocalStack `:4566` · bus `aegis-events` · queue + DLQ                          |
 | Agents / worker          | Step 4.2       | consume `incident.opened.v1`; Claude only in 4.8                               |
+| LangGraph skeleton       | Step 4.3       | worker invokes compiled graph; hop cap; still no Claude                        |
 
 
-**You are here:** Step 4.2 complete → next [Step 4.3 — LangGraph orchestrator skeleton](#step-43--langgraph-orchestrator-skeleton).
+**You are here:** Step 4.3 complete → next [Step 4.4 — Incident Commander agent](#step-44--incident-commander-agent).
 
 ---
 
@@ -2789,10 +2790,10 @@ uv run python -m aegis.application.investigation   # mermaid / demo invoke if yo
 
 **Done checklist:**
 
-- [ ] Worker starts the compiled graph (not a new framework)
-- [ ] Existing LangGraph unit tests pass
-- [ ] Hop cap still enforced
-- [ ] No Bedrock in this slice
+- [x] Worker starts the compiled graph (not a new framework)
+- [x] Existing LangGraph unit tests pass
+- [x] Hop cap still enforced
+- [x] No Bedrock in this slice
 
 **Learn / interview:**
 
@@ -5794,6 +5795,6 @@ Copy this template when you start any new step:
 
 ## Next action
 
-**Start here:** [Step 4.3 — LangGraph orchestrator skeleton](#step-43--langgraph-orchestrator-skeleton)
+**Start here:** [Step 4.4 — Incident Commander agent](#step-44--incident-commander-agent)
 
-When ready, ask: *"Implement Step 4.3"* and we will code it together with full engineering reasoning. Do not skip to Claude, the tool gateway, or remediation.
+When ready, ask: *"Implement Step 4.4"* and we will code it together with full engineering reasoning. Do not skip to Claude, the tool gateway, or remediation.

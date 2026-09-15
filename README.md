@@ -370,7 +370,7 @@ Incident routes need `AEGIS_DATABASE_URL` and a Bearer JWT (`AEGIS_JWT_SECRET`).
 
 ### Run the investigation worker
 
-A second process long-polls SQS and moves `open` → `investigating`. It does **not** run LangGraph or Claude. Requires Postgres, LocalStack, `AEGIS_DATABASE_URL`, and `AEGIS_AWS_ENDPOINT`. Apply migrations first (`processed_events` inbox).
+A second process long-polls SQS, moves `open` → `investigating`, then invokes the **compiled LangGraph** (`thread_id` = incident id). Specialists are still stubs (no Claude, no retrieve). Pause state uses in-memory checkpointer and is lost if the worker process restarts.
 
 ```bash
 uv run alembic upgrade head
