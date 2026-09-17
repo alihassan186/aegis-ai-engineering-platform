@@ -39,11 +39,7 @@ def main(argv: list[str] | None = None) -> int:
         thread_id=args.thread_id,
         resume=args.resume,
     )
-    printable = {
-        key: value
-        for key, value in result.items()
-        if not key.startswith("_")
-    }
+    printable = {key: value for key, value in result.items() if not key.startswith("_")}
     interrupts = result.get("__interrupt__")
     print(json.dumps(printable, indent=2, default=str))
     if interrupts:
