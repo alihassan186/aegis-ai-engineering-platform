@@ -6,7 +6,11 @@ from datetime import UTC, datetime, timedelta, timezone
 
 import pytest
 
-from aegis.domain.incidents.fingerprint import UNSPECIFIED_SCENARIO, compute_fingerprint
+from aegis.domain.incidents.fingerprint import (
+    UNSPECIFIED_SCENARIO,
+    compute_fingerprint,
+    scenario_from_fingerprint,
+)
 from aegis.shared.exceptions import ValidationError
 
 _HOUR = datetime(2026, 9, 2, 14, 30, tzinfo=UTC)
@@ -111,3 +115,14 @@ def test_blank_service_is_rejected() -> None:
             scenario="latency_spike",
             occurred_at=_HOUR,
         )
+
+
+def test_scenario_from_fingerprint_reads_third_field() -> None:
+    key = compute_fingerprint(
+        affected_service="payment",
+        scenario="latency_spike",
+        occurred_at=_HOUR,
+    )
+    assert scenario_from_fingerprint(key) == "latency_spike"
+    assert scenario_from_fingerprint(None) == UNSPECIFIED_SCENARIO
+    assert scenario_from_fingerprint("") == UNSPECIFIED_SCENARIO

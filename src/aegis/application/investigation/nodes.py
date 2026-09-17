@@ -33,7 +33,10 @@ def intake(state: InvestigationState) -> dict[str, object]:
         "status": "running",
         "human_decision": state.get("human_decision") or "",
         "summary": f"{service}/{scenario}",
-        "log": [f"intake {incident_id} {service}/{scenario}"],
+        "log": [
+            f"intake {incident_id} {service}/{scenario}"
+            + (f" corr={state['correlation_id']}" if state.get("correlation_id") else "")
+        ],
     }
 
 

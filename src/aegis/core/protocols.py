@@ -108,9 +108,20 @@ class ProcessedEventStore(Protocol):
 
 @runtime_checkable
 class InvestigationRunner(Protocol):
-    """Starts specialist work after ``open`` → ``investigating``. Stub in 4.2."""
+    """Starts the investigation graph after ``open`` → ``investigating``.
 
-    def start(self, event: DomainEvent) -> None: ...
+    Implementations live in application (LangGraph). No LangGraph types here
+    so messaging/worker composition stays a port. ``thread_id`` is ``incident_id``.
+    """
+
+    def start(
+        self,
+        *,
+        incident_id: str,
+        service: str,
+        scenario: str,
+        correlation_id: str,
+    ) -> None: ...
 
 
 @dataclass(frozen=True, slots=True)

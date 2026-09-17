@@ -1,7 +1,8 @@
 """Consume ``incident.opened.v1``: idempotent ``open`` → ``investigating`` (FR-020).
 
-No LangGraph, no Bedrock, no boto3. The worker deletes SQS only after this
-use case returns and the session commits.
+No boto3. LangGraph is reached only through ``InvestigationRunner`` after a
+first-time transition. The worker deletes SQS only after this use case
+returns and the session commits.
 """
 
 from __future__ import annotations
@@ -13,6 +14,7 @@ from uuid import UUID
 from aegis.core.protocols import IncidentRepository, InvestigationRunner, ProcessedEventStore
 from aegis.domain.events.envelope import INCIDENT_OPENED_V1, DomainEvent
 from aegis.domain.incidents.enums import IncidentState
+from aegis.domain.incidents.fingerprint import scenario_from_fingerprint
 from aegis.shared.exceptions import NotFoundError
 
 logger = logging.getLogger(__name__)
@@ -81,7 +83,12 @@ class ConsumeOpenedIncident:
             await self._repository.save(incident)
             logger.info("incident open → investigating", extra=extra)
             if self._runner is not None:
-                self._runner.start(event)
+                self._runner.start(
+                    incident_id=str(incident.id),
+                    service=incident.affected_service,
+                    scenario=scenario_from_fingerprint(incident.fingerprint),
+                    correlation_id=event.correlation_id,
+                )
         else:
             logger.info(
                 "incident already %s; no-op ack",

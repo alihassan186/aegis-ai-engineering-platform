@@ -32,3 +32,4 @@ class InvestigationState(TypedDict):
     log: Annotated[list[str], operator.add]
     # Filled only on the first node; NotRequired so invoke() can omit it.
     summary: NotRequired[str]
+    correlation_id: NotRequired[str]

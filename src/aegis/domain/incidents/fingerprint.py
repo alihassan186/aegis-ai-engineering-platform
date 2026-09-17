@@ -30,3 +30,13 @@ def compute_fingerprint(
     scenario_key = (scenario or "").strip().lower() or UNSPECIFIED_SCENARIO
     hour = occurred_at.astimezone(timezone.utc).strftime("%Y-%m-%dT%H")
     return f"{_VERSION}|{service}|{scenario_key}|{hour}"
+
+
+def scenario_from_fingerprint(fingerprint: str | None) -> str:
+    """Third field of ``v1|service|scenario|hour``. Manual creates have no fingerprint."""
+    if fingerprint is None or not fingerprint.strip():
+        return UNSPECIFIED_SCENARIO
+    parts = fingerprint.split("|")
+    if len(parts) >= 3 and parts[2].strip():
+        return parts[2].strip().lower()
+    return UNSPECIFIED_SCENARIO

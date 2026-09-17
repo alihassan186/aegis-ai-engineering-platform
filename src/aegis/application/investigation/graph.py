@@ -9,7 +9,9 @@ Concepts wired here (study this file with the tests):
 * ``InMemorySaver`` checkpointer — required for ``interrupt`` and resume
 * Cycles (specialist → commander) bounded by ``MAX_HOPS``
 
-This is **not** Step 4.3 complete: no SQS worker, no Claude, no retrieve.
+Step 4.3: the worker invokes this compiled graph. Still **no Claude** and
+no ``RetrieveKnowledge`` (stubs). Postgres checkpointer is not here —
+``InMemorySaver`` does not survive worker restart.
 """
 
 from __future__ import annotations

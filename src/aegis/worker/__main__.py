@@ -16,7 +16,7 @@ from aegis.infrastructure.database.session import start_database, stop_database
 from aegis.infrastructure.messaging.sqs_consumer import SqsInvestigationConsumer
 from aegis.infrastructure.repositories.incident_repository import SqlAlchemyIncidentRepository
 from aegis.infrastructure.repositories.processed_event_store import SqlAlchemyProcessedEventStore
-from aegis.worker.runner import LoggingInvestigationRunner
+from aegis.worker.runner import LangGraphInvestigationRunner
 
 logger = logging.getLogger("aegis.worker")
 
@@ -64,7 +64,7 @@ async def run_worker(settings: Settings) -> None:
         except NotImplementedError:
             signal.signal(sig, lambda _s, _f: stop.set())
 
-    runner = LoggingInvestigationRunner()
+    runner = LangGraphInvestigationRunner()
 
     async def handle(event: DomainEvent) -> None:
         await _handle_opened(session_factory, event, runner)
@@ -86,7 +86,7 @@ async def run_worker(settings: Settings) -> None:
 async def _handle_opened(
     session_factory: async_sessionmaker[AsyncSession],
     event: DomainEvent,
-    runner: LoggingInvestigationRunner,
+    runner: LangGraphInvestigationRunner,
 ) -> None:
     session = session_factory()
     try:

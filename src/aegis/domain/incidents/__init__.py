@@ -3,7 +3,7 @@
 from aegis.domain.incidents.entity import Incident, StateTransition
 from aegis.domain.incidents.enums import IncidentState, Severity
 from aegis.domain.incidents.exceptions import InvalidTransitionError
-from aegis.domain.incidents.fingerprint import compute_fingerprint
+from aegis.domain.incidents.fingerprint import compute_fingerprint, scenario_from_fingerprint
 from aegis.domain.incidents.transitions import ALLOWED_TRANSITIONS, can_transition
 
 __all__ = [
@@ -15,4 +15,5 @@ __all__ = [
     "StateTransition",
     "can_transition",
     "compute_fingerprint",
+    "scenario_from_fingerprint",
 ]
