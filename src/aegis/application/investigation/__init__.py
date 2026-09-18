@@ -1,7 +1,8 @@
-"""LangGraph investigation skeleton (Step 4.3).
+"""LangGraph investigation (Steps 4.3–4.4).
 
-The worker invokes ``LangGraphInvestigationRunner`` after consume. This
-package does **not** call OpenSearch or Bedrock. Knowledge is a stub.
+The worker invokes ``LangGraphInvestigationRunner`` after consume.
+Commander policy is ``plan.next_action`` — no tools, no Bedrock.
+Knowledge is still a stub.
 """
 
 from aegis.application.investigation.graph import (

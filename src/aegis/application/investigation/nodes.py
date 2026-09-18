@@ -3,6 +3,7 @@
 Each node receives the current ``InvestigationState`` and returns a
 **dict of updates**. No FastAPI, no SQLAlchemy, no OpenSearch, no Bedrock.
 
+``commander`` is a thin adapter over ``plan.next_action`` (Step 4.4).
 ``escalate`` calls ``interrupt()``. The graph **pauses** until the caller
 resumes with ``Command(resume=...)``. That is LangGraph's human-in-the-loop
 primitive (preview of FR-034). A checkpointer is required.
@@ -10,13 +11,12 @@ primitive (preview of FR-034). A checkpointer is required.
 
 from __future__ import annotations
 
+from datetime import datetime, timezone
+
 from langgraph.types import interrupt
 
-from aegis.application.investigation.state import (
-    ENOUGH_EVIDENCE,
-    MAX_HOPS,
-    InvestigationState,
-)
+from aegis.application.investigation.plan import next_action
+from aegis.application.investigation.state import InvestigationState
 
 
 def intake(state: InvestigationState) -> dict[str, object]:
@@ -24,6 +24,7 @@ def intake(state: InvestigationState) -> dict[str, object]:
     incident_id = state.get("incident_id") or "INC-LEARN"
     service = state.get("service") or "payment"
     scenario = state.get("scenario") or "latency_spike"
+    started_at = state.get("started_at") or datetime.now(timezone.utc).isoformat()
     return {
         "incident_id": incident_id,
         "service": service,
@@ -32,6 +33,8 @@ def intake(state: InvestigationState) -> dict[str, object]:
         "next_agent": "",
         "status": "running",
         "human_decision": state.get("human_decision") or "",
+        "started_at": started_at,
+        "escalate_reason": state.get("escalate_reason") or "",
         "summary": f"{service}/{scenario}",
         "log": [
             f"intake {incident_id} {service}/{scenario}"
@@ -41,30 +44,24 @@ def intake(state: InvestigationState) -> dict[str, object]:
 
 
 def commander(state: InvestigationState) -> dict[str, object]:
-    """Decide the next node. Routing itself is the conditional edge."""
+    """Read state, call the plan, write ``next_agent`` + hop increment."""
     hops = int(state.get("hops") or 0) + 1
-    evidence = list(state.get("evidence") or [])
-    scenario = state["scenario"]
-
-    if hops > MAX_HOPS:
-        nxt = "escalate"
-    elif len(evidence) >= ENOUGH_EVIDENCE:
-        nxt = "synthesize"
-    elif scenario == "dependency_failure" and hops == 1:
-        nxt = "escalate"
-    elif scenario == "db_exhaustion" and hops == 1:
-        nxt = "fanout"
-    elif scenario == "bad_deployment":
-        nxt = "code"
-    elif scenario in {"latency_spike", "memory_leak", "queue_backlog"}:
-        nxt = "observability"
-    else:
-        nxt = "knowledge"
-
+    decision = next_action(
+        scenario=state["scenario"],
+        hops=hops,
+        evidence=list(state.get("evidence") or []),
+        started_at=state.get("started_at"),
+    )
+    nxt = decision.next_agent.value
+    reason = decision.escalate_reason.value if decision.escalate_reason else ""
+    log = f"commander hop={hops} → {nxt}"
+    if reason:
+        log = f"{log} ({reason})"
     return {
         "hops": hops,
         "next_agent": nxt,
-        "log": [f"commander hop={hops} → {nxt}"],
+        "escalate_reason": reason,
+        "log": [log],
     }
 
 
@@ -102,11 +99,12 @@ def synthesize(state: InvestigationState) -> dict[str, object]:
 
 def escalate(state: InvestigationState) -> dict[str, object]:
     """Pause for a human. Resume with ``Command(resume='approve'|'reject')``."""
+    reason = state.get("escalate_reason") or state.get("next_agent") or "escalate"
     decision = interrupt(
         {
             "type": "human_approval",
             "incident_id": state["incident_id"],
-            "reason": state.get("next_agent") or "escalate",
+            "reason": reason,
         }
     )
     return {

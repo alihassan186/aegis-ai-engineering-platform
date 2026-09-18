@@ -132,9 +132,10 @@ Use this table to know **which document answers which question** while coding.
 | EventBridge + SQS local  | Step 4.1       | LocalStack `:4566` · bus `aegis-events` · queue + DLQ                          |
 | Agents / worker          | Step 4.2       | consume `incident.opened.v1`; Claude only in 4.8                               |
 | LangGraph skeleton       | Step 4.3       | worker invokes compiled graph; hop cap; still no Claude                        |
+| Commander policy         | Step 4.4       | deterministic plan; hop + 10m duration escalate; named reasons                 |
 
 
-**You are here:** Step 4.3 complete → next [Step 4.4 — Incident Commander agent](#step-44--incident-commander-agent).
+**You are here:** Step 4.4 complete → next [Step 4.5 — Observability + Code + Knowledge agents](#step-45--observability--code--knowledge-agents).
 
 ---
 
@@ -2876,10 +2877,10 @@ AEGIS_SKIP_DOTENV=1 uv run pytest tests/unit/investigation/test_commander.py tes
 
 **Done checklist:**
 
-- [ ] Plan is unit-tested without Bedrock
-- [ ] Six simulator scenarios have an explicit first hop
-- [ ] Timeout / hop overflow escalate
-- [ ] Commander still tool-free
+- [x] Plan is unit-tested without Bedrock
+- [x] Six simulator scenarios have an explicit first hop
+- [x] Timeout / hop overflow escalate
+- [x] Commander still tool-free
 
 **Learn / interview:**
 
@@ -5795,6 +5796,6 @@ Copy this template when you start any new step:
 
 ## Next action
 
-**Start here:** [Step 4.4 — Incident Commander agent](#step-44--incident-commander-agent)
+**Start here:** [Step 4.5 — Observability + Code + Knowledge agents](#step-45--observability--code--knowledge-agents)
 
-When ready, ask: *"Implement Step 4.4"* and we will code it together with full engineering reasoning. Do not skip to Claude, the tool gateway, or remediation.
+When ready, ask: *"Implement Step 4.5"* and we will code it together with full engineering reasoning. Do not skip to Claude, the tool gateway, or remediation.

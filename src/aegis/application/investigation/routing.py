@@ -6,6 +6,9 @@ A **conditional edge** is a function that returns the next node name.
 ``Send`` is a third form: run one or more nodes **in parallel**, each with
 its own input payload. ``db_exhaustion`` fans out to observability +
 knowledge in one super-step (reducers merge their evidence lists).
+
+Policy lives in ``plan.next_action``. This module only interprets
+``state["next_agent"]`` — including the ``fanout`` sugar.
 """
 
 from __future__ import annotations

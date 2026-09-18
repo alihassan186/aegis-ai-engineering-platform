@@ -9,9 +9,10 @@ Concepts wired here (study this file with the tests):
 * ``InMemorySaver`` checkpointer — required for ``interrupt`` and resume
 * Cycles (specialist → commander) bounded by ``MAX_HOPS``
 
-Step 4.3: the worker invokes this compiled graph. Still **no Claude** and
-no ``RetrieveKnowledge`` (stubs). Postgres checkpointer is not here —
-``InMemorySaver`` does not survive worker restart.
+Step 4.3: the worker invokes this compiled graph. Step 4.4: commander
+*policy* is ``plan.next_action`` (deterministic; hop + duration caps).
+Still **no Claude** and no ``RetrieveKnowledge`` (stubs). Postgres
+checkpointer is not here — ``InMemorySaver`` does not survive worker restart.
 """
 
 from __future__ import annotations
