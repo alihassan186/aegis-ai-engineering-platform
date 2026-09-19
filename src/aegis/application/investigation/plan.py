@@ -20,7 +20,7 @@ no RCA score until Step 4.8. An LLM router later must keep the same caps.
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from enum import StrEnum
@@ -57,21 +57,17 @@ class PlanDecision:
     escalate_reason: EscalateReason | None = None
 
 
-def evidence_kinds(evidence: Sequence[str]) -> frozenset[str]:
-    """Classify stub evidence lines by prefix (``obs:``, ``kb-stub:``, ``code:``)."""
+def evidence_kinds(evidence: Sequence[object]) -> frozenset[str]:
+    """Classify structured items (``collector``) or legacy prefix strings."""
     kinds: set[str] = set()
-    for line in evidence:
-        prefix = line.split(":", 1)[0]
-        if prefix == "obs":
-            kinds.add(KIND_OBSERVABILITY)
-        elif prefix in {"kb-stub", "knowledge", "kb"}:
-            kinds.add(KIND_KNOWLEDGE)
-        elif prefix == "code":
-            kinds.add(KIND_CODE)
+    for item in evidence:
+        collector = _collector_of(item)
+        if collector:
+            kinds.add(collector)
     return frozenset(kinds)
 
 
-def enough_evidence(scenario: str, evidence: Sequence[str]) -> bool:
+def enough_evidence(scenario: str, evidence: Sequence[object]) -> bool:
     """v0.5 sufficiency: N items, or obs+knowledge for ``db_exhaustion``."""
     kinds = evidence_kinds(evidence)
     if scenario == "db_exhaustion":
@@ -83,9 +79,10 @@ def next_action(
     *,
     scenario: str,
     hops: int,
-    evidence: Sequence[str] = (),
+    evidence: Sequence[object] = (),
     started_at: str | None = None,
     now: datetime | None = None,
+    failed_steps: Sequence[str] = (),
 ) -> PlanDecision:
     """Return the next node. ``hops`` is the *upcoming* commander visit (1-based)."""
     clock = _as_utc(now) if now is not None else datetime.now(timezone.utc)
@@ -99,6 +96,8 @@ def next_action(
 
     specialist = _first_specialist(scenario)
     kinds = evidence_kinds(evidence)
+    if _failure_blocks(specialist, failed_steps, kinds):
+        return PlanDecision(NextAction.ESCALATE, EscalateReason.AGENT_FAILURE)
 
     if specialist is NextAction.ESCALATE:
         return PlanDecision(NextAction.ESCALATE, EscalateReason.DEPENDENCY_FAILURE)
@@ -131,6 +130,40 @@ def _fanout_or_remaining(kinds: frozenset[str]) -> PlanDecision:
     if has_kb:
         return PlanDecision(NextAction.OBSERVABILITY)
     return PlanDecision(NextAction.FANOUT)
+
+
+def _collector_of(item: object) -> str | None:
+    aliases = {
+        "observability": KIND_OBSERVABILITY,
+        "obs": KIND_OBSERVABILITY,
+        "knowledge": KIND_KNOWLEDGE,
+        "kb-stub": KIND_KNOWLEDGE,
+        "kb": KIND_KNOWLEDGE,
+        "code": KIND_CODE,
+    }
+    if isinstance(item, Mapping):
+        raw = str(item.get("collector") or "").strip().lower()
+        return aliases.get(raw)
+    prefix = str(item).split(":", 1)[0]
+    return aliases.get(prefix)
+
+
+def _failure_blocks(
+    specialist: NextAction,
+    failed_steps: Sequence[str],
+    kinds: frozenset[str],
+) -> bool:
+    failed = {step.strip().lower() for step in failed_steps}
+    if specialist is NextAction.FANOUT:
+        need_obs = KIND_OBSERVABILITY not in kinds
+        need_kb = KIND_KNOWLEDGE not in kinds
+        return (need_obs and "observability" in failed) or (need_kb and "knowledge" in failed)
+    name = {
+        NextAction.OBSERVABILITY: "observability",
+        NextAction.KNOWLEDGE: "knowledge",
+        NextAction.CODE: "code",
+    }.get(specialist)
+    return bool(name and name in failed)
 
 
 def _already_collected(specialist: NextAction, kinds: frozenset[str]) -> bool:

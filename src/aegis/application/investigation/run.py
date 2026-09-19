@@ -15,6 +15,7 @@ from langchain_core.runnables import RunnableConfig
 from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.types import Command
 
+from aegis.application.investigation.collect import SpecialistPorts
 from aegis.application.investigation.graph import compile_investigation_graph
 from aegis.application.investigation.state import InvestigationState
 
@@ -28,6 +29,7 @@ def invoke_investigation(
     checkpointer: InMemorySaver | None = None,
     resume: str | None = None,
     correlation_id: str = "",
+    ports: SpecialistPorts | None = None,
 ) -> dict[str, Any]:
     """Run (or resume) one investigation thread.
 
@@ -36,7 +38,7 @@ def invoke_investigation(
     it is ``incident_id``.
     """
     saver = checkpointer or InMemorySaver()
-    graph = compile_investigation_graph(checkpointer=saver)
+    graph = compile_investigation_graph(checkpointer=saver, ports=ports)
     iid = (incident_id or "").strip()
     tid = (thread_id or iid or str(uuid4())).strip()
     config: RunnableConfig = {"configurable": {"thread_id": tid}}
@@ -54,6 +56,7 @@ def invoke_investigation(
             "human_decision": "",
             "evidence": [],
             "log": [],
+            "failed_steps": [],
             "correlation_id": correlation_id,
         }
         result = graph.invoke(payload, config)

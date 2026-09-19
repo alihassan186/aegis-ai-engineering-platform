@@ -4,6 +4,7 @@ Each node receives the current ``InvestigationState`` and returns a
 **dict of updates**. No FastAPI, no SQLAlchemy, no OpenSearch, no Bedrock.
 
 ``commander`` is a thin adapter over ``plan.next_action`` (Step 4.4).
+Specialists (Step 4.5) collect through ports bound when the graph is compiled.
 ``escalate`` calls ``interrupt()``. The graph **pauses** until the caller
 resumes with ``Command(resume=...)``. That is LangGraph's human-in-the-loop
 primitive (preview of FR-034). A checkpointer is required.
@@ -11,12 +12,23 @@ primitive (preview of FR-034). A checkpointer is required.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from datetime import datetime, timezone
 
 from langgraph.types import interrupt
 
+from aegis.application.investigation.collect import (
+    KnowledgeRetrieve,
+    SpecialistPorts,
+    collect_code,
+    collect_knowledge,
+    collect_observability,
+)
 from aegis.application.investigation.plan import next_action
 from aegis.application.investigation.state import InvestigationState
+from aegis.core.protocols import CodeSearch, ObservabilitySource
+
+NodeFn = Callable[[InvestigationState], dict[str, object]]
 
 
 def intake(state: InvestigationState) -> dict[str, object]:
@@ -51,6 +63,7 @@ def commander(state: InvestigationState) -> dict[str, object]:
         hops=hops,
         evidence=list(state.get("evidence") or []),
         started_at=state.get("started_at"),
+        failed_steps=list(state.get("failed_steps") or []),
     )
     nxt = decision.next_agent.value
     reason = decision.escalate_reason.value if decision.escalate_reason else ""
@@ -65,31 +78,38 @@ def commander(state: InvestigationState) -> dict[str, object]:
     }
 
 
-def observability(state: InvestigationState) -> dict[str, object]:
-    """Stub Observability Agent — no CloudWatch. Signals come in Phase 4.5."""
-    line = f"obs:{state['service']}:{state['scenario']}"
-    return {"evidence": [line], "log": [f"observability collected {line}"]}
+def observability_node(source: ObservabilitySource) -> NodeFn:
+    def observability(state: InvestigationState) -> dict[str, object]:
+        return collect_observability(state, source)
+
+    return observability
 
 
-def knowledge(state: InvestigationState) -> dict[str, object]:
-    """Stub Knowledge Agent.
+def knowledge_node(retrieve: KnowledgeRetrieve | None) -> NodeFn:
+    def knowledge(state: InvestigationState) -> dict[str, object]:
+        return collect_knowledge(state, retrieve)
 
-    After Step 3.5 this node should call the retrieve **use case**
-    (not OpenSearch directly, not a LangChain retriever).
-    """
-    line = f"kb-stub:{state['service']}:{state['scenario']}"
-    return {"evidence": [line], "log": [f"knowledge stub {line}"]}
+    return knowledge
 
 
-def code_agent(state: InvestigationState) -> dict[str, object]:
-    """Stub Code Agent — GitHub search is Phase 4 / 5."""
-    line = f"code:{state['service']}:recent-deploy"
-    return {"evidence": [line], "log": [f"code collected {line}"]}
+def code_node(search: CodeSearch) -> NodeFn:
+    def code_agent(state: InvestigationState) -> dict[str, object]:
+        return collect_code(state, search)
+
+    return code_agent
+
+
+def bind_specialists(ports: SpecialistPorts) -> dict[str, NodeFn]:
+    return {
+        "observability": observability_node(ports.observability),
+        "knowledge": knowledge_node(ports.retrieve),
+        "code": code_node(ports.code_search),
+    }
 
 
 def synthesize(state: InvestigationState) -> dict[str, object]:
     """Stub RCA fold — Claude + schema is Step 4.8. No LLM here."""
-    joined = "; ".join(state.get("evidence") or [])
+    joined = "; ".join(_evidence_label(item) for item in state.get("evidence") or [])
     return {
         "status": "ready",
         "summary": f"draft from {len(state.get('evidence') or [])} evidence items: {joined}",
@@ -112,3 +132,11 @@ def escalate(state: InvestigationState) -> dict[str, object]:
         "status": "escalated",
         "log": [f"human_decision={decision}"],
     }
+
+
+def _evidence_label(item: object) -> str:
+    if isinstance(item, dict):
+        collector = item.get("collector") or item.get("kind") or "item"
+        summary = item.get("summary") or item.get("text") or ""
+        return f"{collector}:{str(summary)[:40]}"
+    return str(item)

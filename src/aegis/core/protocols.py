@@ -106,6 +106,49 @@ class ProcessedEventStore(Protocol):
     ) -> bool: ...
 
 
+@dataclass(frozen=True, slots=True)
+class ObservabilitySignal:
+    """One log, metric, or trace **summary** (FR-010–012). Not a raw dump."""
+
+    kind: str
+    source: str
+    timestamp: datetime
+    service: str
+    summary: str
+
+
+@runtime_checkable
+class ObservabilitySource(Protocol):
+    """Read-only telemetry. Implementations live in infrastructure (simulator HTTP)."""
+
+    def fetch_signals(
+        self,
+        *,
+        service: str,
+        scenario: str,
+        limit: int = 20,
+    ) -> Sequence[ObservabilitySignal]: ...
+
+
+@dataclass(frozen=True, slots=True)
+class CodeHit:
+    """Deploy version and/or a fake repo path (FR-013, FR-014). Not a ``src/`` walk."""
+
+    service: str
+    version: str
+    path: str
+    summary: str
+
+
+@runtime_checkable
+class CodeSearch(Protocol):
+    """Read-only code/deploy search. GitHub through the gateway is Phase 5."""
+
+    def recent_deploys(self, *, service: str) -> Sequence[CodeHit]: ...
+
+    def search(self, *, service: str, scenario: str) -> Sequence[CodeHit]: ...
+
+
 @runtime_checkable
 class InvestigationRunner(Protocol):
     """Starts the investigation graph after ``open`` → ``investigating``.

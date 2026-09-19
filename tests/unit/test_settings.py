@@ -24,6 +24,7 @@ def test_defaults_when_env_unset(monkeypatch: pytest.MonkeyPatch) -> None:
         "AEGIS_AWS_ENDPOINT",
         "AEGIS_EVENT_BUS_NAME",
         "AEGIS_INVESTIGATION_QUEUE_NAME",
+        "AEGIS_SIMULATOR_URL",
     ):
         monkeypatch.delenv(name, raising=False)
 
@@ -43,6 +44,7 @@ def test_defaults_when_env_unset(monkeypatch: pytest.MonkeyPatch) -> None:
     assert settings.aws_endpoint == ""
     assert settings.event_bus_name == "aegis-events"
     assert settings.investigation_queue_name == "investigation-workflow"
+    assert settings.simulator_base_url == "http://127.0.0.1:8001"
 
 
 def test_loads_database_url_from_env(monkeypatch: pytest.MonkeyPatch) -> None:

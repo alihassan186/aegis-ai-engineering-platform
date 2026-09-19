@@ -6,12 +6,14 @@ import ast
 from pathlib import Path
 
 from aegis.core.protocols import (
+    CodeSearch,
     Embedder,
     EventPublisher,
     IncidentRepository,
     InvestigationRunner,
     KnowledgeHit,
     KnowledgeStore,
+    ObservabilitySource,
     ProcessedEventStore,
 )
 from aegis.shared.exceptions import DomainError, NotFoundError, ValidationError
@@ -115,3 +117,8 @@ def test_processed_event_store_is_a_protocol() -> None:
 
 def test_investigation_runner_is_a_protocol() -> None:
     assert getattr(InvestigationRunner, "_is_protocol", False)
+
+
+def test_observability_and_code_ports_are_protocols() -> None:
+    assert getattr(ObservabilitySource, "_is_protocol", False)
+    assert getattr(CodeSearch, "_is_protocol", False)

@@ -31,6 +31,7 @@ def _payload(scenario: str, *, service: str = "payment") -> dict[str, object]:
         "human_decision": "",
         "evidence": [],
         "log": [],
+        "failed_steps": [],
     }
 
 
@@ -38,7 +39,11 @@ def test_latency_spike_reaches_synthesize_with_observability_evidence() -> None:
     result = invoke_investigation(service="payment", scenario="latency_spike")
 
     assert result["status"] == "ready"
-    assert any(item.startswith("obs:payment:latency_spike") for item in result["evidence"])
+    obs = [item for item in result["evidence"] if item.get("collector") == "observability"]
+    assert obs
+    assert all(item["source"] == "simulator" for item in obs)
+    assert {item["kind"] for item in obs} <= {"log", "metric", "trace"}
+    assert all(item.get("timestamp") for item in obs)
     assert "synthesize ready" in " ".join(result["log"])
 
 
@@ -46,16 +51,18 @@ def test_bad_deployment_routes_through_code_node() -> None:
     result = invoke_investigation(service="user", scenario="bad_deployment")
 
     assert result["status"] == "ready"
-    assert any(item.startswith("code:user:") for item in result["evidence"])
+    code = [item for item in result["evidence"] if item.get("collector") == "code"]
+    assert any(item.get("version") == "1.14.0" for item in code)
+    assert any("1.14.0" in str(item.get("summary")) for item in code)
 
 
 def test_db_exhaustion_fans_out_to_observability_and_knowledge() -> None:
     """``Send`` runs two specialists in one super-step; reducers merge evidence."""
     result = invoke_investigation(service="payment", scenario="db_exhaustion")
 
-    kinds = {item.split(":")[0] for item in result["evidence"]}
-    assert "obs" in kinds
-    assert "kb-stub" in kinds
+    collectors = {item.get("collector") for item in result["evidence"]}
+    assert "observability" in collectors
+    assert "knowledge" in collectors
     assert result["status"] == "ready"
 
 

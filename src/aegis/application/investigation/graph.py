@@ -9,10 +9,10 @@ Concepts wired here (study this file with the tests):
 * ``InMemorySaver`` checkpointer — required for ``interrupt`` and resume
 * Cycles (specialist → commander) bounded by ``MAX_HOPS``
 
-Step 4.3: the worker invokes this compiled graph. Step 4.4: commander
-*policy* is ``plan.next_action`` (deterministic; hop + duration caps).
-Still **no Claude** and no ``RetrieveKnowledge`` (stubs). Postgres
-checkpointer is not here — ``InMemorySaver`` does not survive worker restart.
+Step 4.4: commander policy is ``plan.next_action``.
+Step 4.5: specialists collect through ports (simulator / RetrieveKnowledge / code fake).
+Still **no Claude**. Postgres checkpointer is not here —
+``InMemorySaver`` does not survive worker restart.
 """
 
 from __future__ import annotations
@@ -21,33 +21,33 @@ from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.graph import END, START, StateGraph
 from langgraph.graph.state import CompiledStateGraph
 
+from aegis.application.investigation.collect import SpecialistPorts
 from aegis.application.investigation.nodes import (
-    code_agent,
+    bind_specialists,
     commander,
     escalate,
     intake,
-    knowledge,
-    observability,
     synthesize,
 )
 from aegis.application.investigation.routing import route_after_commander
 from aegis.application.investigation.state import InvestigationState
 
 
-def build_investigation_graph() -> StateGraph:
+def build_investigation_graph(ports: SpecialistPorts | None = None) -> StateGraph:
+    resolved = ports or SpecialistPorts.memory()
+    specialists = bind_specialists(resolved)
     graph = StateGraph(InvestigationState)
     graph.add_node("intake", intake)
     graph.add_node("commander", commander)
-    graph.add_node("observability", observability)
-    graph.add_node("knowledge", knowledge)
-    graph.add_node("code", code_agent)
+    graph.add_node("observability", specialists["observability"])
+    graph.add_node("knowledge", specialists["knowledge"])
+    graph.add_node("code", specialists["code"])
     graph.add_node("synthesize", synthesize)
     graph.add_node("escalate", escalate)
 
     graph.add_edge(START, "intake")
     graph.add_edge("intake", "commander")
     graph.add_conditional_edges("commander", route_after_commander)
-    # Specialists return to the commander (a cycle). Fan-out uses the same edges.
     graph.add_edge("observability", "commander")
     graph.add_edge("knowledge", "commander")
     graph.add_edge("code", "commander")
@@ -58,9 +58,10 @@ def build_investigation_graph() -> StateGraph:
 
 def compile_investigation_graph(
     checkpointer: InMemorySaver | None = None,
+    ports: SpecialistPorts | None = None,
 ) -> CompiledStateGraph:
     saver = checkpointer or InMemorySaver()
-    return build_investigation_graph().compile(checkpointer=saver)
+    return build_investigation_graph(ports).compile(checkpointer=saver)
 
 
 def draw_investigation_mermaid() -> str:

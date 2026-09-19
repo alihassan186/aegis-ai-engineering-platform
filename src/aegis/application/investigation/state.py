@@ -4,6 +4,8 @@ LangGraph nodes do not return a new full object. They return a **partial
 update**. Fields wrapped in ``Annotated[..., operator.add]`` use a
 **reducer**: each update is appended, not replaced. That is how parallel
 ``Send`` nodes can both add evidence without clobbering each other.
+
+``evidence`` items are structured dicts (Step 4.5). Persist to Postgres is 4.6.
 """
 
 from __future__ import annotations
@@ -21,6 +23,11 @@ ENOUGH_EVIDENCE = 1
 # FR-026 wall-clock cap from ``started_at``. Hop cap still wins if both fire.
 MAX_DURATION = timedelta(minutes=10)
 
+# Caps before Claude (4.8): summaries, not raw dumps.
+OBS_MAX_ITEMS = 20
+KNOWLEDGE_MAX_CHUNKS = 4
+EVIDENCE_TEXT_CAP = 800
+
 
 class InvestigationState(TypedDict):
     """One investigation thread (one ``thread_id`` in the checkpointer)."""
@@ -32,8 +39,9 @@ class InvestigationState(TypedDict):
     next_agent: str
     status: str
     human_decision: str
-    evidence: Annotated[list[str], operator.add]
+    evidence: Annotated[list[dict[str, object]], operator.add]
     log: Annotated[list[str], operator.add]
+    failed_steps: Annotated[list[str], operator.add]
     # Filled only on the first node; NotRequired so invoke() can omit it.
     summary: NotRequired[str]
     correlation_id: NotRequired[str]
@@ -41,3 +49,4 @@ class InvestigationState(TypedDict):
     started_at: NotRequired[str]
     # Domain ``EscalateReason`` value, or empty when not escalating.
     escalate_reason: NotRequired[str]
+    title: NotRequired[str]
