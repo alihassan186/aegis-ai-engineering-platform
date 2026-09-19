@@ -133,9 +133,10 @@ Use this table to know **which document answers which question** while coding.
 | Agents / worker          | Step 4.2       | consume `incident.opened.v1`; Claude only in 4.8                               |
 | LangGraph skeleton       | Step 4.3       | worker invokes compiled graph; hop cap; still no Claude                        |
 | Commander policy         | Step 4.4       | deterministic plan; hop + 10m duration escalate; named reasons                 |
+| Specialist agents        | Step 4.5       | simulator signals · RetrieveKnowledge · FakeCodeSearch                         |
 
 
-**You are here:** Step 4.4 complete → next [Step 4.5 — Observability + Code + Knowledge agents](#step-45--observability--code--knowledge-agents).
+**You are here:** Step 4.5 complete → next [Step 4.6 — Evidence model + storage](#step-46--evidence-model--storage).
 
 ---
 
@@ -2966,10 +2967,10 @@ AEGIS_OPENSEARCH_URL=http://127.0.0.1:9200 AEGIS_EMBEDDER=fake \
 
 **Done checklist:**
 
-- [ ] Three specialists return structured items (not only toy `obs:payment:...` strings)
-- [ ] Knowledge goes through `RetrieveKnowledge`
-- [ ] Simulator remains a separate process
-- [ ] No `src/` RAG ingest
+- [x] Three specialists return structured items (not only toy `obs:payment:...` strings)
+- [x] Knowledge goes through `RetrieveKnowledge`
+- [x] Simulator remains a separate process
+- [x] No `src/` RAG ingest
 
 **Learn / interview:**
 
@@ -5796,6 +5797,6 @@ Copy this template when you start any new step:
 
 ## Next action
 
-**Start here:** [Step 4.5 — Observability + Code + Knowledge agents](#step-45--observability--code--knowledge-agents)
+**Start here:** [Step 4.6 — Evidence model + storage](#step-46--evidence-model--storage)
 
-When ready, ask: *"Implement Step 4.5"* and we will code it together with full engineering reasoning. Do not skip to Claude, the tool gateway, or remediation.
+When ready, ask: *"Implement Step 4.6"* and we will code it together with full engineering reasoning. Do not skip to Claude, the tool gateway, or remediation.

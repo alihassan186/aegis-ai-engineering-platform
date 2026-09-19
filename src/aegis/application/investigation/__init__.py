@@ -1,8 +1,8 @@
-"""LangGraph investigation (Steps 4.3–4.4).
+"""LangGraph investigation (Steps 4.3–4.5).
 
 The worker invokes ``LangGraphInvestigationRunner`` after consume.
-Commander policy is ``plan.next_action`` — no tools, no Bedrock.
-Knowledge is still a stub.
+Commander policy is ``plan.next_action``. Specialists collect through ports.
+No Claude. Knowledge goes through ``RetrieveKnowledge`` when OpenSearch is set.
 """
 
 from aegis.application.investigation.graph import (
