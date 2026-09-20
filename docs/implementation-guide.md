@@ -134,9 +134,10 @@ Use this table to know **which document answers which question** while coding.
 | LangGraph skeleton       | Step 4.3       | worker invokes compiled graph; hop cap; still no Claude                        |
 | Commander policy         | Step 4.4       | deterministic plan; hop + 10m duration escalate; named reasons                 |
 | Specialist agents        | Step 4.5       | simulator signals · RetrieveKnowledge · FakeCodeSearch                         |
+| Evidence storage         | Step 4.6       | Postgres `evidence` rows · graph state is not SoR                              |
 
 
-**You are here:** Step 4.5 complete → next [Step 4.6 — Evidence model + storage](#step-46--evidence-model--storage).
+**You are here:** Step 4.6 complete → next [Step 4.7 — Secrets redaction pipeline](#step-47--secrets-redaction-pipeline).
 
 ---
 
@@ -3055,10 +3056,10 @@ uv run pytest tests/integration/repositories/test_evidence_repository.py -v
 
 **Done checklist:**
 
-- [ ] `evidence` table + repository
-- [ ] Items linked to `incident_id`
-- [ ] Graph collect path writes at least one row in an integration test
-- [ ] RISK-007 still not Closed
+- [x] `evidence` table + repository
+- [x] Items linked to `incident_id`
+- [x] Graph collect path writes at least one row in an integration test
+- [x] RISK-007 still not Closed
 
 **Learn / interview:**
 
@@ -5797,6 +5798,6 @@ Copy this template when you start any new step:
 
 ## Next action
 
-**Start here:** [Step 4.6 — Evidence model + storage](#step-46--evidence-model--storage)
+**Start here:** [Step 4.7 — Secrets redaction pipeline](#step-47--secrets-redaction-pipeline)
 
-When ready, ask: *"Implement Step 4.6"* and we will code it together with full engineering reasoning. Do not skip to Claude, the tool gateway, or remediation.
+When ready, ask: *"Implement Step 4.7"* and we will code it together with full engineering reasoning. Do not skip to Claude, the tool gateway, or remediation.
