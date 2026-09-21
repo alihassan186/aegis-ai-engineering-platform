@@ -9,6 +9,7 @@ from aegis.core.protocols import (
     CodeSearch,
     Embedder,
     EventPublisher,
+    EvidenceRepository,
     IncidentRepository,
     InvestigationRunner,
     KnowledgeHit,
@@ -122,3 +123,7 @@ def test_investigation_runner_is_a_protocol() -> None:
 def test_observability_and_code_ports_are_protocols() -> None:
     assert getattr(ObservabilitySource, "_is_protocol", False)
     assert getattr(CodeSearch, "_is_protocol", False)
+
+
+def test_evidence_repository_is_a_protocol() -> None:
+    assert getattr(EvidenceRepository, "_is_protocol", False)

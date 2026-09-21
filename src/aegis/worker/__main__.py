@@ -9,11 +9,13 @@ import sys
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
+from aegis.application.evidence.record_evidence import RecordEvidence
 from aegis.application.investigation.consume_opened import ConsumeOpenedIncident
 from aegis.config.settings import Settings, get_settings
 from aegis.domain.events.envelope import DomainEvent
 from aegis.infrastructure.database.session import start_database, stop_database
 from aegis.infrastructure.messaging.sqs_consumer import SqsInvestigationConsumer
+from aegis.infrastructure.repositories.evidence_repository import SqlAlchemyEvidenceRepository
 from aegis.infrastructure.repositories.incident_repository import SqlAlchemyIncidentRepository
 from aegis.infrastructure.repositories.processed_event_store import SqlAlchemyProcessedEventStore
 from aegis.worker.ports import build_specialist_ports
@@ -95,6 +97,7 @@ async def _handle_opened(
             SqlAlchemyIncidentRepository(session),
             SqlAlchemyProcessedEventStore(session),
             runner=runner,
+            record_evidence=RecordEvidence(SqlAlchemyEvidenceRepository(session)),
         )
         await consume.execute(event)
         await session.commit()

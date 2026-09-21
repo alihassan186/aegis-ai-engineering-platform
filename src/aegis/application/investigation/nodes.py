@@ -17,6 +17,7 @@ from datetime import datetime, timezone
 
 from langgraph.types import interrupt
 
+from aegis.application.evidence.record_evidence import EvidenceRecorder
 from aegis.application.investigation.collect import (
     KnowledgeRetrieve,
     SpecialistPorts,
@@ -78,32 +79,39 @@ def commander(state: InvestigationState) -> dict[str, object]:
     }
 
 
-def observability_node(source: ObservabilitySource) -> NodeFn:
+def observability_node(
+    source: ObservabilitySource,
+    recorder: EvidenceRecorder | None = None,
+) -> NodeFn:
     def observability(state: InvestigationState) -> dict[str, object]:
-        return collect_observability(state, source)
+        return collect_observability(state, source, recorder=recorder)
 
     return observability
 
 
-def knowledge_node(retrieve: KnowledgeRetrieve | None) -> NodeFn:
+def knowledge_node(
+    retrieve: KnowledgeRetrieve | None,
+    recorder: EvidenceRecorder | None = None,
+) -> NodeFn:
     def knowledge(state: InvestigationState) -> dict[str, object]:
-        return collect_knowledge(state, retrieve)
+        return collect_knowledge(state, retrieve, recorder=recorder)
 
     return knowledge
 
 
-def code_node(search: CodeSearch) -> NodeFn:
+def code_node(search: CodeSearch, recorder: EvidenceRecorder | None = None) -> NodeFn:
     def code_agent(state: InvestigationState) -> dict[str, object]:
-        return collect_code(state, search)
+        return collect_code(state, search, recorder=recorder)
 
     return code_agent
 
 
 def bind_specialists(ports: SpecialistPorts) -> dict[str, NodeFn]:
+    recorder = ports.recorder
     return {
-        "observability": observability_node(ports.observability),
-        "knowledge": knowledge_node(ports.retrieve),
-        "code": code_node(ports.code_search),
+        "observability": observability_node(ports.observability, recorder),
+        "knowledge": knowledge_node(ports.retrieve, recorder),
+        "code": code_node(ports.code_search, recorder),
     }
 
 

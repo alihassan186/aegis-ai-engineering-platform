@@ -11,6 +11,7 @@ import logging
 from dataclasses import dataclass
 from uuid import UUID
 
+from aegis.application.evidence.record_evidence import RecordEvidence
 from aegis.core.protocols import IncidentRepository, InvestigationRunner, ProcessedEventStore
 from aegis.domain.events.envelope import INCIDENT_OPENED_V1, DomainEvent
 from aegis.domain.incidents.enums import IncidentState
@@ -35,10 +36,12 @@ class ConsumeOpenedIncident:
         processed_events: ProcessedEventStore,
         *,
         runner: InvestigationRunner | None = None,
+        record_evidence: RecordEvidence | None = None,
     ) -> None:
         self._repository = repository
         self._processed_events = processed_events
         self._runner = runner
+        self._record_evidence = record_evidence
 
     async def execute(self, event: DomainEvent) -> ConsumeOpenedResult:
         extra = {
@@ -89,6 +92,7 @@ class ConsumeOpenedIncident:
                     scenario=scenario_from_fingerprint(incident.fingerprint),
                     correlation_id=event.correlation_id,
                 )
+                await self._persist_collected_evidence()
         else:
             logger.info(
                 "incident already %s; no-op ack",
@@ -102,3 +106,12 @@ class ConsumeOpenedIncident:
             transitioned=transitioned,
             already_processed=False,
         )
+
+    async def _persist_collected_evidence(self) -> None:
+        if self._record_evidence is None or self._runner is None:
+            return
+        drain = getattr(self._runner, "drain_recorded_evidence", None)
+        if drain is None:
+            return
+        for item in drain():
+            await self._record_evidence.persist(item)

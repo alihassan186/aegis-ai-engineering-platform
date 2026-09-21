@@ -4,11 +4,14 @@ from __future__ import annotations
 
 import pytest
 
+from aegis.application.evidence.record_evidence import RecordEvidence
 from aegis.application.investigation.consume_opened import ConsumeOpenedIncident
 from aegis.domain.events.envelope import incident_opened_v1
+from aegis.domain.evidence import Evidence, EvidenceKind, EvidenceSource
 from aegis.domain.incidents.entity import Incident
 from aegis.domain.incidents.enums import IncidentState, Severity
 from aegis.shared.exceptions import NotFoundError
+from tests.unit.application.evidence.fakes import FakeEvidenceRepository
 from tests.unit.application.incidents.fakes import FakeIncidentRepository, FakeProcessedEventStore
 
 
@@ -121,6 +124,38 @@ async def test_consume_starts_runner_once_with_fingerprint_scenario() -> None:
             "correlation_id": "corr-graph",
         }
     ]
+
+
+async def test_consume_persists_evidence_drained_from_runner() -> None:
+    repo = FakeIncidentRepository()
+    store = FakeProcessedEventStore()
+    evidence_repo = FakeEvidenceRepository()
+    incident = _open_incident()
+    await repo.create(incident)
+    minted = Evidence.create(
+        incident_id=incident.id,
+        source=EvidenceSource.SIMULATOR,
+        kind=EvidenceKind.LOG,
+        content_ref="simulator:payment:log",
+        summary="timeout",
+    )
+
+    class _DrainingRunner(_RecordingRunner):
+        def drain_recorded_evidence(self) -> list[Evidence]:
+            return [minted]
+
+    consume = ConsumeOpenedIncident(
+        repo,
+        store,
+        runner=_DrainingRunner(),
+        record_evidence=RecordEvidence(evidence_repo),
+    )
+
+    await consume.execute(
+        incident_opened_v1(incident_id=str(incident.id), correlation_id="corr-ev")
+    )
+
+    assert [item.id for item in evidence_repo.items] == [minted.id]
 
 
 async def test_unknown_event_type_is_rejected() -> None:

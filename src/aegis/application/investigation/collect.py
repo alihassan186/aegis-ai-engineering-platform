@@ -5,11 +5,16 @@ Tool calls in v0.5 are direct port calls. Phase 5 wraps them in the gateway.
 
 from __future__ import annotations
 
+import logging
 from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Protocol
 
+from aegis.application.evidence.record_evidence import (
+    EvidenceRecorder,
+    incident_id_from_state,
+)
 from aegis.application.investigation.state import (
     EVIDENCE_TEXT_CAP,
     KNOWLEDGE_MAX_CHUNKS,
@@ -24,6 +29,8 @@ from aegis.application.rag.retrieve import (
     RetrieveResult,
 )
 from aegis.core.protocols import CodeHit, CodeSearch, ObservabilitySignal, ObservabilitySource
+
+logger = logging.getLogger(__name__)
 
 KNOWLEDGE_DOC_TYPES = ("runbook", "incident_report")
 _SOURCE_SIMULATOR = "simulator"
@@ -65,6 +72,7 @@ class SpecialistPorts:
     observability: ObservabilitySource
     code_search: CodeSearch
     retrieve: KnowledgeRetrieve | None = None
+    recorder: EvidenceRecorder | None = None
 
     @classmethod
     def memory(cls) -> SpecialistPorts:
@@ -171,6 +179,7 @@ class MemoryRetrieve:
 def collect_observability(
     state: InvestigationState,
     source: ObservabilitySource,
+    recorder: EvidenceRecorder | None = None,
 ) -> dict[str, object]:
     service = state["service"]
     scenario = state["scenario"]
@@ -189,6 +198,7 @@ def collect_observability(
             "failed_steps": ["observability"],
             "log": ["observability failed: empty_signals"],
         }
+    _record_collected(state, items, recorder)
     return {
         "evidence": items,
         "log": [f"observability collected {len(items)} summaries source=simulator"],
@@ -198,6 +208,7 @@ def collect_observability(
 def collect_knowledge(
     state: InvestigationState,
     retrieve: KnowledgeRetrieve | None,
+    recorder: EvidenceRecorder | None = None,
 ) -> dict[str, object]:
     if retrieve is None:
         return {
@@ -222,13 +233,18 @@ def collect_knowledge(
             "failed_steps": ["knowledge"],
             "log": ["knowledge failed: no_hits"],
         }
+    _record_collected(state, items, recorder)
     return {
         "evidence": items,
         "log": [f"knowledge retrieved {len(items)} chunks via RetrieveKnowledge"],
     }
 
 
-def collect_code(state: InvestigationState, search: CodeSearch) -> dict[str, object]:
+def collect_code(
+    state: InvestigationState,
+    search: CodeSearch,
+    recorder: EvidenceRecorder | None = None,
+) -> dict[str, object]:
     service = state["service"]
     scenario = state["scenario"]
     try:
@@ -240,10 +256,27 @@ def collect_code(state: InvestigationState, search: CodeSearch) -> dict[str, obj
     items = [_code_item(hit) for hit in merged]
     if not items:
         return {"failed_steps": ["code"], "log": ["code failed: empty"]}
+    _record_collected(state, items, recorder)
     return {
         "evidence": items,
         "log": [f"code collected {len(items)} hits including deploy history"],
     }
+
+
+def _record_collected(
+    state: InvestigationState,
+    items: list[dict[str, object]],
+    recorder: EvidenceRecorder | None,
+) -> None:
+    if recorder is None or not items:
+        return
+    incident_id = incident_id_from_state(state.get("incident_id"))
+    if incident_id is None:
+        return
+    try:
+        recorder.record_collected(incident_id, items)
+    except Exception:
+        logger.exception("evidence record failed; graph items still returned")
 
 
 def _retrieve_runbooks_and_incidents(

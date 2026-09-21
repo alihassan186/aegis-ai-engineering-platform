@@ -14,16 +14,32 @@ import operator
 from datetime import timedelta
 from typing import Annotated, NotRequired, TypedDict
 
-# Commander stops looping after this many visits (cycle safety / RISK-010).
+# MAX_HOPS determines the maximum number of steps (or "hops") the investigation commander can perform
+# during an investigation. This is a safety feature to prevent the system from entering an infinite loop
+# by enforcing a hard cap on the number of node transitions, as described in risk mitigation (see RISK-010).
+# Each "hop" typically represents a decision, call to a specialist, or a jump to a new graph node.
 MAX_HOPS = 4
 
-# After this many evidence lines the commander routes to synthesize (non-db).
+# ENOUGH_EVIDENCE sets the minimum number of evidence items required before moving the investigation process
+# towards synthesis (e.g., having the commander summarize or synthesize actions, rather than collecting more raw evidence).
+# This ensures that the process converges efficiently and does not stall waiting for an unbounded amount of evidence.
+# This also helps balance completeness of investigation with performance and resource usage.
 ENOUGH_EVIDENCE = 1
 
-# FR-026 wall-clock cap from ``started_at``. Hop cap still wins if both fire.
+# MAX_DURATION specifies the maximum wall-clock time allowed for an investigation thread, counted
+# from the time recorded in 'started_at'. If this time cap is reached, the investigation is terminated regardless of hop count.
+# The hop cap (MAX_HOPS) always takes precedence if both the hop and duration limits are hit simultaneously.
+# This is designed to enforce fairness and avoid long-running, stuck, or zombie investigations (see FR-026).
 MAX_DURATION = timedelta(minutes=10)
 
-# Caps before Claude (4.8): summaries, not raw dumps.
+# The following caps are soft limits designed to keep responses tractable for both users and LLMs called by
+# the system, such as Claude (until version 4.8). These affect summary outputs and how much information is passed to the LLMs:
+# - OBS_MAX_ITEMS: Limits the number of observability signals (e.g., logs, traces, metrics) sampled per investigation step
+#                  to ensure payloads are manageable and can be summarized by an LLM in a single operation.
+# - KNOWLEDGE_MAX_CHUNKS: Restricts the number of knowledge/context chunks (such as code or documentation segments)
+#                         retrieved and included for use by the investigation graph, preventing overload and lost focus.
+# - EVIDENCE_TEXT_CAP: Puts a character cap on synthesized evidence string length, so that generated summaries
+#                      remain within a sane range, helping integrity, readability, and LLM performance.
 OBS_MAX_ITEMS = 20
 KNOWLEDGE_MAX_CHUNKS = 4
 EVIDENCE_TEXT_CAP = 800

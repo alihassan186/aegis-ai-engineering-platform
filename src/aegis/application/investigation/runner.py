@@ -6,8 +6,10 @@ import logging
 
 from langgraph.checkpoint.memory import InMemorySaver
 
+from aegis.application.evidence.record_evidence import CollectingEvidenceRecorder
 from aegis.application.investigation.collect import SpecialistPorts
 from aegis.application.investigation.run import invoke_investigation
+from aegis.domain.evidence.entity import Evidence
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +23,16 @@ class LangGraphInvestigationRunner:
         ports: SpecialistPorts | None = None,
     ) -> None:
         self._checkpointer = checkpointer or InMemorySaver()
-        self._ports = ports
+        self._recorded: list[Evidence] = []
+        resolved = ports or SpecialistPorts.memory()
+        if resolved.recorder is None:
+            resolved = SpecialistPorts(
+                observability=resolved.observability,
+                code_search=resolved.code_search,
+                retrieve=resolved.retrieve,
+                recorder=CollectingEvidenceRecorder(self._recorded),
+            )
+        self._ports = resolved
 
     def start(
         self,
@@ -53,3 +64,9 @@ class LangGraphInvestigationRunner:
         )
         status = result.get("status") or "paused"
         logger.info("investigation graph returned status=%s", status, extra=extra)
+
+    def drain_recorded_evidence(self) -> list[Evidence]:
+        """Evidence minted during the last ``start``. Cleared after the read."""
+        items = list(self._recorded)
+        self._recorded.clear()
+        return items

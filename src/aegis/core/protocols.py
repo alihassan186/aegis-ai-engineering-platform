@@ -12,6 +12,7 @@ from typing import Any, Protocol, runtime_checkable
 from uuid import UUID
 
 from aegis.domain.events.envelope import DomainEvent
+from aegis.domain.evidence.entity import Evidence
 from aegis.domain.incidents.entity import Incident
 from aegis.domain.incidents.enums import IncidentState, Severity
 
@@ -177,6 +178,14 @@ class IncidentFilters:
     owner_id: UUID | None = None
     created_after: datetime | None = None
     created_before: datetime | None = None
+
+
+class EvidenceRepository(Protocol):
+    """Persistence port for incident-scoped evidence (FR-018). No embeddings."""
+
+    async def add(self, evidence: Evidence) -> Evidence: ...
+
+    async def list_by_incident(self, incident_id: UUID) -> list[Evidence]: ...
 
 
 class IncidentRepository(Protocol):
