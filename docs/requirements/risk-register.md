@@ -21,7 +21,7 @@ Tracks product, technical, operational, and security risks. Reviewed at each maj
 | RISK-005 | Investigation cost exceeds budget per incident | Financial | 3 | 3 | 9 | Open | Token tracking; model routing; caching; cost alerts |
 | RISK-006 | Scope creep delays foundation delivery | Product | 4 | 3 | 12 | Open | Incremental roadmap; ADRs; phase gates |
 | RISK-007 | Insufficient evaluation data for RCA benchmarking | Product | 3 | 4 | 12 | Partial v0.4 | Simulator + written RCAs in RAG; golden RCA **scorer** still open |
-| RISK-008 | Sensitive data leaked in logs or LLM context | Security | 3 | 5 | 15 | Open | PII/secrets redaction; context size limits; audit review |
+| RISK-008 | Sensitive data leaked in logs or LLM context | Security | 3 | 5 | 15 | Partial v0.5 | Regex redact-on-write; LLM path still uses the same helper in 4.8; not full DLP |
 | RISK-009 | Single-region AWS dependency | Operational | 2 | 4 | 8 | Accepted | Accept for v1.0; multi-region deferred |
 | RISK-010 | Agent infinite loop or runaway token consumption | Technical | 3 | 3 | 9 | Open | Step limits; token budgets; timeout enforcement |
 | RISK-011 | OpenSearch index corruption or data loss | Operational | 2 | 4 | 8 | Open | Automated snapshots; re-indexing pipeline |

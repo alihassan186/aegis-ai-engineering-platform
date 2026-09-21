@@ -101,7 +101,7 @@ Out of scope: threats to target production applications under investigation (cov
 
 | ID | Threat | Surface | Mitigation | Status |
 |---|---|---|---|---|
-| THR-009 | Secrets in logs/traces sent to Bedrock | [4] LLM context | Secrets detection and redaction before context assembly | Planned v0.5 |
+| THR-009 | Secrets in logs/traces sent to Bedrock | [4] LLM context | Secrets detection and redaction before context assembly | Partial v0.5 — regex redact-on-write; not a full DLP product |
 | THR-010 | Cross-incident data leak via RAG retrieval | [4] RAG | Metadata filtering by incident scope; access control on index | Planned v0.4 |
 | THR-011 | API returns data beyond user's RBAC scope | [1] API | Authorization check on every endpoint; row-level filtering | Planned v0.2 |
 | THR-012 | LLM context window includes data from unrelated incidents | [4] LLM | Strict context assembly scoped to current incident_id | Planned v0.5 |

@@ -135,9 +135,10 @@ Use this table to know **which document answers which question** while coding.
 | Commander policy         | Step 4.4       | deterministic plan; hop + 10m duration escalate; named reasons                 |
 | Specialist agents        | Step 4.5       | simulator signals · RetrieveKnowledge · FakeCodeSearch                         |
 | Evidence storage         | Step 4.6       | Postgres `evidence` rows · graph state is not SoR                              |
+| Secrets redaction        | Step 4.7       | `redact()` on evidence write · reserved for 4.8 prompt assemble                |
 
 
-**You are here:** Step 4.6 complete → next [Step 4.7 — Secrets redaction pipeline](#step-47--secrets-redaction-pipeline).
+**You are here:** Step 4.7 complete → next [Step 4.8 — RCA agent + Bedrock integration](#step-48--rca-agent--bedrock-integration).
 
 ---
 
@@ -3077,13 +3078,13 @@ uv run pytest tests/integration/repositories/test_evidence_repository.py -v
 ### Step 4.7 — Secrets redaction pipeline
 
 
-|                   |                                                                                                                                     |
-| ----------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| **Goal**          | Detected secrets / sensitive patterns are stripped **before** evidence persist and **before** any LLM context                       |
-| **Why**           | [FR-019](requirements/functional-requirements.md) · [THR-009](security/threat-model.md) · [RISK-008](requirements/risk-register.md) |
-| **When**          | After 4.6 can write rows. Implement **before** 4.8 Claude.                                                                          |
-| **Documentation** | Threat model THR-009 / THR-012 · NFR-036 (retrieved text is untrusted data)                                                         |
-| **Implements**    | FR-019. Not a full DLP product.                                                                                                     |
+|                   |                                                                                                               |
+| ----------------- | ------------------------------------------------------------------------------------------------------------- |
+| **Goal**          | Detected secrets / sensitive patterns are stripped **before** evidence persist and **before** any LLM context |
+| **Why**           | FR-019 · THR-009 · RISK-008                                                                                   |
+| **When**          | After 4.6 can write rows. Implement **before** 4.8 Claude.                                                    |
+| **Documentation** | Threat model THR-009 / THR-012 · NFR-036 (retrieved text is untrusted data)                                   |
+| **Implements**    | FR-019. Not a full DLP product.                                                                               |
 
 
 **Files to create / modify:**
@@ -3134,10 +3135,10 @@ AEGIS_SKIP_DOTENV=1 uv run pytest tests/unit/application/security/test_redact.py
 
 **Done checklist:**
 
-- [ ] Redact-on-write for evidence
-- [ ] Same helper reserved for 4.8 context assembly
-- [ ] Tests use dummy secrets only
-- [ ] No Claude yet
+- [x] Redact-on-write for evidence
+- [x] Same helper reserved for 4.8 context assembly
+- [x] Tests use dummy secrets only
+- [x] No Claude yet
 
 **Learn / interview:**
 
@@ -5798,6 +5799,6 @@ Copy this template when you start any new step:
 
 ## Next action
 
-**Start here:** [Step 4.7 — Secrets redaction pipeline](#step-47--secrets-redaction-pipeline)
+**Start here:** [Step 4.8 — RCA agent + Bedrock integration](#step-48--rca-agent--bedrock-integration)
 
-When ready, ask: *"Implement Step 4.7"* and we will code it together with full engineering reasoning. Do not skip to Claude, the tool gateway, or remediation.
+When ready, ask: *"Implement Step 4.8"* and we will code it together with full engineering reasoning. Claude context must go through `redact_for_llm`. Do not skip the tool gateway or remediation.

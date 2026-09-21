@@ -154,8 +154,69 @@ def test_code_deploy_and_manual_sources() -> None:
     assert note.kind is EvidenceKind.NOTE
 
 
-def test_redaction_is_noop_until_4_7() -> None:
-    assert apply_redaction("AKIAIOSFODNN7EXAMPLE") == "AKIAIOSFODNN7EXAMPLE"
+def test_redaction_strips_dummy_aws_key() -> None:
+    assert "AKIAIOSFODNN7EXAMPLE" not in apply_redaction("key=AKIAIOSFODNN7EXAMPLE")
+    assert "[REDACTED:aws_access_key]" in apply_redaction("key=AKIAIOSFODNN7EXAMPLE")
+
+
+async def test_record_evidence_persists_redacted_body() -> None:
+    repo = FakeEvidenceRepository()
+    use_case = RecordEvidence(repo)
+    dummy = "AKIAIOSFODNN7EXAMPLE"
+
+    stored = await use_case.execute(
+        incident_id=uuid4(),
+        source=EvidenceSource.SIMULATOR,
+        kind=EvidenceKind.LOG,
+        content_ref="simulator:payment:log:1",
+        summary=f"checkout auth failed key={dummy}",
+        metadata={"query": "postgresql+asyncpg://dummy:dummy-pass-NOT-REAL@127.0.0.1:5434/aegis"},
+    )
+
+    assert dummy not in stored.summary
+    assert "dummy-pass-NOT-REAL" not in stored.summary
+    assert "dummy-pass-NOT-REAL" not in str(stored.metadata)
+    assert "[REDACTED:aws_access_key]" in stored.summary
+    assert stored.metadata["redaction_count"] >= 2
+    assert dummy not in repo.items[0].summary
+
+
+async def test_persist_redacts_even_if_entity_was_built_raw() -> None:
+    repo = FakeEvidenceRepository()
+    dummy = "ghp_dummyNotARealGitHubPatToken"
+    minted = Evidence.create(
+        incident_id=uuid4(),
+        source=EvidenceSource.RETRIEVE,
+        kind=EvidenceKind.CHUNK,
+        content_ref="chunk-1",
+        summary=f"runbook mentions {dummy}",
+    )
+
+    stored = await RecordEvidence(repo).persist(minted)
+
+    assert dummy not in stored.summary
+    assert dummy not in repo.items[0].summary
+    assert "[REDACTED:github_pat]" in stored.summary
+
+
+def test_collected_knowledge_excerpt_is_redacted() -> None:
+    dummy_jwt = (
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9."
+        "eyJzdWIiOiJkdW1teS11c2VyIn0."
+        "dummy_signature_not_a_real_secret"
+    )
+    evidence = evidence_from_collected_item(
+        uuid4(),
+        {
+            "collector": "knowledge",
+            "text": f"do not replay {dummy_jwt}",
+            "citation": {"chunk_id": "chunk-9", "document": "docs/knowledge/runbooks/x.md"},
+        },
+    )
+
+    assert dummy_jwt not in evidence.summary
+    assert "[REDACTED:jwt]" in evidence.summary
+    assert evidence.metadata["redaction_count"] >= 1
 
 
 def test_cli_incident_ids_are_not_persisted() -> None:

@@ -28,6 +28,7 @@ from aegis.application.rag.retrieve import (
     RetrieveHit,
     RetrieveResult,
 )
+from aegis.application.security.redact import redact
 from aegis.core.protocols import CodeHit, CodeSearch, ObservabilitySignal, ObservabilitySource
 
 logger = logging.getLogger(__name__)
@@ -366,7 +367,7 @@ def _iso(value: datetime) -> str:
 
 
 def _cap(text: str) -> str:
-    stripped = text.strip()
+    stripped = redact(text.strip()).text
     if len(stripped) <= EVIDENCE_TEXT_CAP:
         return stripped
     return stripped[: EVIDENCE_TEXT_CAP - 3] + "..."
