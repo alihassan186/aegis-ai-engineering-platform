@@ -14,8 +14,8 @@ Priority (first match wins):
    specialists do not ping-pong
 5. default → knowledge (unknown / ``unspecified``)
 
-``low_confidence`` (FR-025) is a domain reason, not fired here — there is
-no RCA score until Step 4.8. An LLM router later must keep the same caps.
+``low_confidence`` (FR-025) is fired by synthesize (Step 4.8) when RCA
+confidence is below the threshold. This module does not score RCA.
 """
 
 from __future__ import annotations

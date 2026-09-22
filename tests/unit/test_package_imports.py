@@ -14,8 +14,10 @@ from aegis.core.protocols import (
     InvestigationRunner,
     KnowledgeHit,
     KnowledgeStore,
+    LlmClient,
     ObservabilitySource,
     ProcessedEventStore,
+    RcaRepository,
 )
 from aegis.shared.exceptions import DomainError, NotFoundError, ValidationError
 
@@ -127,3 +129,11 @@ def test_observability_and_code_ports_are_protocols() -> None:
 
 def test_evidence_repository_is_a_protocol() -> None:
     assert getattr(EvidenceRepository, "_is_protocol", False)
+
+
+def test_llm_client_is_a_protocol() -> None:
+    assert getattr(LlmClient, "_is_protocol", False)
+
+
+def test_rca_repository_is_a_protocol() -> None:
+    assert getattr(RcaRepository, "_is_protocol", False)

@@ -26,8 +26,14 @@ from aegis.application.investigation.collect import (
     collect_observability,
 )
 from aegis.application.investigation.plan import next_action
+from aegis.application.investigation.rca import (
+    FixtureLlm,
+    generate_rca,
+    pack_from_evidence_rows,
+    pack_from_graph_evidence,
+)
 from aegis.application.investigation.state import InvestigationState
-from aegis.core.protocols import CodeSearch, ObservabilitySource
+from aegis.core.protocols import CodeSearch, LlmClient, ObservabilitySource
 
 NodeFn = Callable[[InvestigationState], dict[str, object]]
 
@@ -112,16 +118,63 @@ def bind_specialists(ports: SpecialistPorts) -> dict[str, NodeFn]:
         "observability": observability_node(ports.observability, recorder),
         "knowledge": knowledge_node(ports.retrieve, recorder),
         "code": code_node(ports.code_search, recorder),
+        "synthesize": synthesize_node(ports.llm, recorder),
     }
 
 
+def synthesize_node(
+    llm: LlmClient | None = None,
+    recorder: EvidenceRecorder | None = None,
+) -> NodeFn:
+    def synthesize(state: InvestigationState) -> dict[str, object]:
+        return _synthesize(state, llm=llm, recorder=recorder)
+
+    return synthesize
+
+
 def synthesize(state: InvestigationState) -> dict[str, object]:
-    """Stub RCA fold — Claude + schema is Step 4.8. No LLM here."""
-    joined = "; ".join(_evidence_label(item) for item in state.get("evidence") or [])
+    """Default synthesize bound to the fixture LLM (no Bedrock)."""
+    return _synthesize(state, llm=None, recorder=None)
+
+
+def _synthesize(
+    state: InvestigationState,
+    *,
+    llm: LlmClient | None,
+    recorder: EvidenceRecorder | None,
+) -> dict[str, object]:
+    recorded = list(getattr(recorder, "recorded", []) or [])
+    if recorded:
+        pack = pack_from_evidence_rows(recorded)
+    else:
+        pack = pack_from_graph_evidence(
+            incident_key=str(state.get("incident_id") or "INC-LEARN"),
+            evidence=list(state.get("evidence") or []),
+        )
+    if not pack:
+        return {
+            "status": "escalated",
+            "escalate_reason": "agent_failure",
+            "log": ["synthesize failed: empty evidence pack"],
+        }
+    generation = generate_rca(
+        incident_id=str(state.get("incident_id") or ""),
+        service=str(state.get("service") or ""),
+        scenario=str(state.get("scenario") or ""),
+        pack=pack,
+        llm=llm or FixtureLlm(),
+    )
+    reason = generation.escalate_reason.value if generation.escalate_reason else ""
+    payload = generation.payload or {}
+    log = f"synthesize {generation.outcome} attempts={generation.attempts}"
+    if reason:
+        log = f"{log} ({reason})"
     return {
-        "status": "ready",
-        "summary": f"draft from {len(state.get('evidence') or [])} evidence items: {joined}",
-        "log": ["synthesize ready (no Claude in this skeleton)"],
+        "status": generation.outcome,
+        "escalate_reason": reason or state.get("escalate_reason") or "",
+        "summary": str(payload.get("summary") or state.get("summary") or ""),
+        "rca": payload,
+        "log": [log],
     }
 
 
@@ -140,11 +193,3 @@ def escalate(state: InvestigationState) -> dict[str, object]:
         "status": "escalated",
         "log": [f"human_decision={decision}"],
     }
-
-
-def _evidence_label(item: object) -> str:
-    if isinstance(item, dict):
-        collector = item.get("collector") or item.get("kind") or "item"
-        summary = item.get("summary") or item.get("text") or ""
-        return f"{collector}:{str(summary)[:40]}"
-    return str(item)

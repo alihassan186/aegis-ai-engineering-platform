@@ -38,19 +38,20 @@ def _payload(scenario: str, *, service: str = "payment") -> dict[str, object]:
 def test_latency_spike_reaches_synthesize_with_observability_evidence() -> None:
     result = invoke_investigation(service="payment", scenario="latency_spike")
 
-    assert result["status"] == "ready"
+    assert result["status"] == "pending_review"
     obs = [item for item in result["evidence"] if item.get("collector") == "observability"]
     assert obs
     assert all(item["source"] == "simulator" for item in obs)
     assert {item["kind"] for item in obs} <= {"log", "metric", "trace"}
     assert all(item.get("timestamp") for item in obs)
-    assert "synthesize ready" in " ".join(result["log"])
+    assert "synthesize pending_review" in " ".join(result["log"])
+    assert result.get("rca")
 
 
 def test_bad_deployment_routes_through_code_node() -> None:
     result = invoke_investigation(service="user", scenario="bad_deployment")
 
-    assert result["status"] == "ready"
+    assert result["status"] == "pending_review"
     code = [item for item in result["evidence"] if item.get("collector") == "code"]
     assert any(item.get("version") == "1.14.0" for item in code)
     assert any("1.14.0" in str(item.get("summary")) for item in code)
@@ -63,7 +64,7 @@ def test_db_exhaustion_fans_out_to_observability_and_knowledge() -> None:
     collectors = {item.get("collector") for item in result["evidence"]}
     assert "observability" in collectors
     assert "knowledge" in collectors
-    assert result["status"] == "ready"
+    assert result["status"] == "pending_review"
 
 
 def test_dependency_failure_interrupts_then_resumes() -> None:
@@ -134,7 +135,7 @@ def test_invoke_uses_incident_id_as_thread_id() -> None:
         correlation_id="corr-1",
     )
     assert result["_thread_id"] == incident_id
-    assert result["status"] == "ready"
+    assert result["status"] == "pending_review"
 
 
 def test_langgraph_runner_starts_compiled_graph() -> None:
@@ -149,4 +150,4 @@ def test_langgraph_runner_starts_compiled_graph() -> None:
     snapshot = compile_investigation_graph(checkpointer=saver).get_state(
         {"configurable": {"thread_id": "22222222-2222-2222-2222-222222222222"}}
     )
-    assert snapshot.values.get("status") == "ready"
+    assert snapshot.values.get("status") == "pending_review"

@@ -29,7 +29,13 @@ from aegis.application.rag.retrieve import (
     RetrieveResult,
 )
 from aegis.application.security.redact import redact
-from aegis.core.protocols import CodeHit, CodeSearch, ObservabilitySignal, ObservabilitySource
+from aegis.core.protocols import (
+    CodeHit,
+    CodeSearch,
+    LlmClient,
+    ObservabilitySignal,
+    ObservabilitySource,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -74,6 +80,7 @@ class SpecialistPorts:
     code_search: CodeSearch
     retrieve: KnowledgeRetrieve | None = None
     recorder: EvidenceRecorder | None = None
+    llm: LlmClient | None = None
 
     @classmethod
     def memory(cls) -> SpecialistPorts:

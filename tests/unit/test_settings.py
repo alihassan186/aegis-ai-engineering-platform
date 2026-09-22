@@ -25,6 +25,7 @@ def test_defaults_when_env_unset(monkeypatch: pytest.MonkeyPatch) -> None:
         "AEGIS_EVENT_BUS_NAME",
         "AEGIS_INVESTIGATION_QUEUE_NAME",
         "AEGIS_SIMULATOR_URL",
+        "AEGIS_LLM",
     ):
         monkeypatch.delenv(name, raising=False)
 
@@ -45,6 +46,7 @@ def test_defaults_when_env_unset(monkeypatch: pytest.MonkeyPatch) -> None:
     assert settings.event_bus_name == "aegis-events"
     assert settings.investigation_queue_name == "investigation-workflow"
     assert settings.simulator_base_url == "http://127.0.0.1:8001"
+    assert settings.llm == "fake"
 
 
 def test_loads_database_url_from_env(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -156,6 +158,21 @@ def test_loads_embedder_and_region_from_env(monkeypatch: pytest.MonkeyPatch) -> 
 
     assert settings.embedder == "titan"
     assert settings.aws_region == "eu-west-1"
+
+
+def test_loads_llm_claude_from_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("AEGIS_LLM", "claude")
+    monkeypatch.delenv("AEGIS_DATABASE_URL", raising=False)
+
+    assert Settings.from_env().llm == "claude"
+
+
+def test_unknown_llm_is_rejected(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("AEGIS_LLM", "openai")
+    monkeypatch.delenv("AEGIS_DATABASE_URL", raising=False)
+
+    with pytest.raises(ValueError, match="fake"):
+        Settings.from_env()
 
 
 def test_unknown_embedder_is_rejected(monkeypatch: pytest.MonkeyPatch) -> None:

@@ -6,10 +6,13 @@ import pytest
 
 from aegis.application.evidence.record_evidence import RecordEvidence
 from aegis.application.investigation.consume_opened import ConsumeOpenedIncident
+from aegis.application.rca.record_rca import RecordRca
 from aegis.domain.events.envelope import incident_opened_v1
 from aegis.domain.evidence import Evidence, EvidenceKind, EvidenceSource
 from aegis.domain.incidents.entity import Incident
 from aegis.domain.incidents.enums import IncidentState, Severity
+from aegis.domain.rca.entity import RcaCitation, RcaReport
+from aegis.domain.rca.enums import RcaFindingStatus
 from aegis.shared.exceptions import NotFoundError
 from tests.unit.application.evidence.fakes import FakeEvidenceRepository
 from tests.unit.application.incidents.fakes import FakeIncidentRepository, FakeProcessedEventStore
@@ -156,6 +159,57 @@ async def test_consume_persists_evidence_drained_from_runner() -> None:
     )
 
     assert [item.id for item in evidence_repo.items] == [minted.id]
+
+
+async def test_consume_persists_rca_drained_from_runner() -> None:
+    repo = FakeIncidentRepository()
+    store = FakeProcessedEventStore()
+    incident = _open_incident()
+    await repo.create(incident)
+    report = RcaReport.create(
+        incident_id=incident.id,
+        summary="latency on checkout",
+        root_cause="saturated workers",
+        contributing_factors=["recent deploy"],
+        confidence=0.84,
+        finding_status=RcaFindingStatus.HYPOTHESIS,
+        citations=[
+            RcaCitation(
+                evidence_id=incident.id,
+                source="simulator",
+                relevance="p99",
+            )
+        ],
+        recommended_actions=["watch p99"],
+        model_id="fake-llm",
+    )
+    stored: list[RcaReport] = []
+
+    class _RcaRepo:
+        async def add(self, item: RcaReport) -> RcaReport:
+            stored.append(item)
+            return item
+
+        async def list_by_incident(self, incident_id):  # type: ignore[no-untyped-def]
+            return [item for item in stored if item.incident_id == incident_id]
+
+    class _DrainingRunner(_RecordingRunner):
+        def drain_recorded_rca(self) -> list[RcaReport]:
+            return [report]
+
+    consume = ConsumeOpenedIncident(
+        repo,
+        store,
+        runner=_DrainingRunner(),
+        record_rca=RecordRca(_RcaRepo()),
+    )
+
+    await consume.execute(
+        incident_opened_v1(incident_id=str(incident.id), correlation_id="corr-rca")
+    )
+
+    assert [item.id for item in stored] == [report.id]
+    assert stored[0].review_status.value == "pending_review"
 
 
 async def test_unknown_event_type_is_rejected() -> None:

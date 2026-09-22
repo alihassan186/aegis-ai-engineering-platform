@@ -6,6 +6,7 @@ from aegis.application.investigation.collect import SpecialistPorts
 from aegis.application.rag.retrieve import RetrieveKnowledge
 from aegis.config.settings import Settings
 from aegis.infrastructure.code.fake_code_search import FakeCodeSearch
+from aegis.infrastructure.llm import build_llm
 from aegis.infrastructure.observability.simulator_client import SimulatorObservabilityClient
 from aegis.infrastructure.rag.embedder import build_embedder
 from aegis.infrastructure.rag.opensearch_client import OpenSearchKnowledgeStore
@@ -23,4 +24,5 @@ def build_specialist_ports(settings: Settings) -> SpecialistPorts:
         observability=SimulatorObservabilityClient(settings.simulator_base_url),
         code_search=FakeCodeSearch(),
         retrieve=retrieve,
+        llm=build_llm(settings),
     )

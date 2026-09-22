@@ -15,6 +15,7 @@ from aegis.domain.events.envelope import DomainEvent
 from aegis.domain.evidence.entity import Evidence
 from aegis.domain.incidents.entity import Incident
 from aegis.domain.incidents.enums import IncidentState, Severity
+from aegis.domain.rca.entity import RcaReport
 
 
 @runtime_checkable
@@ -178,6 +179,31 @@ class IncidentFilters:
     owner_id: UUID | None = None
     created_after: datetime | None = None
     created_before: datetime | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class LlmJsonResult:
+    """Structured model output plus token attribution (NFR-045, NFR-070)."""
+
+    data: Mapping[str, Any]
+    model_id: str
+    input_tokens: int
+    output_tokens: int
+
+
+@runtime_checkable
+class LlmClient(Protocol):
+    """JSON completion port. No boto3 here. Fake in CI; Claude via Bedrock."""
+
+    def complete_json(self, *, system: str, user: str) -> LlmJsonResult: ...
+
+
+class RcaRepository(Protocol):
+    """Persistence port for RCA versions (FR-035). HTTP accept is Step 4.9."""
+
+    async def add(self, report: RcaReport) -> RcaReport: ...
+
+    async def list_by_incident(self, incident_id: UUID) -> list[RcaReport]: ...
 
 
 class EvidenceRepository(Protocol):

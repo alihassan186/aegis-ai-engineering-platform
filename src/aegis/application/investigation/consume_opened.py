@@ -12,6 +12,7 @@ from dataclasses import dataclass
 from uuid import UUID
 
 from aegis.application.evidence.record_evidence import RecordEvidence
+from aegis.application.rca.record_rca import RecordRca
 from aegis.core.protocols import IncidentRepository, InvestigationRunner, ProcessedEventStore
 from aegis.domain.events.envelope import INCIDENT_OPENED_V1, DomainEvent
 from aegis.domain.incidents.enums import IncidentState
@@ -37,11 +38,13 @@ class ConsumeOpenedIncident:
         *,
         runner: InvestigationRunner | None = None,
         record_evidence: RecordEvidence | None = None,
+        record_rca: RecordRca | None = None,
     ) -> None:
         self._repository = repository
         self._processed_events = processed_events
         self._runner = runner
         self._record_evidence = record_evidence
+        self._record_rca = record_rca
 
     async def execute(self, event: DomainEvent) -> ConsumeOpenedResult:
         extra = {
@@ -93,6 +96,7 @@ class ConsumeOpenedIncident:
                     correlation_id=event.correlation_id,
                 )
                 await self._persist_collected_evidence()
+                await self._persist_recorded_rca()
         else:
             logger.info(
                 "incident already %s; no-op ack",
@@ -115,3 +119,12 @@ class ConsumeOpenedIncident:
             return
         for item in drain():
             await self._record_evidence.persist(item)
+
+    async def _persist_recorded_rca(self) -> None:
+        if self._record_rca is None or self._runner is None:
+            return
+        drain = getattr(self._runner, "drain_recorded_rca", None)
+        if drain is None:
+            return
+        for item in drain():
+            await self._record_rca.persist(item)

@@ -1,8 +1,9 @@
-"""LangGraph investigation (Steps 4.3–4.5).
+"""LangGraph investigation (Steps 4.3–4.8).
 
 The worker invokes ``LangGraphInvestigationRunner`` after consume.
 Commander policy is ``plan.next_action``. Specialists collect through ports.
-No Claude. Knowledge goes through ``RetrieveKnowledge`` when OpenSearch is set.
+Synthesize uses ``LlmClient`` (FakeLlm default). Knowledge goes through
+``RetrieveKnowledge`` when OpenSearch is set.
 """
 
 from aegis.application.investigation.graph import (

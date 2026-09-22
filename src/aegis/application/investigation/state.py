@@ -32,8 +32,7 @@ ENOUGH_EVIDENCE = 1
 # This is designed to enforce fairness and avoid long-running, stuck, or zombie investigations (see FR-026).
 MAX_DURATION = timedelta(minutes=10)
 
-# The following caps are soft limits designed to keep responses tractable for both users and LLMs called by
-# the system, such as Claude (until version 4.8). These affect summary outputs and how much information is passed to the LLMs:
+# Soft caps so specialist evidence stays tractable for the RCA prompt (NFR-045):
 # - OBS_MAX_ITEMS: Limits the number of observability signals (e.g., logs, traces, metrics) sampled per investigation step
 #                  to ensure payloads are manageable and can be summarized by an LLM in a single operation.
 # - KNOWLEDGE_MAX_CHUNKS: Restricts the number of knowledge/context chunks (such as code or documentation segments)
@@ -66,3 +65,5 @@ class InvestigationState(TypedDict):
     # Domain ``EscalateReason`` value, or empty when not escalating.
     escalate_reason: NotRequired[str]
     title: NotRequired[str]
+    # Structured RCA payload from synthesize (Step 4.8). Not chat history.
+    rca: NotRequired[dict[str, object]]

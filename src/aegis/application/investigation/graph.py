@@ -11,8 +11,8 @@ Concepts wired here (study this file with the tests):
 
 Step 4.4: commander policy is ``plan.next_action``.
 Step 4.5: specialists collect through ports (simulator / RetrieveKnowledge / code fake).
-Still **no Claude**. Postgres checkpointer is not here —
-``InMemorySaver`` does not survive worker restart.
+Step 4.8: synthesize calls ``LlmClient`` (FakeLlm default). Postgres
+checkpointer is not here — ``InMemorySaver`` does not survive worker restart.
 """
 
 from __future__ import annotations
@@ -27,7 +27,6 @@ from aegis.application.investigation.nodes import (
     commander,
     escalate,
     intake,
-    synthesize,
 )
 from aegis.application.investigation.routing import route_after_commander
 from aegis.application.investigation.state import InvestigationState
@@ -42,7 +41,7 @@ def build_investigation_graph(ports: SpecialistPorts | None = None) -> StateGrap
     graph.add_node("observability", specialists["observability"])
     graph.add_node("knowledge", specialists["knowledge"])
     graph.add_node("code", specialists["code"])
-    graph.add_node("synthesize", synthesize)
+    graph.add_node("synthesize", specialists["synthesize"])
     graph.add_node("escalate", escalate)
 
     graph.add_edge(START, "intake")

@@ -8,8 +8,10 @@ from langgraph.checkpoint.memory import InMemorySaver
 
 from aegis.application.evidence.record_evidence import CollectingEvidenceRecorder
 from aegis.application.investigation.collect import SpecialistPorts
+from aegis.application.investigation.rca import report_from_payload
 from aegis.application.investigation.run import invoke_investigation
 from aegis.domain.evidence.entity import Evidence
+from aegis.domain.rca.entity import RcaReport
 
 logger = logging.getLogger(__name__)
 
@@ -31,8 +33,10 @@ class LangGraphInvestigationRunner:
                 code_search=resolved.code_search,
                 retrieve=resolved.retrieve,
                 recorder=CollectingEvidenceRecorder(self._recorded),
+                llm=resolved.llm,
             )
         self._ports = resolved
+        self._rca_reports: list[RcaReport] = []
 
     def start(
         self,
@@ -64,9 +68,23 @@ class LangGraphInvestigationRunner:
         )
         status = result.get("status") or "paused"
         logger.info("investigation graph returned status=%s", status, extra=extra)
+        self._capture_rca(result)
 
     def drain_recorded_evidence(self) -> list[Evidence]:
         """Evidence minted during the last ``start``. Cleared after the read."""
         items = list(self._recorded)
         self._recorded.clear()
         return items
+
+    def drain_recorded_rca(self) -> list[RcaReport]:
+        items = list(self._rca_reports)
+        self._rca_reports.clear()
+        return items
+
+    def _capture_rca(self, result: dict[str, object]) -> None:
+        payload = result.get("rca")
+        if not isinstance(payload, dict):
+            return
+        report = report_from_payload(payload)
+        if report is not None:
+            self._rca_reports.append(report)

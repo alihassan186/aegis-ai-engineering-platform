@@ -56,6 +56,7 @@ class Settings:
     event_bus_name: str = "aegis-events"
     investigation_queue_name: str = "investigation-workflow"
     simulator_base_url: str = "http://127.0.0.1:8001"
+    llm: str = "fake"
 
     @classmethod
     def from_env(cls) -> Settings:
@@ -88,6 +89,7 @@ class Settings:
         simulator_base_url = (
             os.getenv("AEGIS_SIMULATOR_URL", "").strip().rstrip("/") or "http://127.0.0.1:8001"
         )
+        llm = _parse_llm_name(os.getenv("AEGIS_LLM"))
 
         if environment == "production" and not database_url:
             raise ValueError("AEGIS_DATABASE_URL is required when AEGIS_ENV=production (NFR-060).")
@@ -114,6 +116,7 @@ class Settings:
             event_bus_name=event_bus_name,
             investigation_queue_name=investigation_queue_name,
             simulator_base_url=simulator_base_url,
+            llm=llm,
         )
 
 
@@ -139,3 +142,13 @@ def _parse_embedder_name(raw: str | None) -> str:
     if name in {"fake", "titan"}:
         return name
     raise ValueError("AEGIS_EMBEDDER must be 'fake' or 'titan'.")
+
+
+def _parse_llm_name(raw: str | None) -> str:
+    """Default fake so CI and local graph runs never need Bedrock (Step 4.8)."""
+    name = (raw or "").strip().lower()
+    if not name:
+        return "fake"
+    if name in {"fake", "claude"}:
+        return name
+    raise ValueError("AEGIS_LLM must be 'fake' or 'claude'.")
