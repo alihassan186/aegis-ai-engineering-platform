@@ -14,7 +14,7 @@ Tracks product, technical, operational, and security risks. Reviewed at each maj
 
 | ID | Risk | Category | L | I | Score | Status | Mitigation |
 |---|---|---|---|---|---|---|---|
-| RISK-001 | LLM hallucination produces incorrect RCA | Technical | 4 | 5 | 20 | Open | Evidence citation requirement; human review; benchmark evaluation |
+| RISK-001 | LLM hallucination produces incorrect RCA | Technical | 4 | 5 | 20 | Partial v0.5 | Schema + pack-id citations + pending_review; golden scorer still Phase 7 |
 | RISK-002 | Agent executes unauthorized production action | Security | 3 | 5 | 15 | Open | Tool gateway; policy enforcement; least privilege; approval gates |
 | RISK-003 | Prompt injection via retrieved documents | Security | 3 | 4 | 12 | Open | Input sanitization; treat RAG content as untrusted; output validation |
 | RISK-004 | Bedrock API unavailability or throttling | Operational | 3 | 4 | 12 | Open | Retry with backoff; fallback model; queue-based async processing |
@@ -46,6 +46,8 @@ Tracks product, technical, operational, and security risks. Reviewed at each maj
 - Human acceptance/rejection workflow (FR-034)
 - Golden dataset evaluation before release (FR-090, FR-091)
 - Confidence scoring with escalation below threshold (FR-025)
+
+**Status note (v0.5 / Step 4.8):** citations must be pack evidence UUIDs; invalid JSON retries once then escalates; RCA review_status is `pending_review` (no auto-`identified`). FR-090 golden scoring remains open — RISK-007 stays Partial.
 
 **Owner:** Engineering  
 **Review date:** v0.5 release gate

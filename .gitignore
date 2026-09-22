@@ -183,6 +183,9 @@ desktop.ini
 *.joblib
 
 models/
+# SQLAlchemy ORM package — not ML weights. The rule above would hide it.
+!src/aegis/infrastructure/database/models/
+!src/aegis/infrastructure/database/models/*.py
 checkpoints/
 artifacts/
 
