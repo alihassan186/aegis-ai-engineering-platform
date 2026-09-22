@@ -136,9 +136,10 @@ Use this table to know **which document answers which question** while coding.
 | Specialist agents        | Step 4.5       | simulator signals · RetrieveKnowledge · FakeCodeSearch                         |
 | Evidence storage         | Step 4.6       | Postgres `evidence` rows · graph state is not SoR                              |
 | Secrets redaction        | Step 4.7       | `redact()` on evidence write · reserved for 4.8 prompt assemble                |
+| RCA + Bedrock            | Step 4.8       | Structured RCA · FakeLlm default · citations must be evidence UUIDs            |
 
 
-**You are here:** Step 4.7 complete → next [Step 4.8 — RCA agent + Bedrock integration](#step-48--rca-agent--bedrock-integration).
+**You are here:** Step 4.8 complete → next [Step 4.9 — Investigation progress API](#step-49--investigation-progress-api).
 
 ---
 
@@ -2481,7 +2482,7 @@ Implement **4.1 → 4.11 in order**. Do not start Phase 5 (tool gateway / MCP) o
 | Postgres             | **:5434**                                   | System of record for incidents, evidence, RCA, investigation steps.                                                                 |
 
 
-**LLM rule:** Steps 4.1–4.7 use **stubs / fake ports**. Claude Sonnet is Step **4.8** (plus a `FakeLlm` like `FakeEmbedder`). Titan embeddings stay on the retrieve path from Phase 3.
+**LLM rule:** Steps 4.1–4.7 used stubs. Step **4.8** adds `LlmClient` with `FakeLlm` default and Claude opt-in (`AEGIS_LLM=claude`). Titan embeddings stay on the retrieve path from Phase 3.
 
 **What v0.5 does not ship:** MCP / policy gateway (Phase 5), write/remediation tools (Phase 8), Amazon EventBridge in AWS (Phase 6), FR-090 RCA **scorer** (Phase 7). RISK-007 stays Partial.
 
@@ -3226,11 +3227,11 @@ AEGIS_SKIP_DOTENV=1 AEGIS_LLM=fake \
 
 **Done checklist:**
 
-- [ ] `FakeLlm` default; Claude opt-in
-- [ ] RCA JSON matches incident-flow fields
-- [ ] Citations are evidence UUIDs
-- [ ] Low confidence escalates
-- [ ] RISK-001 mitigations exist; RISK-007 still Partial
+- [x] `FakeLlm` default; Claude opt-in
+- [x] RCA JSON matches incident-flow fields
+- [x] Citations are evidence UUIDs
+- [x] Low confidence escalates
+- [x] RISK-001 mitigations exist; RISK-007 still Partial
 
 **Learn / interview:**
 
@@ -5799,6 +5800,6 @@ Copy this template when you start any new step:
 
 ## Next action
 
-**Start here:** [Step 4.8 — RCA agent + Bedrock integration](#step-48--rca-agent--bedrock-integration)
+**Start here:** [Step 4.9 — Investigation progress API](#step-49--investigation-progress-api)
 
-When ready, ask: *"Implement Step 4.8"* and we will code it together with full engineering reasoning. Claude context must go through `redact_for_llm`. Do not skip the tool gateway or remediation.
+When ready, ask: *"Implement Step 4.9"* and we will code it together with full engineering reasoning. Accept/amend RCA over JWT. Do not skip the tool gateway or remediation.
