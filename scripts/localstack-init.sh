@@ -88,4 +88,26 @@ aws_local events put-targets \
   --rule "$RULE" \
   --targets "Id=investigation-sqs,Arn=${QUEUE_ARN}" >/dev/null
 
-echo "LocalStack ready: bus=${BUS} queue=${QUEUE} (visibility 300s, maxReceive 3 → ${DLQ})"
+# Notification queue (Step 4.10). Do not create rag-indexing consumers.
+NOTE_QUEUE="${AEGIS_NOTIFICATION_QUEUE_NAME:-notification}"
+NOTE_DLQ="${NOTE_QUEUE}-dlq"
+aws_local sqs create-queue --queue-name "$NOTE_DLQ" >/dev/null 2>&1 || true
+NOTE_DLQ_URL="$(aws_local sqs get-queue-url --queue-name "$NOTE_DLQ" --query QueueUrl --output text | tr -d '\r')"
+NOTE_DLQ_ARN="$(aws_local sqs get-queue-attributes --queue-url "$NOTE_DLQ_URL" --attribute-names QueueArn --query Attributes.QueueArn --output text | tr -d '\r')"
+aws_local sqs create-queue --queue-name "$NOTE_QUEUE" >/dev/null 2>&1 || true
+NOTE_URL="$(aws_local sqs get-queue-url --queue-name "$NOTE_QUEUE" --query QueueUrl --output text | tr -d '\r')"
+NOTE_ARN="$(aws_local sqs get-queue-attributes --queue-url "$NOTE_URL" --attribute-names QueueArn --query Attributes.QueueArn --output text | tr -d '\r')"
+aws_local sqs set-queue-attributes --queue-url "$NOTE_URL" \
+  --attributes "$(json_queue_attrs "$NOTE_DLQ_ARN")" >/dev/null
+aws_local sqs set-queue-attributes --queue-url "$NOTE_URL" \
+  --attributes "$(json_queue_policy "$NOTE_ARN")" >/dev/null
+for pair in "rca-completed-v1:rca.completed.v1" "rca-escalated-v1:rca.escalated.v1"; do
+  RULE_NAME="${pair%%:*}"
+  DETAIL="${pair##*:}"
+  NOTE_PATTERN="$(python3 -c "import json; print(json.dumps({'source':['${SOURCE}'],'detail-type':['${DETAIL}']}))")"
+  aws_local events put-rule --name "$RULE_NAME" --event-bus-name "$BUS" --event-pattern "$NOTE_PATTERN" >/dev/null
+  aws_local events put-targets --event-bus-name "$BUS" --rule "$RULE_NAME" \
+    --targets "Id=${RULE_NAME}-sqs,Arn=${NOTE_ARN}" >/dev/null
+done
+
+echo "LocalStack ready: bus=${BUS} queue=${QUEUE} notify=${NOTE_QUEUE} (visibility 300s, maxReceive 3 → ${DLQ})"

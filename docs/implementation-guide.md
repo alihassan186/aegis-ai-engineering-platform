@@ -137,9 +137,12 @@ Use this table to know **which document answers which question** while coding.
 | Evidence storage         | Step 4.6       | Postgres `evidence` rows · graph state is not SoR                              |
 | Secrets redaction        | Step 4.7       | `redact()` on evidence write · reserved for 4.8 prompt assemble                |
 | RCA + Bedrock            | Step 4.8       | Structured RCA · FakeLlm default · citations must be evidence UUIDs            |
+| Investigation API        | Step 4.9       | JWT progress · accept/amend versions · pause flag (InMemorySaver honesty)      |
+| Notifications            | Step 4.10      | RCA ready / escalate row + log · `rca.completed.v1` / `rca.escalated.v1`       |
+| Post-incident report     | Step 4.11      | GET report JSON/markdown · not auto-indexed (FR-101)                           |
 
 
-**You are here:** Step 4.8 complete → next [Step 4.9 — Investigation progress API](#step-49--investigation-progress-api).
+**You are here:** Step 4.11 complete → Phase 4 exit gate ticked → next [Step 5.1 — Tool gateway core](#step-51--tool-gateway-core-allow--deny--log).
 
 ---
 
@@ -3282,7 +3285,7 @@ tests/security/test_rbac_investigations.py
 **What to build:**
 
 - `GET .../investigation` — state, hops, steps[], evidence ids, RCA summary if any, escalate reason.
-- `POST .../investigation/pause` and `.../resume` (FR-023) — resume uses the same `thread_id` + checkpointer story you started in 4.3. If checkpointer is still in-memory, document that resume only works if the worker process is alive; a Postgres checkpointer is the honest follow-up.
+- `POST .../investigation/pause` and `.../resume` (FR-023) — resume uses the same `thread_id` + checkpointer story you started in 4.3. **v0.5 honesty:** pause/resume persist a cooperative flag in Postgres. `graph_resume_available` is `false` because `InMemorySaver` is process-local; interrupt resume only works if that worker is still alive. A Postgres checkpointer is the follow-up.
 - `POST .../rca/accept` | `reject` | `amend` (FR-034/035). Amend stores a new version; keep original.
 - Accept → incident `identified` (incident-flow Phase 3). Reject → escalate / stay investigating (pick one, test it).
 - Optional: `POST .../evidence` manual note (FR-024 P1).
@@ -3317,10 +3320,10 @@ AEGIS_SKIP_DOTENV=1 uv run pytest tests/integration/api/test_investigations_api.
 
 **Done checklist:**
 
-- [ ] Progress on `/docs`
-- [ ] JWT + RBAC tests
-- [ ] Accept/reject/amend persist versions
-- [ ] Pause/resume documented honestly (checkpointer limits)
+- [x] Progress on `/docs`
+- [x] JWT + RBAC tests
+- [x] Accept/reject/amend persist versions
+- [x] Pause/resume documented honestly (checkpointer limits)
 
 **Learn / interview:**
 
@@ -3396,10 +3399,10 @@ AEGIS_SKIP_DOTENV=1 uv run pytest tests/unit/application/notifications/test_noti
 
 **Done checklist:**
 
-- [ ] RCA ready → notification record
-- [ ] Escalate → notification record
-- [ ] Idempotent
-- [ ] No PII/secrets in payload
+- [x] RCA ready → notification record
+- [x] Escalate → notification record
+- [x] Idempotent
+- [x] No PII/secrets in payload
 
 **Learn / interview:**
 
@@ -3473,11 +3476,11 @@ AEGIS_SKIP_DOTENV=1 uv run pytest tests/unit/application/reports/test_post_incid
 
 **Done checklist:**
 
-- [ ] Report has timeline + evidence + RCA + actions
-- [ ] Not auto-indexed
-- [ ] Optional `docs/releases/v0.5.md`
-- [ ] RISK-007 still Partial
-- [ ] Phase 5 not started in this change
+- [x] Report has timeline + evidence + RCA + actions
+- [x] Not auto-indexed
+- [x] Optional `docs/releases/v0.5.md`
+- [x] RISK-007 still Partial
+- [x] Phase 5 not started in this change
 
 **Learn / interview:**
 
@@ -3491,14 +3494,14 @@ AEGIS_SKIP_DOTENV=1 uv run pytest tests/unit/application/reports/test_post_incid
 
 **Phase 4 exit gate (before Phase 5):**
 
-- [ ] `incident.opened.v1` → worker → graph (not inside the webhook)
-- [ ] Specialists collect through ports; knowledge uses retrieve
-- [ ] Evidence + RCA in Postgres; secrets redacted
-- [ ] Progress + accept/reject on JWT API
-- [ ] Notify on RCA ready / escalate
-- [ ] Post-incident report exists and is **not** auto-indexed
-- [ ] No MCP gateway, no write tools, no FR-090 scorer
-- [ ] You can walk an interviewer through ADR-003, the graph, and “RAG is a tool”
+- [x] `incident.opened.v1` → worker → graph (not inside the webhook)
+- [x] Specialists collect through ports; knowledge uses retrieve
+- [x] Evidence + RCA in Postgres; secrets redacted
+- [x] Progress + accept/reject on JWT API
+- [x] Notify on RCA ready / escalate
+- [x] Post-incident report exists and is **not** auto-indexed
+- [x] No MCP gateway, no write tools, no FR-090 scorer
+- [x] You can walk an interviewer through ADR-003, the graph, and “RAG is a tool”
 
 When this list is ticked, start [Step 5.1 — Tool gateway core](#step-51--tool-gateway-core-allow--deny--log).
 
@@ -5800,6 +5803,6 @@ Copy this template when you start any new step:
 
 ## Next action
 
-**Start here:** [Step 4.9 — Investigation progress API](#step-49--investigation-progress-api)
+**Start here:** [Step 5.1 — Tool gateway core](#step-51--tool-gateway-core-allow--deny--log)
 
-When ready, ask: *"Implement Step 4.9"* and we will code it together with full engineering reasoning. Accept/amend RCA over JWT. Do not skip the tool gateway or remediation.
+When ready, ask: *"Implement Step 5.1"* and we will code it together with full engineering reasoning. Wrap existing ports. Do not add write tools or start remediation.
