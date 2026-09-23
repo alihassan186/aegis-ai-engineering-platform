@@ -16,6 +16,7 @@ from aegis.api.exceptions import (
     DatabaseNotConfiguredError,
     OpenSearchNotConfiguredError,
 )
+from aegis.application.evidence.record_evidence import RecordEvidence
 from aegis.application.incidents import (
     CreateIncident,
     GetIncident,
@@ -23,9 +24,20 @@ from aegis.application.incidents import (
     TransitionIncident,
 )
 from aegis.application.incidents.ingest_signal import IngestIncidentSignal
+from aegis.application.investigation.control import ControlInvestigation
+from aegis.application.investigation.get_progress import GetInvestigationProgress
+from aegis.application.investigation.transition_rca import TransitionRca
+from aegis.application.notifications.notify import NotifyInvestigation
 from aegis.application.rag.retrieve import RetrieveKnowledge
+from aegis.application.reports.build_post_incident import BuildPostIncidentReport
 from aegis.config.settings import Settings
-from aegis.core.protocols import IncidentRepository
+from aegis.core.protocols import (
+    EvidenceRepository,
+    IncidentRepository,
+    InvestigationProgressRepository,
+    NotificationRepository,
+    RcaRepository,
+)
 from aegis.domain.auth.enums import Role
 from aegis.domain.auth.permissions import Permission, has_permission
 from aegis.infrastructure.auth.jwt import (
@@ -33,7 +45,16 @@ from aegis.infrastructure.auth.jwt import (
     JwtNotConfiguredError,
     decode_access_token,
 )
+from aegis.infrastructure.notifications.log_notifier import LogNotifier
+from aegis.infrastructure.repositories.evidence_repository import SqlAlchemyEvidenceRepository
 from aegis.infrastructure.repositories.incident_repository import SqlAlchemyIncidentRepository
+from aegis.infrastructure.repositories.investigation_repository import (
+    SqlAlchemyInvestigationProgressRepository,
+)
+from aegis.infrastructure.repositories.notification_repository import (
+    SqlAlchemyNotificationRepository,
+)
+from aegis.infrastructure.repositories.rca_repository import SqlAlchemyRcaRepository
 
 _bearer = HTTPBearer(auto_error=False)
 
@@ -49,6 +70,10 @@ class CurrentUser:
 @dataclass(frozen=True, slots=True)
 class Repositories:
     incidents: IncidentRepository
+    evidence: EvidenceRepository
+    rca: RcaRepository
+    progress: InvestigationProgressRepository
+    notifications: NotificationRepository
 
 
 async def get_db(request: Request) -> AsyncIterator[AsyncSession]:
@@ -77,7 +102,13 @@ async def get_db(request: Request) -> AsyncIterator[AsyncSession]:
 
 
 async def get_repositories(session: AsyncSession = Depends(get_db)) -> Repositories:
-    return Repositories(incidents=SqlAlchemyIncidentRepository(session))
+    return Repositories(
+        incidents=SqlAlchemyIncidentRepository(session),
+        evidence=SqlAlchemyEvidenceRepository(session),
+        rca=SqlAlchemyRcaRepository(session),
+        progress=SqlAlchemyInvestigationProgressRepository(session),
+        notifications=SqlAlchemyNotificationRepository(session),
+    )
 
 
 def _request_publisher(request: Request) -> RequestEventBuffer | None:
@@ -111,6 +142,45 @@ def get_transition_incident(
     repos: Repositories = Depends(get_repositories),
 ) -> TransitionIncident:
     return TransitionIncident(repos.incidents)
+
+
+def get_investigation_progress(
+    repos: Repositories = Depends(get_repositories),
+) -> GetInvestigationProgress:
+    return GetInvestigationProgress(repos.incidents, repos.evidence, repos.rca, repos.progress)
+
+
+def get_transition_rca(
+    repos: Repositories = Depends(get_repositories),
+) -> TransitionRca:
+    reader = GetInvestigationProgress(repos.incidents, repos.evidence, repos.rca, repos.progress)
+    notify = NotifyInvestigation(repos.notifications, LogNotifier())
+    return TransitionRca(repos.incidents, repos.rca, repos.progress, reader, notify=notify)
+
+
+def get_control_investigation(
+    repos: Repositories = Depends(get_repositories),
+) -> ControlInvestigation:
+    reader = GetInvestigationProgress(repos.incidents, repos.evidence, repos.rca, repos.progress)
+    return ControlInvestigation(repos.incidents, repos.progress, reader)
+
+
+def get_record_evidence(
+    repos: Repositories = Depends(get_repositories),
+) -> RecordEvidence:
+    return RecordEvidence(repos.evidence)
+
+
+def get_build_report(
+    repos: Repositories = Depends(get_repositories),
+) -> BuildPostIncidentReport:
+    return BuildPostIncidentReport(
+        repos.incidents,
+        repos.evidence,
+        repos.rca,
+        repos.progress,
+        repos.notifications,
+    )
 
 
 def get_retrieve_knowledge(request: Request) -> RetrieveKnowledge:
