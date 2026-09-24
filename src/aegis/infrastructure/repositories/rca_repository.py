@@ -21,6 +21,21 @@ class SqlAlchemyRcaRepository:
         await self._session.flush()
         return report
 
+    async def save(self, report: RcaReport) -> RcaReport:
+        existing = await self._session.get(RcaReportModel, report.id)
+        if existing is None:
+            return await self.add(report)
+        existing.review_status = report.review_status.value
+        existing.finding_status = report.finding_status.value
+        existing.summary = report.summary
+        existing.root_cause = report.root_cause
+        existing.contributing_factors = list(report.contributing_factors)
+        existing.confidence = report.confidence
+        existing.recommended_actions = list(report.recommended_actions)
+        existing.evidence_citations = [item.as_dict() for item in report.citations]
+        await self._session.flush()
+        return report
+
     async def list_by_incident(self, incident_id: UUID) -> list[RcaReport]:
         stmt = (
             select(RcaReportModel)

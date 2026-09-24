@@ -10,6 +10,8 @@ from datetime import UTC, datetime
 from uuid import uuid4
 
 INCIDENT_OPENED_V1 = "incident.opened.v1"
+RCA_COMPLETED_V1 = "rca.completed.v1"
+RCA_ESCALATED_V1 = "rca.escalated.v1"
 EVENT_SOURCE = "aegis.incidents"
 SCHEMA_VERSION_V1 = "1"
 
@@ -63,4 +65,45 @@ def incident_opened_v1(
         timestamp=when.astimezone(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
         correlation_id=correlation,
         incident_id=incident,
+    )
+
+
+def _timed_event(
+    *,
+    event_type: str,
+    incident_id: str,
+    correlation_id: str,
+    event_id: str | None = None,
+    timestamp: datetime | None = None,
+) -> DomainEvent:
+    incident = incident_id.strip()
+    correlation = correlation_id.strip() or incident
+    if not incident:
+        raise ValueError("incident_id is required.")
+    when = timestamp or datetime.now(UTC)
+    if when.tzinfo is None:
+        when = when.replace(tzinfo=UTC)
+    return DomainEvent(
+        event_id=(event_id or str(uuid4())).strip(),
+        event_type=event_type,
+        schema_version=SCHEMA_VERSION_V1,
+        timestamp=when.astimezone(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        correlation_id=correlation,
+        incident_id=incident,
+    )
+
+
+def rca_completed_v1(*, incident_id: str, correlation_id: str = "") -> DomainEvent:
+    return _timed_event(
+        event_type=RCA_COMPLETED_V1,
+        incident_id=incident_id,
+        correlation_id=correlation_id,
+    )
+
+
+def rca_escalated_v1(*, incident_id: str, correlation_id: str = "") -> DomainEvent:
+    return _timed_event(
+        event_type=RCA_ESCALATED_V1,
+        incident_id=incident_id,
+        correlation_id=correlation_id,
     )

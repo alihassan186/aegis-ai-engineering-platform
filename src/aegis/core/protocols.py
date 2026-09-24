@@ -15,6 +15,8 @@ from aegis.domain.events.envelope import DomainEvent
 from aegis.domain.evidence.entity import Evidence
 from aegis.domain.incidents.entity import Incident
 from aegis.domain.incidents.enums import IncidentState, Severity
+from aegis.domain.investigation.progress import InvestigationProgress
+from aegis.domain.notifications.entity import Notification
 from aegis.domain.rca.entity import RcaReport
 
 
@@ -87,6 +89,35 @@ class EventPublisher(Protocol):
     """
 
     def publish(self, event: DomainEvent) -> None: ...
+
+
+@dataclass(frozen=True, slots=True)
+class NotificationMessage:
+    """Outbound notify payload. No evidence dumps, no secrets (FR-027, FR-028)."""
+
+    incident_id: str
+    kind: str
+    event_type: str
+    severity: str
+    service: str
+    reason: str
+    link: str
+    rca_version: int | None = None
+
+
+@runtime_checkable
+class Notifier(Protocol):
+    """Delivers a notification. Log in CI; SQS/email later. No SMTP here."""
+
+    def notify(self, message: NotificationMessage) -> None: ...
+
+
+class NotificationRepository(Protocol):
+    """Inbox for notify dedupe. ``record_once`` is True only on first insert."""
+
+    async def record_once(self, notification: Notification) -> bool: ...
+
+    async def list_by_incident(self, incident_id: UUID) -> list[Notification]: ...
 
 
 @runtime_checkable
@@ -203,7 +234,17 @@ class RcaRepository(Protocol):
 
     async def add(self, report: RcaReport) -> RcaReport: ...
 
+    async def save(self, report: RcaReport) -> RcaReport: ...
+
     async def list_by_incident(self, incident_id: UUID) -> list[RcaReport]: ...
+
+
+class InvestigationProgressRepository(Protocol):
+    """Persisted investigation steps and pause flag (FR-022, FR-023)."""
+
+    async def get_by_incident(self, incident_id: UUID) -> InvestigationProgress | None: ...
+
+    async def save(self, progress: InvestigationProgress) -> InvestigationProgress: ...
 
 
 class EvidenceRepository(Protocol):

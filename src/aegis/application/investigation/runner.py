@@ -6,11 +6,16 @@ import logging
 
 from langgraph.checkpoint.memory import InMemorySaver
 
-from aegis.application.evidence.record_evidence import CollectingEvidenceRecorder
+from aegis.application.evidence.record_evidence import (
+    CollectingEvidenceRecorder,
+    incident_id_from_state,
+)
 from aegis.application.investigation.collect import SpecialistPorts
 from aegis.application.investigation.rca import report_from_payload
+from aegis.application.investigation.record_progress import progress_from_graph_result
 from aegis.application.investigation.run import invoke_investigation
 from aegis.domain.evidence.entity import Evidence
+from aegis.domain.investigation.progress import InvestigationProgress
 from aegis.domain.rca.entity import RcaReport
 
 logger = logging.getLogger(__name__)
@@ -37,6 +42,7 @@ class LangGraphInvestigationRunner:
             )
         self._ports = resolved
         self._rca_reports: list[RcaReport] = []
+        self._progress: InvestigationProgress | None = None
 
     def start(
         self,
@@ -69,6 +75,7 @@ class LangGraphInvestigationRunner:
         status = result.get("status") or "paused"
         logger.info("investigation graph returned status=%s", status, extra=extra)
         self._capture_rca(result)
+        self._capture_progress(result, incident_id)
 
     def drain_recorded_evidence(self) -> list[Evidence]:
         """Evidence minted during the last ``start``. Cleared after the read."""
@@ -88,3 +95,14 @@ class LangGraphInvestigationRunner:
         report = report_from_payload(payload)
         if report is not None:
             self._rca_reports.append(report)
+
+    def drain_recorded_progress(self) -> InvestigationProgress | None:
+        item = self._progress
+        self._progress = None
+        return item
+
+    def _capture_progress(self, result: dict[str, object], incident_id: str) -> None:
+        resolved = incident_id_from_state(incident_id)
+        if resolved is None:
+            return
+        self._progress = progress_from_graph_result(resolved, result)

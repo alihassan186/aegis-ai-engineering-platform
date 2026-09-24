@@ -11,13 +11,22 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from aegis.application.evidence.record_evidence import RecordEvidence
 from aegis.application.investigation.consume_opened import ConsumeOpenedIncident
+from aegis.application.investigation.record_progress import RecordInvestigationProgress
+from aegis.application.notifications.notify import NotifyInvestigation
 from aegis.application.rca.record_rca import RecordRca
 from aegis.config.settings import Settings, get_settings
 from aegis.domain.events.envelope import DomainEvent
 from aegis.infrastructure.database.session import start_database, stop_database
 from aegis.infrastructure.messaging.sqs_consumer import SqsInvestigationConsumer
+from aegis.infrastructure.notifications.log_notifier import LogNotifier
 from aegis.infrastructure.repositories.evidence_repository import SqlAlchemyEvidenceRepository
 from aegis.infrastructure.repositories.incident_repository import SqlAlchemyIncidentRepository
+from aegis.infrastructure.repositories.investigation_repository import (
+    SqlAlchemyInvestigationProgressRepository,
+)
+from aegis.infrastructure.repositories.notification_repository import (
+    SqlAlchemyNotificationRepository,
+)
 from aegis.infrastructure.repositories.processed_event_store import SqlAlchemyProcessedEventStore
 from aegis.infrastructure.repositories.rca_repository import SqlAlchemyRcaRepository
 from aegis.worker.ports import build_specialist_ports
@@ -101,6 +110,10 @@ async def _handle_opened(
             runner=runner,
             record_evidence=RecordEvidence(SqlAlchemyEvidenceRepository(session)),
             record_rca=RecordRca(SqlAlchemyRcaRepository(session)),
+            record_progress=RecordInvestigationProgress(
+                SqlAlchemyInvestigationProgressRepository(session)
+            ),
+            notify=NotifyInvestigation(SqlAlchemyNotificationRepository(session), LogNotifier()),
         )
         await consume.execute(event)
         await session.commit()

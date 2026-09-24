@@ -24,15 +24,8 @@ def _require_aware(moment: datetime, field_name: str) -> datetime:
     return moment
 
 
-# The leading underscore in a function name like `_require_text` is a Python naming convention
-# indicating that the function is intended for *internal use* within the module or class—it is *private* by convention (although not enforced).
-# This helps signal to other developers that this function is not part of the public API.
-
-# There are other function naming conventions as well:
-# - No underscore: e.g., `validate_text` (public, part of the API)
-# - Single underscore (`_`): internal/private use by convention
-# - Double leading underscore (`__`): triggers name mangling for class-internal functions (stronger privacy)
-# - Dunder (double underscore both sides): e.g., `__init__` are special Python “magic” methods
+# Leading underscore (`_require_text`) means internal/private by convention.
+# `__name` mangles for class-internal use; `__init__` is a dunder/magic method.
 
 def _require_text(value: str, field_name: str) -> str:
     cleaned = value.strip()
@@ -224,6 +217,29 @@ class RcaReport:
     @property
     def created_at(self) -> datetime:
         return self._created_at
+
+    def with_review_status(self, review_status: RcaReviewStatus) -> RcaReport:
+        """Return a copy with a new review status. Same id and version."""
+        if review_status is self._review_status:
+            return self
+        return RcaReport(
+            id=self._id,
+            incident_id=self._incident_id,
+            version=self._version,
+            version_kind=self._version_kind,
+            summary=self._summary,
+            root_cause=self._root_cause,
+            contributing_factors=self._contributing_factors,
+            confidence=self._confidence,
+            finding_status=self._finding_status,
+            review_status=review_status,
+            citations=self._citations,
+            recommended_actions=self._recommended_actions,
+            model_id=self._model_id,
+            input_tokens=self._input_tokens,
+            output_tokens=self._output_tokens,
+            created_at=self._created_at,
+        )
 
     def as_dict(self) -> dict[str, Any]:
         return {

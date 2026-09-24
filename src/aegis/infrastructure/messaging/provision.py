@@ -7,7 +7,12 @@ from dataclasses import dataclass
 from typing import Any
 
 from aegis.config.settings import Settings
-from aegis.core.events import EVENT_SOURCE, INCIDENT_OPENED_V1
+from aegis.core.events import (
+    EVENT_SOURCE,
+    INCIDENT_OPENED_V1,
+    RCA_COMPLETED_V1,
+    RCA_ESCALATED_V1,
+)
 from aegis.infrastructure.messaging.clients import boto3_client
 from aegis.infrastructure.messaging.names import (
     EVENT_BUS_NAME,
@@ -15,6 +20,10 @@ from aegis.infrastructure.messaging.names import (
     INVESTIGATION_QUEUE_NAME,
     INVESTIGATION_RULE_NAME,
     MAX_RECEIVE_COUNT,
+    NOTIFICATION_COMPLETED_RULE,
+    NOTIFICATION_DLQ_NAME,
+    NOTIFICATION_ESCALATED_RULE,
+    NOTIFICATION_QUEUE_NAME,
     VISIBILITY_TIMEOUT_SECONDS,
 )
 
@@ -59,6 +68,7 @@ def ensure_investigation_topology(settings: Settings) -> MessagingTopology:
     queue_arn = _queue_arn(sqs, queue_url)
     _allow_eventbridge(sqs, queue_url, queue_arn)
     _put_opened_rule(events, bus=bus, queue_arn=queue_arn)
+    _ensure_notification_queue(events, sqs, bus=bus, settings=settings)
     return MessagingTopology(
         bus_name=bus,
         queue_name=queue_name,
@@ -114,6 +124,64 @@ def _allow_eventbridge(sqs: Any, queue_url: str, queue_arn: str) -> None:
     sqs.set_queue_attributes(
         QueueUrl=queue_url,
         Attributes={"Policy": json.dumps(policy)},
+    )
+
+
+def _ensure_notification_queue(events: Any, sqs: Any, *, bus: str, settings: Settings) -> None:
+    """Create ``notification`` + DLQ and route RCA events. No rag-indexing."""
+    queue_name = settings.notification_queue_name.strip() or NOTIFICATION_QUEUE_NAME
+    if queue_name != NOTIFICATION_QUEUE_NAME:
+        dlq_name = f"{queue_name}-dlq"
+    else:
+        dlq_name = NOTIFICATION_DLQ_NAME
+    dlq_url = _ensure_queue(sqs, dlq_name, attributes={})
+    dlq_arn = _queue_arn(sqs, dlq_url)
+    redrive = json.dumps(
+        {"deadLetterTargetArn": dlq_arn, "maxReceiveCount": str(MAX_RECEIVE_COUNT)}
+    )
+    queue_url = _ensure_queue(
+        sqs,
+        queue_name,
+        attributes={
+            "VisibilityTimeout": str(VISIBILITY_TIMEOUT_SECONDS),
+            "RedrivePolicy": redrive,
+        },
+    )
+    queue_arn = _queue_arn(sqs, queue_url)
+    _allow_eventbridge(sqs, queue_url, queue_arn)
+    _put_typed_rule(
+        events,
+        bus=bus,
+        queue_arn=queue_arn,
+        rule=NOTIFICATION_COMPLETED_RULE,
+        detail_type=RCA_COMPLETED_V1,
+        target_id="notification-completed-sqs",
+    )
+    _put_typed_rule(
+        events,
+        bus=bus,
+        queue_arn=queue_arn,
+        rule=NOTIFICATION_ESCALATED_RULE,
+        detail_type=RCA_ESCALATED_V1,
+        target_id="notification-escalated-sqs",
+    )
+
+
+def _put_typed_rule(
+    events: Any,
+    *,
+    bus: str,
+    queue_arn: str,
+    rule: str,
+    detail_type: str,
+    target_id: str,
+) -> None:
+    pattern = json.dumps({"source": [EVENT_SOURCE], "detail-type": [detail_type]})
+    events.put_rule(Name=rule, EventBusName=bus, EventPattern=pattern, State="ENABLED")
+    events.put_targets(
+        EventBusName=bus,
+        Rule=rule,
+        Targets=[{"Id": target_id, "Arn": queue_arn}],
     )
 
 

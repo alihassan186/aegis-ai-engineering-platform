@@ -55,6 +55,7 @@ class Settings:
     aws_endpoint: str = ""
     event_bus_name: str = "aegis-events"
     investigation_queue_name: str = "investigation-workflow"
+    notification_queue_name: str = "notification"
     simulator_base_url: str = "http://127.0.0.1:8001"
     llm: str = "fake"
 
@@ -86,6 +87,9 @@ class Settings:
         investigation_queue_name = (
             os.getenv("AEGIS_INVESTIGATION_QUEUE_NAME", "").strip() or "investigation-workflow"
         )
+        notification_queue_name = (
+            os.getenv("AEGIS_NOTIFICATION_QUEUE_NAME", "").strip() or "notification"
+        )
         simulator_base_url = (
             os.getenv("AEGIS_SIMULATOR_URL", "").strip().rstrip("/") or "http://127.0.0.1:8001"
         )
@@ -115,6 +119,7 @@ class Settings:
             aws_endpoint=aws_endpoint,
             event_bus_name=event_bus_name,
             investigation_queue_name=investigation_queue_name,
+            notification_queue_name=notification_queue_name,
             simulator_base_url=simulator_base_url,
             llm=llm,
         )
