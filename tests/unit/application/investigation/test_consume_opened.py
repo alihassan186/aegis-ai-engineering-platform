@@ -6,11 +6,13 @@ import pytest
 
 from aegis.application.evidence.record_evidence import RecordEvidence
 from aegis.application.investigation.consume_opened import ConsumeOpenedIncident
+from aegis.application.investigation.record_progress import RecordInvestigationProgress
 from aegis.application.rca.record_rca import RecordRca
 from aegis.domain.events.envelope import incident_opened_v1
 from aegis.domain.evidence import Evidence, EvidenceKind, EvidenceSource
 from aegis.domain.incidents.entity import Incident
 from aegis.domain.incidents.enums import IncidentState, Severity
+from aegis.domain.investigation.progress import InvestigationProgress
 from aegis.domain.rca.entity import RcaCitation, RcaReport
 from aegis.domain.rca.enums import RcaFindingStatus
 from aegis.shared.exceptions import NotFoundError
@@ -210,6 +212,41 @@ async def test_consume_persists_rca_drained_from_runner() -> None:
 
     assert [item.id for item in stored] == [report.id]
     assert stored[0].review_status.value == "pending_review"
+
+
+async def test_consume_persists_progress_drained_from_runner() -> None:
+    repo = FakeIncidentRepository()
+    store = FakeProcessedEventStore()
+    incident = _open_incident()
+    await repo.create(incident)
+    snapshot = InvestigationProgress.create(incident_id=incident.id, hops=2)
+    stored: list[InvestigationProgress] = []
+
+    class _ProgressRepo:
+        async def get_by_incident(self, incident_id):  # type: ignore[no-untyped-def]
+            return next((item for item in stored if item.incident_id == incident_id), None)
+
+        async def save(self, item: InvestigationProgress) -> InvestigationProgress:
+            stored.append(item)
+            return item
+
+    class _DrainingRunner(_RecordingRunner):
+        def drain_recorded_progress(self) -> InvestigationProgress:
+            return snapshot
+
+    consume = ConsumeOpenedIncident(
+        repo,
+        store,
+        runner=_DrainingRunner(),
+        record_progress=RecordInvestigationProgress(_ProgressRepo()),
+    )
+
+    await consume.execute(
+        incident_opened_v1(incident_id=str(incident.id), correlation_id="corr-prog")
+    )
+
+    assert [item.incident_id for item in stored] == [incident.id]
+    assert stored[0].hops == 2
 
 
 async def test_unknown_event_type_is_rejected() -> None:

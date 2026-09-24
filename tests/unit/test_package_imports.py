@@ -11,10 +11,13 @@ from aegis.core.protocols import (
     EventPublisher,
     EvidenceRepository,
     IncidentRepository,
+    InvestigationProgressRepository,
     InvestigationRunner,
     KnowledgeHit,
     KnowledgeStore,
     LlmClient,
+    NotificationRepository,
+    Notifier,
     ObservabilitySource,
     ProcessedEventStore,
     RcaRepository,
@@ -137,3 +140,15 @@ def test_llm_client_is_a_protocol() -> None:
 
 def test_rca_repository_is_a_protocol() -> None:
     assert getattr(RcaRepository, "_is_protocol", False)
+
+
+def test_investigation_progress_repository_is_a_protocol() -> None:
+    assert getattr(InvestigationProgressRepository, "_is_protocol", False)
+
+
+def test_notifier_is_a_protocol() -> None:
+    assert getattr(Notifier, "_is_protocol", False)
+
+
+def test_notification_repository_is_a_protocol() -> None:
+    assert getattr(NotificationRepository, "_is_protocol", False)
