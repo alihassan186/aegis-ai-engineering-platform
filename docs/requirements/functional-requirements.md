@@ -127,7 +127,7 @@ Requirements are organized by capability area. Each requirement has a unique ID,
 
 
 
-## 7. Tool gateway & MCP
+## 7. Guardrail (tool gateway & MCP)
 
 
 | ID     | Requirement                                                                                                             | Priority | Target |

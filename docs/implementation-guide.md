@@ -2,7 +2,7 @@
 
 **Document owner:** Engineering  
 **Status:** Active  
-**Last updated:** 2026-09-10
+**Last updated:** 2026-09-26
 
 This is the **master step-by-step guide** for turning AEGIS documentation into working code. Every implementation step links back to the requirement, architecture decision, or design document that justifies it.
 
@@ -21,8 +21,8 @@ This is the **master step-by-step guide** for turning AEGIS documentation into w
 7. [Phase 1 — v0.2 Core backend](#phase-1--v02-core-backend)
 8. [Phase 2 — v0.3 Production simulator](#phase-2--v03-production-simulator)
 9. [Phase 3 — v0.4 RAG platform](#phase-3--v04-rag-platform)
-10. [Phase 4 — v0.5 Multi-agent investigation](#phase-4--v05-multi-agent-investigation) ← **YOU ARE HERE**
-11. [Phase 5 — v0.6 Tool gateway & MCP](#phase-5--v06-tool-gateway--mcp)
+10. [Phase 4 — v0.5 Multi-agent investigation](#phase-4--v05-multi-agent-investigation)
+11. [Phase 5 — v0.6 Guardrail (tool gateway & MCP)](#phase-5--v06-guardrail-tool-gateway--mcp) ← **YOU ARE HERE**
 12. [Phase 6 — v0.7 AWS deployment](#phase-6--v07-aws-deployment)
 13. [Phase 7 — v0.8 Observability & evaluation](#phase-7--v08-observability--evaluation)
 14. [Phase 8 — v0.9 Controlled remediation](#phase-8--v09-controlled-remediation)
@@ -142,7 +142,7 @@ Use this table to know **which document answers which question** while coding.
 | Post-incident report     | Step 4.11      | GET report JSON/markdown · not auto-indexed (FR-101)                           |
 
 
-**You are here:** Step 4.11 complete → Phase 4 exit gate ticked → next [Step 5.1 — Tool gateway core](#step-51--tool-gateway-core-allow--deny--log).
+**You are here:** Step 4.11 complete → Phase 4 exit gate ticked → next [Step 5.1 — Guardrail core](#step-51--guardrail-core-allow--deny--log).
 
 ---
 
@@ -186,7 +186,7 @@ main.py + routes → HTTP interface (thin — delegates to application layer)
 | [Phase 2](#phase-2--v03-production-simulator)      | v0.3    | Synthetic failures for testing      | Phase 1     |
 | [Phase 3](#phase-3--v04-rag-platform)              | v0.4    | Knowledge ingestion & retrieval     | Phase 2     |
 | [Phase 4](#phase-4--v05-multi-agent-investigation) | v0.5    | Agents, evidence, RCA               | Phase 3     |
-| [Phase 5](#phase-5--v06-tool-gateway--mcp)         | v0.6    | Policy, tools, audit                | Phase 4     |
+| [Phase 5](#phase-5--v06-guardrail-tool-gateway--mcp) | v0.6  | Guardrail: policy, tools, audit     | Phase 4     |
 | [Phase 6](#phase-6--v07-aws-deployment)            | v0.7    | AWS CDK, ECS, RDS                   | Phase 5     |
 | [Phase 7](#phase-7--v08-observability--evaluation) | v0.8    | Metrics, benchmarks                 | Phase 6     |
 | [Phase 8](#phase-8--v09-controlled-remediation)    | v0.9    | Approval, remediation               | Phase 7     |
@@ -3503,19 +3503,21 @@ AEGIS_SKIP_DOTENV=1 uv run pytest tests/unit/application/reports/test_post_incid
 - [x] No MCP gateway, no write tools, no FR-090 scorer
 - [x] You can walk an interviewer through ADR-003, the graph, and “RAG is a tool”
 
-When this list is ticked, start [Step 5.1 — Tool gateway core](#step-51--tool-gateway-core-allow--deny--log).
+When this list is ticked, start [Step 5.1 — Guardrail core](#step-51--guardrail-core-allow--deny--log).
 
 ---
 
 
 
-## Phase 5 — v0.6 Tool gateway & MCP
+## Phase 5 — v0.6 Guardrail (tool gateway & MCP)
 
-**Release goal:** Every agent tool call is authenticated, classified, policy-checked, rate-limited, redacted, and audited. The LLM does not enforce security.
+**Release goal:** Every agent tool call is authenticated, classified, policy-checked, rate-limited, redacted, and audited. The LLM does not enforce security. In product language this phase is the **agent guardrail**. The implementation is still a **tool gateway** (`ToolGateway.invoke`, FR-060).
 
 **Start after:** Phase 4 exit gate (4.11). Investigation already calls **ports** directly (retrieve, simulator, fake code). This phase **wraps** those ports. It does not invent new write tools.
 
-**Why after agents:** [Platform overview §10](architecture/platform-overview.md) and [RISK-002](requirements/risk-register.md) — a specialist that can call GitHub or CloudWatch without a gateway is an unauthorized-action risk. Policy lives in the gateway, not in the prompt.
+**Why after agents:** [Platform overview §10](architecture/platform-overview.md) and [RISK-002](requirements/risk-register.md) — a specialist that can call GitHub or CloudWatch without a guardrail is an unauthorized-action risk. Policy lives in the gateway, not in the prompt.
+
+**Name in interviews vs code:** Say **guardrail**. Keep packages as `gateway` so they match FR-060 and [platform overview §10](architecture/platform-overview.md). Do not confuse this with Amazon Bedrock Guardrails (topic / hate / PII filters on model I/O). Those may sit *beside* 4.7 `redact()` later; they do not replace FR-060.
 
 Implement **5.1 → 5.8 in order**. Do not start Phase 6 (real AWS) or Phase 8 (execute remediations) in the same change.
 
@@ -3537,7 +3539,7 @@ Implement **5.1 → 5.8 in order**. Do not start Phase 6 (real AWS) or Phase 8 (
 
 | Step | Goal                                          | Key FRs                        | Key docs                                                                                                   |
 | ---- | --------------------------------------------- | ------------------------------ | ---------------------------------------------------------------------------------------------------------- |
-| 5.1  | Tool gateway core (allow/deny/log)            | FR-060, FR-061, FR-064, FR-067 | [Platform overview §10](architecture/platform-overview.md)                                                 |
+| 5.1  | Guardrail core (allow/deny/log)               | FR-060, FR-061, FR-064, FR-067 | [Platform overview §10](architecture/platform-overview.md)                                                 |
 | 5.2  | Policy rule model + admin API                 | FR-066                         | [Threat model §7](security/threat-model.md)                                                                |
 | 5.3  | Agent service accounts + scoped permissions   | FR-074                         | [FR-074](requirements/functional-requirements.md) · [NFR-033](requirements/non-functional-requirements.md) |
 | 5.4  | Tool implementations (`tools/`)               | FR-060                         | [System boundaries §3](architecture/system-boundaries.md)                                                  |
@@ -3547,13 +3549,44 @@ Implement **5.1 → 5.8 in order**. Do not start Phase 6 (real AWS) or Phase 8 (
 | 5.8  | Security tests (prompt injection, tool abuse) | —                              | [Threat model §10](security/threat-model.md)                                                               |
 
 
-**How to use Phase 5 for interviews:** the sentence you want is *“the model proposes a tool call; the gateway decides.”* Walk allow → deny → audit without mentioning MCP until 5.5.
+**How to use Phase 5 for interviews:** the sentence you want is *“the model proposes a tool call; the guardrail decides.”* Walk allow → deny → audit without mentioning MCP until 5.5. If they ask “is that a guardrail?” — yes: **tool-use guardrail**. The hop cap, redact, and human RCA accept are other layers (table below).
+
+### Guardrail layers (defense in depth)
+
+A single prompt instruction is not a guardrail. AEGIS stacks independent checks. Phase 5 owns the **action** layer; earlier phases already shipped the others — do not re-implement them here.
+
+
+| Layer | Already in the tree | Phase 5 adds |
+| ----- | ------------------- | ------------ |
+| Control-flow | 4.4 hop cap, duration, named escalate | Rate limit per tool (5.7) — hop cap ≠ “one hop, 100 retrieves” |
+| Data | 4.7 `redact()` on evidence / prompt | Same helper on **tool I/O** and audit bodies |
+| Output / human | 4.8 citations + `pending_review`; 4.9 accept | — |
+| **Tool / auth** | Ports called directly (the hole) | **This phase:** classify, policy, agent identity, deny destructive |
+| Evidence of abuse | Worker stdout only | Append-only audit of allow **and** deny (5.6) |
+| Transport | Worker in-process only | MCP is a second door into the **same** `invoke` (5.5) |
+
+### Guardrail best practices (do these; they are not extra FRs)
+
+- **Policy in code and data, never only in the system prompt.** Injection rewrites prompts. FR-067 is deterministic allow/deny + reason.
+- **Classify-then-decide.** `action_class` comes from a registry of tool names, not from Claude. Unknown name = deny.
+- **Default deny.** No matching rule → deny. Stale cache should fail closed (prefer stale deny over stale allow).
+- **Destructive is deny-by-construction.** A `POLICY_RULE` row must not be able to allow `drop_database`. Change that only with a reviewed code change.
+- **Least privilege per agent_id.** Knowledge cannot `search_code`. Identity is bound by the worker, not taken from tool params (confused deputy).
+- **Fail closed.** Tool timeout, rate-store down, unknown class → deny + audit, not “run anyway.”
+- **Redact before the model and before the audit row.** An audit of secrets is itself a leak (THR-009 / THR-004).
+- **Audit denies.** The interesting row is the one that never executed.
+- **No bypass path.** Nodes, MCP, and any future CLI must call `ToolGateway.invoke`. “Just this once” is RISK-002.
+- **Separate human JWT from agent identity.** `engineer` is not `agent_id=knowledge`.
+- **MCP is untrusted.** Loopback + auth. Listing a tool in MCP does not widen policy.
+- **Do not treat Bedrock Guardrails as this phase.** Optional later: content filters on RCA text. They do not authorize GitHub.
+- **Security tests assert side effects** (5.8): poisoned runbook says `drop_database` → registry spy shows the write never ran.
+- **Say in an interview:** “We use layered guardrails. Redaction and hop caps are one layer. The hard guardrail for actions is the tool gateway.”
 
 ---
 
 
 
-### Step 5.1 — Tool gateway core (allow / deny / log)
+### Step 5.1 — Guardrail core (allow / deny / log)
 
 
 |                   |                                                                                                                                                                                                            |
@@ -3593,8 +3626,9 @@ tests/unit/application/gateway/test_invoke_tool.py
 
 **Best practices:**
 
-- Gateway is synchronous in-process in v0.6 (same worker). Not a microservice.
+- Gateway is synchronous in-process in v0.6 (same worker). Not a microservice. This **is** the tool-use guardrail, not a second HTTP API.
 - Decision is deterministic: same input → same allow/deny (rate limits come in 5.7).
+- Follow the [phase guardrail best practices](#guardrail-best-practices-do-these-they-are-not-extra-frs): classify from the registry, default deny, redact output, never let the model pick `action_class`.
 
 **Do NOT:**
 
@@ -3625,10 +3659,11 @@ AEGIS_SKIP_DOTENV=1 uv run pytest tests/unit/application/gateway/test_invoke_too
 **Learn / interview:**
 
 - **Concepts:** policy enforcement point; confused deputy; never trust the model to self-authorize; classify-then-decide.
-- **Say in an interview:** “Agents don’t call GitHub. They call the gateway. The gateway classifies the action, evaluates policy, and only then runs a tool. Destructive is deny-by-construction.”
+- **Say in an interview:** “This is our tool-use guardrail. Agents don’t call GitHub. They call the gateway. It classifies the action, evaluates policy, and only then runs a tool. Destructive is deny-by-construction.”
 - **Likely questions:**
+  - *Is this Bedrock Guardrails?* — No. That product filters model I/O. This authorizes **tools**.
   - *Why not put rules in the system prompt?* — Prompts are bypassable (injection). Policy is code + data.
-  - *Where does MCP fit?* — Transport (5.5). Same `invoke` function. MCP must not skip the gateway.
+  - *Where does MCP fit?* — Transport (5.5). Same `invoke` function. MCP must not skip the guardrail.
 
 ---
 
@@ -5733,7 +5768,7 @@ Tests:    tests/unit/domain/ + tests/integration/api/
 ### v0.6 traceability example
 
 ```text
-Goal:     Agents cannot act without policy (product-vision §9, RISK-002)
+Goal:     Agent guardrail — cannot act without policy (product-vision §9, RISK-002)
 FR:       FR-060, FR-064, FR-067, FR-074, FR-100
 NFR:      NFR-033, NFR-035, NFR-036
 ADR:      ADR-001 (ports), threat-model §7 (action class)
@@ -5803,6 +5838,6 @@ Copy this template when you start any new step:
 
 ## Next action
 
-**Start here:** [Step 5.1 — Tool gateway core](#step-51--tool-gateway-core-allow--deny--log)
+**Start here:** [Step 5.1 — Guardrail core](#step-51--guardrail-core-allow--deny--log)
 
-When ready, ask: *"Implement Step 5.1"* and we will code it together with full engineering reasoning. Wrap existing ports. Do not add write tools or start remediation.
+When ready, ask: *"Implement Step 5.1"* and we will code it together with full engineering reasoning. Guardrail wraps existing ports. Do not add write tools or start remediation.

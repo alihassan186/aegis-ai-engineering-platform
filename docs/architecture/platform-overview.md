@@ -621,9 +621,9 @@ Every bus event carries this Detail object. Types are versioned (`*.v1`); do not
 
 ---
 
-## 10. Tool gateway & security flow
+## 10. Guardrail (tool gateway) & security flow
 
-Every external action passes through policy enforcement.
+Every external action passes through the **agent guardrail**. The mechanism is the tool gateway: authenticate, classify, policy, rate limit, decide, redact, audit. This is not Amazon Bedrock Guardrails (content filters). Policy lives here, not in the prompt.
 
 ```mermaid
 flowchart TB

@@ -174,7 +174,7 @@ These principles govern every product and engineering decision:
 | **v0.3** | Production simulator — synthetic failure scenarios for testing |
 | **v0.4** | RAG platform — knowledge ingestion, retrieval, citations |
 | **v0.5** | Multi-agent investigation — orchestrated evidence collection and RCA |
-| **v0.6** | MCP tool gateway — governed tool access and policy enforcement |
+| **v0.6** | Guardrail (tool gateway & MCP) — governed tool access and policy enforcement |
 | **v0.7** | AWS deployment — production infrastructure on ECS/RDS/OpenSearch |
 | **v0.8** | Observability & evaluation — benchmarks, metrics, agent telemetry |
 | **v0.9** | Controlled remediation — approval workflows, verification |
