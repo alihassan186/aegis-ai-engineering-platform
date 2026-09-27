@@ -179,17 +179,17 @@ main.py + routes → HTTP interface (thin — delegates to application layer)
 ## 5. Release roadmap overview
 
 
-| Phase                                              | Version | Focus                               | Start after |
-| -------------------------------------------------- | ------- | ----------------------------------- | ----------- |
-| [Phase 0](#phase-0--complete-v01-foundation)       | v0.1    | Foundation                          | —           |
-| [Phase 1](#phase-1--v02-core-backend)              | v0.2    | Incident model, Postgres, auth, API | Phase 0     |
-| [Phase 2](#phase-2--v03-production-simulator)      | v0.3    | Synthetic failures for testing      | Phase 1     |
-| [Phase 3](#phase-3--v04-rag-platform)              | v0.4    | Knowledge ingestion & retrieval     | Phase 2     |
-| [Phase 4](#phase-4--v05-multi-agent-investigation) | v0.5    | Agents, evidence, RCA               | Phase 3     |
-| [Phase 5](#phase-5--v06-guardrail-tool-gateway--mcp) | v0.6  | Guardrail: policy, tools, audit     | Phase 4     |
-| [Phase 6](#phase-6--v07-aws-deployment)            | v0.7    | AWS CDK, ECS, RDS                   | Phase 5     |
-| [Phase 7](#phase-7--v08-observability--evaluation) | v0.8    | Metrics, benchmarks                 | Phase 6     |
-| [Phase 8](#phase-8--v09-controlled-remediation)    | v0.9    | Approval, remediation               | Phase 7     |
+| Phase                                                | Version | Focus                               | Start after |
+| ---------------------------------------------------- | ------- | ----------------------------------- | ----------- |
+| [Phase 0](#phase-0--complete-v01-foundation)         | v0.1    | Foundation                          | —           |
+| [Phase 1](#phase-1--v02-core-backend)                | v0.2    | Incident model, Postgres, auth, API | Phase 0     |
+| [Phase 2](#phase-2--v03-production-simulator)        | v0.3    | Synthetic failures for testing      | Phase 1     |
+| [Phase 3](#phase-3--v04-rag-platform)                | v0.4    | Knowledge ingestion & retrieval     | Phase 2     |
+| [Phase 4](#phase-4--v05-multi-agent-investigation)   | v0.5    | Agents, evidence, RCA               | Phase 3     |
+| [Phase 5](#phase-5--v06-guardrail-tool-gateway--mcp) | v0.6    | Guardrail: policy, tools, audit     | Phase 4     |
+| [Phase 6](#phase-6--v07-aws-deployment)              | v0.7    | AWS CDK, ECS, RDS                   | Phase 5     |
+| [Phase 7](#phase-7--v08-observability--evaluation)   | v0.8    | Metrics, benchmarks                 | Phase 6     |
+| [Phase 8](#phase-8--v09-controlled-remediation)      | v0.9    | Approval, remediation               | Phase 7     |
 
 
 ---
@@ -3559,17 +3559,20 @@ Implement **5.1 → 5.11 in order**. Do not start Phase 6 (real AWS) or Phase 8 
 A single prompt instruction is not a guardrail. AEGIS stacks independent checks. Phase 5 owns the **action** layer; earlier phases already shipped the others — do not re-implement them here.
 
 
-| Layer | Already in the tree | Phase 5 adds |
-| ----- | ------------------- | ------------ |
-| Control-flow | 4.4 hop cap, duration, named escalate | Rate limit per tool (5.7) — hop cap ≠ “one hop, 100 retrieves” |
-| Data | 4.7 `redact()` on evidence / prompt | Same helper on **tool I/O** and audit bodies |
-| Output / human | 4.8 citations + `pending_review`; 4.9 accept | — |
-| **Tool / auth** | Ports called directly (the hole) | **This phase:** classify, policy, agent identity, deny destructive |
-| Evidence of abuse | Worker stdout only | Append-only audit of allow **and** deny (5.6) |
-| Transport | Worker in-process only | MCP is a second door into the **same** `invoke` (5.5) |
-| Untrusted data | RAG/tool text can still look like commands | Tag + never execute from text (5.9) |
-| Tool edge | Best-practice notes on 5.4 only | Timeouts, caps, circuit breaker, SSRF allowlist (5.10) |
-| Ops kill switch | Restart the worker | `AEGIS_GUARDRAIL_DENY_ALL` + policy version on audit (5.11) |
+| Layer             | Already in the tree                          | Phase 5 adds                                                       |
+| ----------------- | -------------------------------------------- | ------------------------------------------------------------------ |
+| Control-flow      | 4.4 hop cap, duration, named escalate        | Rate limit per tool (5.7) — hop cap ≠ “one hop, 100 retrieves”     |
+| Data              | 4.7 `redact()` on evidence / prompt          | Same helper on **tool I/O** and audit bodies                       |
+| Output / human    | 4.8 citations + `pending_review`; 4.9 accept | —                                                                  |
+| **Tool / auth**   | Ports called directly (the hole)             | **This phase:** classify, policy, agent identity, deny destructive |
+| Evidence of abuse | Worker stdout only                           | Append-only audit of allow **and** deny (5.6)                      |
+| Transport         | Worker in-process only                       | MCP is a second door into the **same** `invoke` (5.5)              |
+| Untrusted data    | RAG/tool text can still look like commands   | Tag + never execute from text (5.9)                                |
+| Tool edge         | Best-practice notes on 5.4 only              | Timeouts, caps, circuit breaker, SSRF allowlist (5.10)             |
+| Ops kill switch   | Restart the worker                           | `AEGIS_GUARDRAIL_DENY_ALL` + policy version on audit (5.11)        |
+
+
+
 
 ### Guardrail best practices (do these; they are not extra FRs)
 
@@ -3596,13 +3599,13 @@ A single prompt instruction is not a guardrail. AEGIS stacks independent checks.
 ### Step 5.1 — Guardrail core (allow / deny / log)
 
 
-|                   |                                                                                                                                                                                                            |
-| ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Goal**          | One function every specialist must call: `{agent_id, tool, params, incident_id}` → allow/deny + reason                                                                                                     |
-| **Why**           | [FR-060](requirements/functional-requirements.md), [FR-061](requirements/functional-requirements.md), [FR-064](requirements/functional-requirements.md), [FR-067](requirements/functional-requirements.md) |
-| **When**          | After 4.5 ports exist. Replace direct port calls in graph nodes with `ToolGateway.invoke`.                                                                                                                 |
-| **Documentation** | [Platform overview §10](architecture/platform-overview.md) · [System boundaries §4 tool contract](architecture/system-boundaries.md)                                                                       |
-| **Implements**    | FR-060, FR-061, FR-064, FR-067 (hardcoded policy is OK). Rules table is 5.2. Audit table is 5.6.                                                                                                           |
+|                   |                                                                                                        |
+| ----------------- | ------------------------------------------------------------------------------------------------------ |
+| **Goal**          | One function every specialist must call: `{agent_id, tool, params, incident_id}` → allow/deny + reason |
+| **Why**           | FR-060, FR-061, FR-064, FR-067                                                                         |
+| **When**          | After 4.5 ports exist. Replace direct port calls in graph nodes with `ToolGateway.invoke`.             |
+| **Documentation** | Platform overview §10 · System boundaries §4 tool contract                                             |
+| **Implements**    | FR-060, FR-061, FR-064, FR-067 (hardcoded policy is OK). Rules table is 5.2. Audit table is 5.6.       |
 
 
 **Files to create / modify:**
@@ -3623,7 +3626,7 @@ tests/unit/application/gateway/test_invoke_tool.py
 
 **What to build:**
 
-- Contract ([system boundaries](architecture/system-boundaries.md)):
+- Contract (system boundaries):
   - In: `agent_id`, `tool_name`, `parameters`, `incident_id`, optional `action_class`
   - Out: `allowed`, `reason`, `requires_approval`, `result | error`, later `audit_id`
 - Classify from a **registry**, not from the LLM. `retrieve_knowledge` / `fetch_signals` / `search_code` = `read`. Unknown tool = deny.
@@ -3658,10 +3661,10 @@ AEGIS_SKIP_DOTENV=1 uv run pytest tests/unit/application/gateway/test_invoke_too
 
 **Done checklist:**
 
-- [ ] Specialists invoke only through the gateway
-- [ ] Explicit allow/deny + reason
-- [ ] Destructive never runs
-- [ ] Output redacted
+- [x] Specialists invoke only through the gateway
+- [x] Explicit allow/deny + reason
+- [x] Destructive never runs
+- [x] Output redacted
 
 **Learn / interview:**
 
@@ -4267,13 +4270,13 @@ AEGIS_SKIP_DOTENV=1 uv run pytest tests/unit/application/gateway/test_untrusted.
 ### Step 5.10 — Tool edge hardening
 
 
-|                   |                                                                                                                          |
-| ----------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| **Goal**          | Each registered tool has a schema, timeout, output size cap, and (for HTTP) a host allowlist. Fail closed                |
+|                   |                                                                                                                            |
+| ----------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| **Goal**          | Each registered tool has a schema, timeout, output size cap, and (for HTTP) a host allowlist. Fail closed                  |
 | **Why**           | 5.4 said “timeout / allowlists” as notes. Industry production tools treat these as **gates**, not comments (SSRF, NFR-011) |
-| **When**          | After 5.4 registry exists and 5.9 envelope exists. Apply at the registry wrapper, not inside each specialist node        |
-| **Documentation** | [System boundaries §3](architecture/system-boundaries.md) · [NFR-011](requirements/non-functional-requirements.md)       |
-| **Implements**    | Hardens FR-060. No new write tools                                                                                       |
+| **When**          | After 5.4 registry exists and 5.9 envelope exists. Apply at the registry wrapper, not inside each specialist node          |
+| **Documentation** | [System boundaries §3](architecture/system-boundaries.md) · [NFR-011](requirements/non-functional-requirements.md)         |
+| **Implements**    | Hardens FR-060. No new write tools                                                                                         |
 
 
 **Files to create / modify:**
@@ -4344,13 +4347,13 @@ AEGIS_SKIP_DOTENV=1 uv run pytest tests/unit/application/gateway/test_limits.py 
 ### Step 5.11 — Kill switch + policy version
 
 
-|                   |                                                                                                                                     |
-| ----------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| **Goal**          | Operators can deny **all** tools without a deploy, and every audit row records which policy version made the decision               |
+|                   |                                                                                                                                      |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| **Goal**          | Operators can deny **all** tools without a deploy, and every audit row records which policy version made the decision                |
 | **Why**           | Industry ops standard: break-glass / kill switch. 5.2 CRUD is not enough if a bad allow rule ships — you need an instant global deny |
-| **When**          | After 5.2 + 5.6. Last functional step before you call v0.6 done                                                                     |
-| **Documentation** | FR-066 / FR-067 · FR-062 · [NFR-035](requirements/non-functional-requirements.md)                                                   |
-| **Implements**    | Operability for the guardrail. Not Phase 8 remediation                                                                              |
+| **When**          | After 5.2 + 5.6. Last functional step before you call v0.6 done                                                                      |
+| **Documentation** | FR-066 / FR-067 · FR-062 · [NFR-035](requirements/non-functional-requirements.md)                                                    |
+| **Implements**    | Operability for the guardrail. Not Phase 8 remediation                                                                               |
 
 
 **Files to create / modify:**
@@ -4475,13 +4478,13 @@ Implement **6.1 → 6.9 in order**. Do not start golden-eval (7.4) or remediatio
 ### Step 6.1 — AWS CDK project in `infrastructure/cdk/`
 
 
-|                   |                                                                                                                       |
-| ----------------- | --------------------------------------------------------------------------------------------------------------------- |
-| **Goal**          | A CDK app that synths an empty-or-minimal stack; app code still runs locally                                          |
-| **Why**           | IaC for everything that will exist in §12. No click-ops.                                                              |
+|                   |                                                                                                                        |
+| ----------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| **Goal**          | A CDK app that synths an empty-or-minimal stack; app code still runs locally                                           |
+| **Why**           | IaC for everything that will exist in §12. No click-ops.                                                               |
 | **When**          | After 5.11. First AWS step — **do not** create paid domains yet if you cannot afford them; synth + tests are the gate. |
-| **Documentation** | [Platform overview §12](architecture/platform-overview.md)                                                            |
-| **Implements**    | Topology scaffolding. No FR number.                                                                                   |
+| **Documentation** | [Platform overview §12](architecture/platform-overview.md)                                                             |
+| **Implements**    | Topology scaffolding. No FR number.                                                                                    |
 
 
 **Files to create / modify:**
