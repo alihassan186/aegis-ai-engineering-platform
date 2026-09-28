@@ -1,6 +1,6 @@
 """Specialist adapters: ports in, structured evidence out. No HTTP, no OpenSearch.
 
-Tool calls in v0.5 are direct port calls. Phase 5 wraps them in the gateway.
+Tool calls go through ``InvokeTool`` (Step 5.1). Ports are runners, not a bypass.
 """
 
 from __future__ import annotations
@@ -15,6 +15,7 @@ from aegis.application.evidence.record_evidence import (
     EvidenceRecorder,
     incident_id_from_state,
 )
+from aegis.application.gateway.invoke_tool import InvokeTool
 from aegis.application.investigation.state import (
     EVIDENCE_TEXT_CAP,
     KNOWLEDGE_MAX_CHUNKS,
@@ -36,6 +37,7 @@ from aegis.core.protocols import (
     ObservabilitySignal,
     ObservabilitySource,
 )
+from aegis.domain.gateway.request import ToolInvokeRequest
 
 logger = logging.getLogger(__name__)
 
@@ -81,6 +83,7 @@ class SpecialistPorts:
     retrieve: KnowledgeRetrieve | None = None
     recorder: EvidenceRecorder | None = None
     llm: LlmClient | None = None
+    gateway: InvokeTool | None = None
 
     @classmethod
     def memory(cls) -> SpecialistPorts:
@@ -188,18 +191,46 @@ def collect_observability(
     state: InvestigationState,
     source: ObservabilitySource,
     recorder: EvidenceRecorder | None = None,
+    *,
+    gateway: InvokeTool | None = None,
 ) -> dict[str, object]:
     service = state["service"]
     scenario = state["scenario"]
+    invoke = gateway or InvokeTool(
+        tools={
+            "fetch_signals": lambda params: list(
+                source.fetch_signals(
+                    service=str(params.get("service") or service),
+                    scenario=str(params.get("scenario") or scenario),
+                    limit=int(params.get("limit") or OBS_MAX_ITEMS),
+                )
+            )
+        }
+    )
     try:
-        signals = list(
-            source.fetch_signals(service=service, scenario=scenario, limit=OBS_MAX_ITEMS)
+        decision = invoke.invoke(
+            ToolInvokeRequest(
+                agent_id="observability",
+                tool_name="fetch_signals",
+                parameters={
+                    "service": service,
+                    "scenario": scenario,
+                    "limit": OBS_MAX_ITEMS,
+                },
+                incident_id=str(state.get("incident_id") or "unknown"),
+            )
         )
     except Exception as exc:
         return {
             "failed_steps": ["observability"],
             "log": [f"observability failed: {exc}"],
         }
+    if not decision.allowed:
+        return {
+            "failed_steps": ["observability"],
+            "log": [f"observability denied: {decision.reason}"],
+        }
+    signals = list(decision.result or [])
     items = [_obs_item(signal) for signal in signals[:OBS_MAX_ITEMS]]
     if not items:
         return {
@@ -217,8 +248,10 @@ def collect_knowledge(
     state: InvestigationState,
     retrieve: KnowledgeRetrieve | None,
     recorder: EvidenceRecorder | None = None,
+    *,
+    gateway: InvokeTool | None = None,
 ) -> dict[str, object]:
-    if retrieve is None:
+    if retrieve is None and gateway is None:
         return {
             "failed_steps": ["knowledge"],
             "log": ["knowledge failed: opensearch_unset"],
@@ -226,15 +259,41 @@ def collect_knowledge(
     service = state["service"]
     scenario = state["scenario"]
     query = (state.get("title") or "").strip() or f"{scenario.replace('_', ' ')} {service}"
+    invoke = gateway or InvokeTool(
+        tools={
+            "retrieve_knowledge": lambda params: _retrieve_runbooks_and_incidents(
+                retrieve,  # type: ignore[arg-type]
+                query=str(params.get("query") or query),
+                service=str(params.get("service") or service),
+                scenario=str(params.get("scenario") or scenario),
+            )
+        }
+        if retrieve is not None
+        else {}
+    )
     try:
-        hits = _retrieve_runbooks_and_incidents(
-            retrieve, query=query, service=service, scenario=scenario
+        decision = invoke.invoke(
+            ToolInvokeRequest(
+                agent_id="knowledge",
+                tool_name="retrieve_knowledge",
+                parameters={"query": query, "service": service, "scenario": scenario},
+                incident_id=str(state.get("incident_id") or "unknown"),
+            )
         )
     except Exception as exc:
         return {
             "failed_steps": ["knowledge"],
             "log": [f"knowledge failed: {exc}"],
         }
+    if not decision.allowed:
+        reason = decision.reason
+        if reason == "denied:not_registered":
+            reason = "opensearch_unset"
+        return {
+            "failed_steps": ["knowledge"],
+            "log": [f"knowledge denied: {reason}"],
+        }
+    hits = list(decision.result or [])
     items = [_knowledge_item(hit) for hit in hits]
     if not items:
         return {
@@ -252,14 +311,49 @@ def collect_code(
     state: InvestigationState,
     search: CodeSearch,
     recorder: EvidenceRecorder | None = None,
+    *,
+    gateway: InvokeTool | None = None,
 ) -> dict[str, object]:
     service = state["service"]
     scenario = state["scenario"]
+    invoke = gateway or InvokeTool(
+        tools={
+            "list_deploys": lambda params: list(
+                search.recent_deploys(service=str(params.get("service") or service))
+            ),
+            "search_code": lambda params: list(
+                search.search(
+                    service=str(params.get("service") or service),
+                    scenario=str(params.get("scenario") or scenario),
+                )
+            ),
+        }
+    )
+    incident_id = str(state.get("incident_id") or "unknown")
     try:
-        deploys = list(search.recent_deploys(service=service))
-        hits = list(search.search(service=service, scenario=scenario))
+        deploys_decision = invoke.invoke(
+            ToolInvokeRequest(
+                agent_id="code",
+                tool_name="list_deploys",
+                parameters={"service": service},
+                incident_id=incident_id,
+            )
+        )
+        hits_decision = invoke.invoke(
+            ToolInvokeRequest(
+                agent_id="code",
+                tool_name="search_code",
+                parameters={"service": service, "scenario": scenario},
+                incident_id=incident_id,
+            )
+        )
     except Exception as exc:
         return {"failed_steps": ["code"], "log": [f"code failed: {exc}"]}
+    if not deploys_decision.allowed or not hits_decision.allowed:
+        reason = deploys_decision.reason if not deploys_decision.allowed else hits_decision.reason
+        return {"failed_steps": ["code"], "log": [f"code denied: {reason}"]}
+    deploys = list(deploys_decision.result or [])
+    hits = list(hits_decision.result or [])
     merged = _dedupe_code_hits([*deploys, *hits])
     items = [_code_item(hit) for hit in merged]
     if not items:

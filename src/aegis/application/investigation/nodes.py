@@ -4,7 +4,7 @@ Each node receives the current ``InvestigationState`` and returns a
 **dict of updates**. No FastAPI, no SQLAlchemy, no OpenSearch, no Bedrock.
 
 ``commander`` is a thin adapter over ``plan.next_action`` (Step 4.4).
-Specialists (Step 4.5) collect through ports bound when the graph is compiled.
+Specialists collect through ``InvokeTool`` (Step 5.1), not raw ports.
 ``escalate`` calls ``interrupt()``. The graph **pauses** until the caller
 resumes with ``Command(resume=...)``. That is LangGraph's human-in-the-loop
 primitive (preview of FR-034). A checkpointer is required.
@@ -18,6 +18,8 @@ from datetime import datetime, timezone
 from langgraph.types import interrupt
 
 from aegis.application.evidence.record_evidence import EvidenceRecorder
+from aegis.application.gateway.bind_ports import invoke_tool_for_ports
+from aegis.application.gateway.invoke_tool import InvokeTool
 from aegis.application.investigation.collect import (
     KnowledgeRetrieve,
     SpecialistPorts,
@@ -88,9 +90,10 @@ def commander(state: InvestigationState) -> dict[str, object]:
 def observability_node(
     source: ObservabilitySource,
     recorder: EvidenceRecorder | None = None,
+    gateway: InvokeTool | None = None,
 ) -> NodeFn:
     def observability(state: InvestigationState) -> dict[str, object]:
-        return collect_observability(state, source, recorder=recorder)
+        return collect_observability(state, source, recorder=recorder, gateway=gateway)
 
     return observability
 
@@ -98,26 +101,32 @@ def observability_node(
 def knowledge_node(
     retrieve: KnowledgeRetrieve | None,
     recorder: EvidenceRecorder | None = None,
+    gateway: InvokeTool | None = None,
 ) -> NodeFn:
     def knowledge(state: InvestigationState) -> dict[str, object]:
-        return collect_knowledge(state, retrieve, recorder=recorder)
+        return collect_knowledge(state, retrieve, recorder=recorder, gateway=gateway)
 
     return knowledge
 
 
-def code_node(search: CodeSearch, recorder: EvidenceRecorder | None = None) -> NodeFn:
+def code_node(
+    search: CodeSearch,
+    recorder: EvidenceRecorder | None = None,
+    gateway: InvokeTool | None = None,
+) -> NodeFn:
     def code_agent(state: InvestigationState) -> dict[str, object]:
-        return collect_code(state, search, recorder=recorder)
+        return collect_code(state, search, recorder=recorder, gateway=gateway)
 
     return code_agent
 
 
 def bind_specialists(ports: SpecialistPorts) -> dict[str, NodeFn]:
     recorder = ports.recorder
+    gateway = ports.gateway or invoke_tool_for_ports(ports)
     return {
-        "observability": observability_node(ports.observability, recorder),
-        "knowledge": knowledge_node(ports.retrieve, recorder),
-        "code": code_node(ports.code_search, recorder),
+        "observability": observability_node(ports.observability, recorder, gateway),
+        "knowledge": knowledge_node(ports.retrieve, recorder, gateway),
+        "code": code_node(ports.code_search, recorder, gateway),
         "synthesize": synthesize_node(ports.llm, recorder),
     }
 
