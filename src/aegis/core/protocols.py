@@ -13,6 +13,8 @@ from uuid import UUID
 
 from aegis.domain.events.envelope import DomainEvent
 from aegis.domain.evidence.entity import Evidence
+from aegis.domain.gateway.decision import GatewayDecision
+from aegis.domain.gateway.request import ToolInvokeRequest
 from aegis.domain.incidents.entity import Incident
 from aegis.domain.incidents.enums import IncidentState, Severity
 from aegis.domain.investigation.progress import InvestigationProgress
@@ -180,6 +182,16 @@ class CodeSearch(Protocol):
     def recent_deploys(self, *, service: str) -> Sequence[CodeHit]: ...
 
     def search(self, *, service: str, scenario: str) -> Sequence[CodeHit]: ...
+
+
+@runtime_checkable
+class ToolGateway(Protocol):
+    """Tool-use guardrail. Nodes call this; they do not import tool clients.
+
+    No boto3 here. Implementations live in application (``InvokeTool``).
+    """
+
+    def invoke(self, request: ToolInvokeRequest) -> GatewayDecision: ...
 
 
 @runtime_checkable

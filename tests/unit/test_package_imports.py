@@ -21,6 +21,7 @@ from aegis.core.protocols import (
     ObservabilitySource,
     ProcessedEventStore,
     RcaRepository,
+    ToolGateway,
 )
 from aegis.shared.exceptions import DomainError, NotFoundError, ValidationError
 
@@ -152,3 +153,7 @@ def test_notifier_is_a_protocol() -> None:
 
 def test_notification_repository_is_a_protocol() -> None:
     assert getattr(NotificationRepository, "_is_protocol", False)
+
+
+def test_tool_gateway_is_a_protocol() -> None:
+    assert getattr(ToolGateway, "_is_protocol", False)

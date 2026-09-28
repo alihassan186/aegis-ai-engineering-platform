@@ -6,6 +6,7 @@ import inspect
 from collections.abc import Mapping, Sequence
 from datetime import datetime, timezone
 
+from aegis.application.gateway.invoke_tool import InvokeTool
 from aegis.application.investigation.collect import (
     MemoryObservabilitySource,
     SpecialistPorts,
@@ -183,6 +184,17 @@ def test_code_fake_mentions_version_and_does_not_walk_src() -> None:
     assert any("1.14.0" in str(item.get("version")) for item in update["evidence"])
     assert any("1.14.0" in str(item.get("summary")) for item in update["evidence"])
     assert all(not str(item.get("path", "")).startswith("src/aegis") for item in update["evidence"])
+
+
+def test_denied_fetch_signals_is_a_failed_step() -> None:
+    gateway = InvokeTool(tools={})
+    update = collect_observability(
+        _state(),
+        MemoryObservabilitySource(),
+        gateway=gateway,
+    )
+    assert update["failed_steps"] == ["observability"]
+    assert "denied:" in str(update["log"])
 
 
 def test_memory_ports_match_graph_defaults() -> None:
