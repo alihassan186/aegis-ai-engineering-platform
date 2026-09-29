@@ -408,6 +408,11 @@ erDiagram
         string action_class
         string scope
         boolean allowed
+        string reason
+        string created_by
+        string updated_by
+        timestamp created_at
+        timestamp updated_at
     }
 ```
 
