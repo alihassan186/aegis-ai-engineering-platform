@@ -1,8 +1,8 @@
-# AEGIS Implementation Guide
+# PolicyRuleAEGIS Implementation Guide
 
 **Document owner:** Engineering  
 **Status:** Active  
-**Last updated:** 2026-09-26
+**Last updated:** 2026-09-28
 
 This is the **master step-by-step guide** for turning AEGIS documentation into working code. Every implementation step links back to the requirement, architecture decision, or design document that justifies it.
 
@@ -3744,10 +3744,10 @@ AEGIS_SKIP_DOTENV=1 uv run pytest tests/unit/application/policy tests/security/t
 
 **Done checklist:**
 
-- [ ] Rules in Postgres
-- [ ] Admin API on `/docs`
-- [ ] Default deny + destructive hard-stop
-- [ ] Gateway uses rules
+- [x] Rules in Postgres
+- [x] Admin API on `/docs`
+- [x] Default deny + destructive hard-stop
+- [x] Gateway uses rules
 
 **Learn / interview:**
 
