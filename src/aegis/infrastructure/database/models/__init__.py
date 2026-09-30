@@ -10,6 +10,8 @@ from aegis.infrastructure.database.models.investigation import (
     InvestigationStepModel,
 )
 from aegis.infrastructure.database.models.notification import NotificationModel
+from aegis.infrastructure.database.models.policy import PolicyRuleModel
+from aegis.infrastructure.database.models.policy_change import PolicyRuleChangeModel
 from aegis.infrastructure.database.models.processed_event import ProcessedEventModel
 from aegis.infrastructure.database.models.rca import RcaReportModel
 from aegis.infrastructure.database.models.state_history import IncidentStateHistoryModel
@@ -21,6 +23,8 @@ __all__ = [
     "InvestigationProgressModel",
     "InvestigationStepModel",
     "NotificationModel",
+    "PolicyRuleChangeModel",
+    "PolicyRuleModel",
     "ProcessedEventModel",
     "RcaReportModel",
 ]

@@ -19,6 +19,7 @@ from aegis.domain.incidents.entity import Incident
 from aegis.domain.incidents.enums import IncidentState, Severity
 from aegis.domain.investigation.progress import InvestigationProgress
 from aegis.domain.notifications.entity import Notification
+from aegis.domain.policy.entity import PolicyRule, PolicyRuleChange
 from aegis.domain.rca.entity import RcaReport
 
 
@@ -265,6 +266,22 @@ class EvidenceRepository(Protocol):
     async def add(self, evidence: Evidence) -> Evidence: ...
 
     async def list_by_incident(self, incident_id: UUID) -> list[Evidence]: ...
+
+
+class PolicyRepository(Protocol):
+    """Persistence port for POLICY_RULE plus admin change history (FR-066)."""
+
+    async def list_rules(self) -> list[PolicyRule]: ...
+
+    async def get(self, rule_id: UUID) -> PolicyRule | None: ...
+
+    async def add(self, rule: PolicyRule) -> PolicyRule: ...
+
+    async def save(self, rule: PolicyRule) -> PolicyRule: ...
+
+    async def delete(self, rule_id: UUID) -> None: ...
+
+    async def append_change(self, change: PolicyRuleChange) -> None: ...
 
 
 class IncidentRepository(Protocol):

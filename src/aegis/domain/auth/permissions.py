@@ -15,6 +15,7 @@ class Permission(StrEnum):
     REVIEW_RCA = "review_rca"
     CONTROL_INVESTIGATION = "control_investigation"
     ADD_EVIDENCE = "add_evidence"
+    MANAGE_POLICY = "manage_policy"
 
 
 _INVESTIGATION_WRITE = frozenset(
@@ -58,6 +59,7 @@ ROLE_PERMISSIONS: Mapping[Role, frozenset[Permission]] = {
             Permission.READ_INCIDENT,
             Permission.TRANSITION_INCIDENT,
             Permission.RETRIEVE_KNOWLEDGE,
+            Permission.MANAGE_POLICY,
             *_INVESTIGATION_WRITE,
         }
     ),

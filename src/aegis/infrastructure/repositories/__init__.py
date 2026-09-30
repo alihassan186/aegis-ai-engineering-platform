@@ -9,6 +9,7 @@ from aegis.infrastructure.repositories.mappers import to_domain, to_orm
 from aegis.infrastructure.repositories.notification_repository import (
     SqlAlchemyNotificationRepository,
 )
+from aegis.infrastructure.repositories.policy_repository import SqlAlchemyPolicyRepository
 from aegis.infrastructure.repositories.rca_repository import SqlAlchemyRcaRepository
 
 __all__ = [
@@ -16,6 +17,7 @@ __all__ = [
     "SqlAlchemyIncidentRepository",
     "SqlAlchemyInvestigationProgressRepository",
     "SqlAlchemyNotificationRepository",
+    "SqlAlchemyPolicyRepository",
     "SqlAlchemyRcaRepository",
     "to_domain",
     "to_orm",

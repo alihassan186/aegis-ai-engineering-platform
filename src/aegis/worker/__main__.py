@@ -13,6 +13,7 @@ from aegis.application.evidence.record_evidence import RecordEvidence
 from aegis.application.investigation.consume_opened import ConsumeOpenedIncident
 from aegis.application.investigation.record_progress import RecordInvestigationProgress
 from aegis.application.notifications.notify import NotifyInvestigation
+from aegis.application.policy.cache import replace_policy_rules
 from aegis.application.rca.record_rca import RecordRca
 from aegis.config.settings import Settings, get_settings
 from aegis.domain.events.envelope import DomainEvent
@@ -27,6 +28,7 @@ from aegis.infrastructure.repositories.investigation_repository import (
 from aegis.infrastructure.repositories.notification_repository import (
     SqlAlchemyNotificationRepository,
 )
+from aegis.infrastructure.repositories.policy_repository import SqlAlchemyPolicyRepository
 from aegis.infrastructure.repositories.processed_event_store import SqlAlchemyProcessedEventStore
 from aegis.infrastructure.repositories.rca_repository import SqlAlchemyRcaRepository
 from aegis.worker.ports import build_specialist_ports
@@ -79,6 +81,8 @@ async def run_worker(settings: Settings) -> None:
             signal.signal(sig, lambda _s, _f: stop.set())
 
     runner = LangGraphInvestigationRunner(ports=build_specialist_ports(settings))
+    async with session_factory() as session:
+        await _refresh_policy_cache(session)
 
     async def handle(event: DomainEvent) -> None:
         await _handle_opened(session_factory, event, runner)
@@ -104,6 +108,7 @@ async def _handle_opened(
 ) -> None:
     session = session_factory()
     try:
+        await _refresh_policy_cache(session)
         consume = ConsumeOpenedIncident(
             SqlAlchemyIncidentRepository(session),
             SqlAlchemyProcessedEventStore(session),
@@ -122,6 +127,11 @@ async def _handle_opened(
         raise
     finally:
         await session.close()
+
+
+async def _refresh_policy_cache(session: AsyncSession) -> None:
+    rules = await SqlAlchemyPolicyRepository(session).list_rules()
+    replace_policy_rules(rules)
 
 
 if __name__ == "__main__":
