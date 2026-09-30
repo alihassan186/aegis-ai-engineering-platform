@@ -19,6 +19,7 @@ from aegis.core.protocols import (
     NotificationRepository,
     Notifier,
     ObservabilitySource,
+    PolicyRepository,
     ProcessedEventStore,
     RcaRepository,
     ToolGateway,
@@ -157,3 +158,7 @@ def test_notification_repository_is_a_protocol() -> None:
 
 def test_tool_gateway_is_a_protocol() -> None:
     assert getattr(ToolGateway, "_is_protocol", False)
+
+
+def test_policy_repository_is_a_protocol() -> None:
+    assert getattr(PolicyRepository, "_is_protocol", False)

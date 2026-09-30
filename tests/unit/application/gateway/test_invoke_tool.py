@@ -120,6 +120,12 @@ def test_not_registered_read_tool_is_denied() -> None:
     assert decision.reason == "denied:not_registered"
 
 
+def test_empty_policy_denies_seeded_read_tool() -> None:
+    decision = InvokeTool(policy_rules=()).invoke(_request("retrieve_knowledge"))
+    assert decision.allowed is False
+    assert decision.reason == "denied:default"
+
+
 def test_empty_tool_name_is_rejected() -> None:
     with pytest.raises(ValidationError):
         _request("   ")

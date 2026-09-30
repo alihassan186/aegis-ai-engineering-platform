@@ -12,6 +12,7 @@ def test_viewer_is_read_only() -> None:
     assert not has_permission(Role.VIEWER, Permission.REVIEW_RCA)
     assert not has_permission(Role.VIEWER, Permission.CONTROL_INVESTIGATION)
     assert not has_permission(Role.VIEWER, Permission.ADD_EVIDENCE)
+    assert not has_permission(Role.VIEWER, Permission.MANAGE_POLICY)
 
 
 def test_write_roles_can_create_and_transition() -> None:
@@ -24,3 +25,7 @@ def test_write_roles_can_create_and_transition() -> None:
         assert has_permission(role, Permission.REVIEW_RCA)
         assert has_permission(role, Permission.CONTROL_INVESTIGATION)
         assert has_permission(role, Permission.ADD_EVIDENCE)
+        if role is Role.ADMIN:
+            assert has_permission(role, Permission.MANAGE_POLICY)
+        else:
+            assert not has_permission(role, Permission.MANAGE_POLICY)
