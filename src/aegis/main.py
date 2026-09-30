@@ -15,11 +15,13 @@ from aegis.api.auth.router import router as auth_router
 from aegis.api.errors import register_exception_handlers
 from aegis.api.request_id import add_request_id_middleware
 from aegis.api.router import api_v1_router
+from aegis.application.policy.cache import replace_policy_rules
 from aegis.config.settings import Settings, get_settings
 from aegis.infrastructure.database.session import start_database, stop_database
 from aegis.infrastructure.messaging.publisher import build_event_publisher
 from aegis.infrastructure.rag.embedder import build_embedder
 from aegis.infrastructure.rag.opensearch_client import OpenSearchKnowledgeStore
+from aegis.infrastructure.repositories.policy_repository import SqlAlchemyPolicyRepository
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
@@ -38,6 +40,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             engine, session_factory = await start_database(resolved)
         application.state.engine = engine
         application.state.session_factory = session_factory
+        if session_factory is not None:
+            await _load_policy_cache(session_factory)
         try:
             yield
         finally:
@@ -75,6 +79,15 @@ def _health_router() -> APIRouter:
         return {"status": "ok"}
 
     return router
+
+
+async def _load_policy_cache(session_factory: async_sessionmaker[AsyncSession]) -> None:
+    session = session_factory()
+    try:
+        rules = await SqlAlchemyPolicyRepository(session).list_rules()
+        replace_policy_rules(rules)
+    finally:
+        await session.close()
 
 
 app = create_app()

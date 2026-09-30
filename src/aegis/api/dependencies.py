@@ -28,6 +28,8 @@ from aegis.application.investigation.control import ControlInvestigation
 from aegis.application.investigation.get_progress import GetInvestigationProgress
 from aegis.application.investigation.transition_rca import TransitionRca
 from aegis.application.notifications.notify import NotifyInvestigation
+from aegis.application.policy.cache import replace_policy_rules
+from aegis.application.policy.manage_rules import ManageRules
 from aegis.application.rag.retrieve import RetrieveKnowledge
 from aegis.application.reports.build_post_incident import BuildPostIncidentReport
 from aegis.config.settings import Settings
@@ -36,6 +38,7 @@ from aegis.core.protocols import (
     IncidentRepository,
     InvestigationProgressRepository,
     NotificationRepository,
+    PolicyRepository,
     RcaRepository,
 )
 from aegis.domain.auth.enums import Role
@@ -54,6 +57,7 @@ from aegis.infrastructure.repositories.investigation_repository import (
 from aegis.infrastructure.repositories.notification_repository import (
     SqlAlchemyNotificationRepository,
 )
+from aegis.infrastructure.repositories.policy_repository import SqlAlchemyPolicyRepository
 from aegis.infrastructure.repositories.rca_repository import SqlAlchemyRcaRepository
 
 _bearer = HTTPBearer(auto_error=False)
@@ -74,6 +78,7 @@ class Repositories:
     rca: RcaRepository
     progress: InvestigationProgressRepository
     notifications: NotificationRepository
+    policy: PolicyRepository
 
 
 async def get_db(request: Request) -> AsyncIterator[AsyncSession]:
@@ -108,6 +113,7 @@ async def get_repositories(session: AsyncSession = Depends(get_db)) -> Repositor
         rca=SqlAlchemyRcaRepository(session),
         progress=SqlAlchemyInvestigationProgressRepository(session),
         notifications=SqlAlchemyNotificationRepository(session),
+        policy=SqlAlchemyPolicyRepository(session),
     )
 
 
@@ -181,6 +187,10 @@ def get_build_report(
         repos.progress,
         repos.notifications,
     )
+
+
+def get_manage_rules(repos: Repositories = Depends(get_repositories)) -> ManageRules:
+    return ManageRules(repos.policy, on_change=replace_policy_rules)
 
 
 def get_retrieve_knowledge(request: Request) -> RetrieveKnowledge:
