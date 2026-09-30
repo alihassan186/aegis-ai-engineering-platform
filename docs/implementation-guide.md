@@ -3816,9 +3816,9 @@ AEGIS_SKIP_DOTENV=1 uv run pytest tests/unit/application/gateway/test_agent_scop
 
 **Done checklist:**
 
-- [ ] One identity per specialist
-- [ ] Cross-scope deny tested
-- [ ] Claude cannot choose `agent_id`
+- [x] One identity per specialist
+- [x] Cross-scope deny tested
+- [x] Claude cannot choose `agent_id`
 
 **Learn / interview:**
 

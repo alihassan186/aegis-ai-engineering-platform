@@ -63,6 +63,7 @@ Tracks product, technical, operational, and security risks. Reviewed at each maj
 **Mitigation:**
 - Centralized tool gateway with policy enforcement (FR-060, FR-064)
 - Action classification: read / low-risk / high-risk / destructive (FR-052)
+- Application agent identities with least-privilege tool grants (FR-074, Step 5.3). Cloud IAM task roles are Phase 6.
 - Human approval for high-risk and destructive actions (FR-053, NFR-037)
 - Least-privilege IAM for agent service accounts (NFR-033, NFR-034)
 - Immutable audit log (FR-100, NFR-038)

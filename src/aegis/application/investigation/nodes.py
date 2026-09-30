@@ -5,6 +5,8 @@ Each node receives the current ``InvestigationState`` and returns a
 
 ``commander`` is a thin adapter over ``plan.next_action`` (Step 4.4).
 Specialists collect through ``InvokeTool`` (Step 5.1), not raw ports.
+Each specialist node closes over its ``agent_id`` (Step 5.3). Commander and
+RCA do not receive a tool gateway.
 ``escalate`` calls ``interrupt()``. The graph **pauses** until the caller
 resumes with ``Command(resume=...)``. That is LangGraph's human-in-the-loop
 primitive (preview of FR-034). A checkpointer is required.
@@ -36,6 +38,7 @@ from aegis.application.investigation.rca import (
 )
 from aegis.application.investigation.state import InvestigationState
 from aegis.core.protocols import CodeSearch, LlmClient, ObservabilitySource
+from aegis.domain.auth.agent_identity import AgentIdentity
 
 NodeFn = Callable[[InvestigationState], dict[str, object]]
 
@@ -92,8 +95,10 @@ def observability_node(
     recorder: EvidenceRecorder | None = None,
     gateway: InvokeTool | None = None,
 ) -> NodeFn:
+    bound = None if gateway is None else gateway.bind(AgentIdentity.OBSERVABILITY)
+
     def observability(state: InvestigationState) -> dict[str, object]:
-        return collect_observability(state, source, recorder=recorder, gateway=gateway)
+        return collect_observability(state, source, recorder=recorder, gateway=bound)
 
     return observability
 
@@ -103,8 +108,10 @@ def knowledge_node(
     recorder: EvidenceRecorder | None = None,
     gateway: InvokeTool | None = None,
 ) -> NodeFn:
+    bound = None if gateway is None else gateway.bind(AgentIdentity.KNOWLEDGE)
+
     def knowledge(state: InvestigationState) -> dict[str, object]:
-        return collect_knowledge(state, retrieve, recorder=recorder, gateway=gateway)
+        return collect_knowledge(state, retrieve, recorder=recorder, gateway=bound)
 
     return knowledge
 
@@ -114,8 +121,10 @@ def code_node(
     recorder: EvidenceRecorder | None = None,
     gateway: InvokeTool | None = None,
 ) -> NodeFn:
+    bound = None if gateway is None else gateway.bind(AgentIdentity.CODE)
+
     def code_agent(state: InvestigationState) -> dict[str, object]:
-        return collect_code(state, search, recorder=recorder, gateway=gateway)
+        return collect_code(state, search, recorder=recorder, gateway=bound)
 
     return code_agent
 

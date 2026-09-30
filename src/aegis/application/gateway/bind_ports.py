@@ -1,4 +1,7 @@
-"""Register 4.5 ports as named read tools. Nodes never import the clients."""
+"""Register 4.5 ports as named read tools. Nodes never import the clients.
+
+Identity is bound per node in ``bind_specialists`` (Step 5.3), not here.
+"""
 
 from __future__ import annotations
 

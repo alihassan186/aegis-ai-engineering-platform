@@ -37,6 +37,7 @@ from aegis.core.protocols import (
     ObservabilitySignal,
     ObservabilitySource,
 )
+from aegis.domain.auth.agent_identity import AgentIdentity
 from aegis.domain.gateway.request import ToolInvokeRequest
 
 logger = logging.getLogger(__name__)
@@ -210,7 +211,7 @@ def collect_observability(
     try:
         decision = invoke.invoke(
             ToolInvokeRequest(
-                agent_id="observability",
+                agent_id=_agent_id(invoke, AgentIdentity.OBSERVABILITY),
                 tool_name="fetch_signals",
                 parameters={
                     "service": service,
@@ -274,7 +275,7 @@ def collect_knowledge(
     try:
         decision = invoke.invoke(
             ToolInvokeRequest(
-                agent_id="knowledge",
+                agent_id=_agent_id(invoke, AgentIdentity.KNOWLEDGE),
                 tool_name="retrieve_knowledge",
                 parameters={"query": query, "service": service, "scenario": scenario},
                 incident_id=str(state.get("incident_id") or "unknown"),
@@ -330,10 +331,11 @@ def collect_code(
         }
     )
     incident_id = str(state.get("incident_id") or "unknown")
+    agent_id = _agent_id(invoke, AgentIdentity.CODE)
     try:
         deploys_decision = invoke.invoke(
             ToolInvokeRequest(
-                agent_id="code",
+                agent_id=agent_id,
                 tool_name="list_deploys",
                 parameters={"service": service},
                 incident_id=incident_id,
@@ -341,7 +343,7 @@ def collect_code(
         )
         hits_decision = invoke.invoke(
             ToolInvokeRequest(
-                agent_id="code",
+                agent_id=agent_id,
                 tool_name="search_code",
                 parameters={"service": service, "scenario": scenario},
                 incident_id=incident_id,
@@ -459,6 +461,11 @@ def _dedupe_code_hits(hits: Sequence[CodeHit]) -> list[CodeHit]:
         seen.add(key)
         unique.append(hit)
     return unique
+
+
+def _agent_id(gateway: InvokeTool, default: AgentIdentity) -> str:
+    """Use the node's bound identity when present; never a param-supplied id."""
+    return gateway.bound_agent_id or default.value
 
 
 def _iso(value: datetime) -> str:
