@@ -100,8 +100,9 @@ Dependencies point **inward only**:
 | `src/aegis/shared/`         | Cross-cutting  | Shared types, exceptions, utilities                             |
 | `src/aegis/core/`           | Cross-cutting  | Base classes, interfaces, protocols                             |
 | `agents/`                   | Application    | Agent implementations (one package per agent role)              |
-| `mcp/`                      | Infrastructure | MCP server definitions and tool gateway                         |
+| `mcp/`                      | Infrastructure | MCP server definitions and tool gateway (Step 5.5)              |
 | `tools/`                    | Infrastructure | Concrete tool implementations behind gateway                    |
+| `src/aegis/tools/`          | Infrastructure | v0.6 read-tool adapters (ports only; MCP is a later transport)  |
 | `services/`                 | Application    | Domain-specific service modules (incident, investigation, etc.) |
 | `apps/api/`                 | Presentation   | API service entry point (wraps `aegis.main`)                    |
 | `apps/simulator/`           | Infrastructure | Production environment simulator                                |
@@ -142,6 +143,21 @@ Input:  { agent_id, tool_name, parameters, incident_id, action_class }
 Output: { success, result | error, audit_id }
 Policy: { allowed: bool, reason: string, requires_approval: bool }
 ```
+
+### `tools/` vs `mcp/`
+
+- **`src/aegis/tools/`** is the implementation layer (FR-060). Each named
+  tool is a facade over a 4.5 port: validate an allowlisted Pydantic model
+  (`extra="forbid"`), call the port with a 10s fail-closed timeout, return a
+  small JSON-safe payload. The application registry maps **name → callable**
+  plus a default `action_class`. Nodes and the gateway never import GitHub
+  SDKs, OpenSearch clients, or simulator HTTP — the worker injects those
+  ports. v0.6 registers only the four read tools
+  (`retrieve_knowledge`, `fetch_signals`, `search_code`, `list_deploys`).
+- **`mcp/`** (Step 5.5) is a **transport**, not a second policy and not a
+  second capability set. The same names, the same runners, and the same
+  classify → identity → policy path sit behind MCP. Adding a write tool
+  there does not make it legal.
 
 
 

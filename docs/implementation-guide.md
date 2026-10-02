@@ -3847,11 +3847,12 @@ AEGIS_SKIP_DOTENV=1 uv run pytest tests/unit/application/gateway/test_agent_scop
 **Files to create / modify:**
 
 ```text
-tools/retrieve_knowledge.py              # or src/aegis/infrastructure/tools/
-tools/fetch_signals.py
-tools/search_code.py
-tools/list_deploys.py
+src/aegis/tools/retrieve_knowledge.py    # facades over 4.5 ports (not GitHub/OS clients)
+src/aegis/tools/fetch_signals.py
+src/aegis/tools/search_code.py
+src/aegis/tools/list_deploys.py
 src/aegis/application/gateway/registry.py
+src/aegis/application/gateway/bind_ports.py
 tests/unit/tools/test_registry.py
 ```
 
@@ -3891,9 +3892,9 @@ AEGIS_SKIP_DOTENV=1 uv run pytest tests/unit/tools tests/unit/application/gatewa
 
 **Done checklist:**
 
-- [ ] 4.5 ports only reachable via named tools
-- [ ] No write tools registered
-- [ ] Params validated
+- [x] 4.5 ports only reachable via named tools
+- [x] No write tools registered
+- [x] Params validated
 
 **Learn / interview:**
 
