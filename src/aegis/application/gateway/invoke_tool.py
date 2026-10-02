@@ -164,7 +164,17 @@ class InvokeTool:
                 action_class=resolved,
                 **common,
             )
-        raw = runner(parameters)
+        try:
+            raw = runner(parameters)
+        except ValidationError as exc:
+            reason = str(exc)
+            if not reason.startswith("denied:"):
+                reason = "denied:invalid_params"
+            return GatewayDecision.deny(
+                reason=reason,
+                action_class=resolved,
+                **common,
+            )
         return GatewayDecision.allow(
             reason="allowed:read",
             action_class=resolved,

@@ -6,7 +6,7 @@ Tool calls go through ``InvokeTool`` (Step 5.1). Ports are runners, not a bypass
 from __future__ import annotations
 
 import logging
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Protocol
@@ -18,11 +18,9 @@ from aegis.application.evidence.record_evidence import (
 from aegis.application.gateway.invoke_tool import InvokeTool
 from aegis.application.investigation.state import (
     EVIDENCE_TEXT_CAP,
-    KNOWLEDGE_MAX_CHUNKS,
     OBS_MAX_ITEMS,
     InvestigationState,
 )
-from aegis.application.rag.allowlist import is_allowlisted
 from aegis.application.rag.retrieve import (
     Citation,
     RetrieveFilters,
@@ -39,6 +37,10 @@ from aegis.core.protocols import (
 )
 from aegis.domain.auth.agent_identity import AgentIdentity
 from aegis.domain.gateway.request import ToolInvokeRequest
+from aegis.tools.fetch_signals import make_fetch_signals
+from aegis.tools.list_deploys import make_list_deploys
+from aegis.tools.retrieve_knowledge import make_retrieve_knowledge
+from aegis.tools.search_code import make_search_code
 
 logger = logging.getLogger(__name__)
 
@@ -197,17 +199,7 @@ def collect_observability(
 ) -> dict[str, object]:
     service = state["service"]
     scenario = state["scenario"]
-    invoke = gateway or InvokeTool(
-        tools={
-            "fetch_signals": lambda params: list(
-                source.fetch_signals(
-                    service=str(params.get("service") or service),
-                    scenario=str(params.get("scenario") or scenario),
-                    limit=int(params.get("limit") or OBS_MAX_ITEMS),
-                )
-            )
-        }
-    )
+    invoke = gateway or InvokeTool(tools={"fetch_signals": make_fetch_signals(source)})
     try:
         decision = invoke.invoke(
             ToolInvokeRequest(
@@ -261,14 +253,7 @@ def collect_knowledge(
     scenario = state["scenario"]
     query = (state.get("title") or "").strip() or f"{scenario.replace('_', ' ')} {service}"
     invoke = gateway or InvokeTool(
-        tools={
-            "retrieve_knowledge": lambda params: _retrieve_runbooks_and_incidents(
-                retrieve,  # type: ignore[arg-type]
-                query=str(params.get("query") or query),
-                service=str(params.get("service") or service),
-                scenario=str(params.get("scenario") or scenario),
-            )
-        }
+        tools={"retrieve_knowledge": make_retrieve_knowledge(retrieve)}
         if retrieve is not None
         else {}
     )
@@ -319,15 +304,8 @@ def collect_code(
     scenario = state["scenario"]
     invoke = gateway or InvokeTool(
         tools={
-            "list_deploys": lambda params: list(
-                search.recent_deploys(service=str(params.get("service") or service))
-            ),
-            "search_code": lambda params: list(
-                search.search(
-                    service=str(params.get("service") or service),
-                    scenario=str(params.get("scenario") or scenario),
-                )
-            ),
+            "list_deploys": make_list_deploys(search),
+            "search_code": make_search_code(search),
         }
     )
     incident_id = str(state.get("incident_id") or "unknown")
@@ -383,30 +361,20 @@ def _record_collected(
         logger.exception("evidence record failed; graph items still returned")
 
 
-def _retrieve_runbooks_and_incidents(
-    retrieve: KnowledgeRetrieve,
-    *,
-    query: str,
-    service: str,
-    scenario: str,
-) -> list[RetrieveHit]:
-    by_id: dict[str, RetrieveHit] = {}
-    per_type = max(1, KNOWLEDGE_MAX_CHUNKS)
-    for doc_type in KNOWLEDGE_DOC_TYPES:
-        result = retrieve.execute(
-            query,
-            filters=RetrieveFilters(service=service, scenario=scenario, doc_type=doc_type),
-            top_k=per_type,
-        )
-        for hit in result.hits:
-            if not is_allowlisted(hit.citation.document):
-                continue
-            by_id.setdefault(hit.citation.chunk_id, hit)
-    ordered = sorted(by_id.values(), key=lambda hit: (-hit.score, hit.citation.chunk_id))
-    return ordered[:KNOWLEDGE_MAX_CHUNKS]
-
-
-def _obs_item(signal: ObservabilitySignal) -> dict[str, object]:
+def _obs_item(signal: ObservabilitySignal | Mapping[str, object]) -> dict[str, object]:
+    if isinstance(signal, Mapping):
+        kind = str(signal.get("kind") or "log")
+        if kind not in {"log", "metric", "trace"}:
+            kind = "log"
+        timestamp = signal.get("timestamp")
+        return {
+            "collector": "observability",
+            "kind": kind,
+            "source": str(signal.get("source") or _SOURCE_SIMULATOR),
+            "timestamp": _as_iso(timestamp),
+            "service": str(signal.get("service") or ""),
+            "summary": _cap(str(signal.get("summary") or "")),
+        }
     kind = signal.kind if signal.kind in {"log", "metric", "trace"} else "log"
     return {
         "collector": "observability",
@@ -418,7 +386,23 @@ def _obs_item(signal: ObservabilitySignal) -> dict[str, object]:
     }
 
 
-def _knowledge_item(hit: RetrieveHit) -> dict[str, object]:
+def _knowledge_item(hit: RetrieveHit | Mapping[str, object]) -> dict[str, object]:
+    if isinstance(hit, Mapping):
+        raw_citation = hit.get("citation")
+        citation: Mapping[str, object] = raw_citation if isinstance(raw_citation, Mapping) else {}
+        return {
+            "collector": "knowledge",
+            "kind": "knowledge",
+            "source": _SOURCE_RAG,
+            "timestamp": _iso(datetime.now(timezone.utc)),
+            "text": _cap(str(hit.get("text") or "")),
+            "text_role": "data",
+            "citation": {
+                "document": str(citation.get("document") or ""),
+                "section": str(citation.get("section") or ""),
+                "chunk_id": str(citation.get("chunk_id") or ""),
+            },
+        }
     return {
         "collector": "knowledge",
         "kind": "knowledge",
@@ -434,7 +418,21 @@ def _knowledge_item(hit: RetrieveHit) -> dict[str, object]:
     }
 
 
-def _code_item(hit: CodeHit) -> dict[str, object]:
+def _code_item(hit: CodeHit | Mapping[str, object]) -> dict[str, object]:
+    if isinstance(hit, Mapping):
+        summary = str(hit.get("summary") or "")
+        path = str(hit.get("path") or "")
+        is_deploy = "deploy" in summary.lower() or path.endswith("deployments.md")
+        return {
+            "collector": "code",
+            "kind": "deploy" if is_deploy else "code",
+            "source": _SOURCE_CODE,
+            "timestamp": _iso(datetime.now(timezone.utc)),
+            "service": str(hit.get("service") or ""),
+            "version": str(hit.get("version") or ""),
+            "path": path,
+            "summary": _cap(summary),
+        }
     return {
         "collector": "code",
         "kind": (
@@ -451,11 +449,13 @@ def _code_item(hit: CodeHit) -> dict[str, object]:
     }
 
 
-def _dedupe_code_hits(hits: Sequence[CodeHit]) -> list[CodeHit]:
+def _dedupe_code_hits(
+    hits: Sequence[CodeHit | Mapping[str, object]],
+) -> list[CodeHit | Mapping[str, object]]:
     seen: set[tuple[str, str, str]] = set()
-    unique: list[CodeHit] = []
+    unique: list[CodeHit | Mapping[str, object]] = []
     for hit in hits:
-        key = (hit.service, hit.path, hit.version)
+        key = _code_key(hit)
         if key in seen:
             continue
         seen.add(key)
@@ -463,9 +463,27 @@ def _dedupe_code_hits(hits: Sequence[CodeHit]) -> list[CodeHit]:
     return unique
 
 
+def _code_key(hit: CodeHit | Mapping[str, object]) -> tuple[str, str, str]:
+    if isinstance(hit, Mapping):
+        return (
+            str(hit.get("service") or ""),
+            str(hit.get("path") or ""),
+            str(hit.get("version") or ""),
+        )
+    return (hit.service, hit.path, hit.version)
+
+
 def _agent_id(gateway: InvokeTool, default: AgentIdentity) -> str:
     """Use the node's bound identity when present; never a param-supplied id."""
     return gateway.bound_agent_id or default.value
+
+
+def _as_iso(value: object) -> str:
+    if isinstance(value, datetime):
+        return _iso(value)
+    if value is None:
+        return _iso(datetime.now(timezone.utc))
+    return str(value)
 
 
 def _iso(value: datetime) -> str:
