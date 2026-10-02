@@ -36,6 +36,8 @@ def test_registry_is_least_privilege() -> None:
     assert AGENT_TOOL_GRANTS[AgentIdentity.CODE] == frozenset({"search_code", "list_deploys"})
     assert AGENT_TOOL_GRANTS[AgentIdentity.COMMANDER] == frozenset()
     assert AGENT_TOOL_GRANTS[AgentIdentity.RCA] == frozenset()
+    assert AGENT_TOOL_GRANTS[AgentIdentity.MCP_CLIENT] == frozenset({"retrieve_knowledge"})
+    assert not agent_may_invoke("mcp_client", "fetch_signals")
     assert not agent_may_invoke("knowledge", "search_code")
     assert not agent_may_invoke("system", "retrieve_knowledge")
     assert agent_may_invoke("code", "list_deploys")

@@ -630,6 +630,8 @@ Every bus event carries this Detail object. Types are versioned (`*.v1`); do not
 
 Every external action passes through the **agent guardrail**. The mechanism is the tool gateway: authenticate, classify, policy, rate limit, decide, redact, audit. This is not Amazon Bedrock Guardrails (content filters). Policy lives here, not in the prompt.
 
+MCP (FR-065) is a **second door**, not a second lock. An IDE or copilot lists the same read tools over `127.0.0.1:8002` and every call is `ToolGateway.invoke` with untrusted `agent_id=mcp_client` (retrieve-only). Loopback plus `AEGIS_MCP_TOKEN`. Listing a tool does not widen policy. See [mcp/README.md](../../mcp/README.md).
+
 ```mermaid
 flowchart TB
     AGENT["Agent"] -->|"tool call request"| GW_IN["Tool Gateway"]
@@ -664,6 +666,15 @@ flowchart TB
 
     AUDIT --> PG_AUDIT
     PENDING --> PG_AUDIT
+```
+
+```mermaid
+flowchart LR
+    IDE["IDE / MCP client"] -->|"127.0.0.1:8002 + token"| MCP["mcp/server.py"]
+    Worker["Investigation worker"] -->|"bound node identity"| GW["InvokeTool"]
+    MCP -->|"agent_id=mcp_client"| GW
+    GW --> Policy["classify · grants · POLICY_RULE"]
+    Policy --> Tools["src/aegis/tools"]
 ```
 
 ---

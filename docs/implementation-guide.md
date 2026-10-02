@@ -3924,6 +3924,7 @@ AEGIS_SKIP_DOTENV=1 uv run pytest tests/unit/tools tests/unit/application/gatewa
 ```text
 mcp/server.py                            # composition: registry + gateway
 mcp/README.md                            # how to point an MCP client at local AEGIS
+src/aegis/domain/auth/agent_identity.py  # mcp_client grant (retrieve only)
 tests/integration/mcp/test_mcp_policy.py
 ```
 
@@ -3963,9 +3964,9 @@ AEGIS_SKIP_DOTENV=1 uv run pytest tests/integration/mcp/test_mcp_policy.py -v
 
 **Done checklist:**
 
-- [ ] MCP process documented
-- [ ] Same gateway, same deny
-- [ ] Loopback + auth story written
+- [x] MCP process documented
+- [x] Same gateway, same deny
+- [x] Loopback + auth story written
 
 **Learn / interview:**
 

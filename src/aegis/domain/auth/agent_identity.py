@@ -4,7 +4,8 @@ Human JWT roles (``viewer`` / ``engineer`` / ``admin``) are a different plane.
 Mixing them with ``agent_id`` is a confused-deputy bug.
 
 This is **not** AWS IAM. Task-role IAM is Phase 6 (steps 6.4 / 6.8). These
-ids are minted by the worker when it runs a node — never by Claude.
+ids are minted by the worker (or the MCP process for ``mcp_client``) —
+never by Claude or an IDE plugin.
 """
 
 from collections.abc import Mapping
@@ -19,6 +20,7 @@ class AgentIdentity(StrEnum):
     CODE = "code"
     COMMANDER = "commander"
     RCA = "rca"
+    MCP_CLIENT = "mcp_client"
 
 
 AGENT_TOOL_GRANTS: Mapping[AgentIdentity, frozenset[str]] = {
@@ -27,6 +29,8 @@ AGENT_TOOL_GRANTS: Mapping[AgentIdentity, frozenset[str]] = {
     AgentIdentity.CODE: frozenset({"search_code", "list_deploys"}),
     AgentIdentity.COMMANDER: frozenset(),
     AgentIdentity.RCA: frozenset(),
+    # IDE / copilot door (Step 5.5). Listing a tool in MCP does not widen this.
+    AgentIdentity.MCP_CLIENT: frozenset({"retrieve_knowledge"}),
 }
 
 
