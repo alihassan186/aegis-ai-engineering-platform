@@ -399,6 +399,12 @@ erDiagram
         string action
         jsonb input
         jsonb output
+        string decision
+        string reason
+        string incident_id
+        string action_class
+        string prev_hash
+        string row_hash
         timestamp created_at
     }
 

@@ -4040,10 +4040,10 @@ uv run pytest tests/unit/application/audit tests/integration/repositories/test_a
 
 **Done checklist:**
 
-- [ ] Append-only table
-- [ ] Gateway writes every decision
-- [ ] App role cannot UPDATE/DELETE
-- [ ] THR-004 materially mitigated
+- [x] Append-only table
+- [x] Gateway writes every decision
+- [x] App role cannot UPDATE/DELETE
+- [x] THR-004 materially mitigated
 
 **Learn / interview:**
 

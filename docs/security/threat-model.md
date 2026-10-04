@@ -86,7 +86,7 @@ Out of scope: threats to target production applications under investigation (cov
 
 | ID | Threat | Surface | Mitigation | Status |
 |---|---|---|---|---|
-| THR-004 | Attacker modifies audit logs to hide actions | [9] Audit | Append-only log table; no DELETE/UPDATE permissions | Planned v0.6 |
+| THR-004 | Attacker modifies audit logs to hide actions | [9] Audit | Append-only ``audit_log``; UPDATE/DELETE trigger; no repository update API; hash chain; no admin edit route | Mitigated v0.6 (5.6) |
 | THR-005 | Attacker modifies incident data to mislead investigation | [1] API | RBAC; input validation; audit on all writes | Planned v0.2 |
 | THR-006 | Poisoned document in RAG index manipulates agent | [3] RAG | Document provenance tracking; ingestion review; treat as untrusted | Planned v0.4 |
 
