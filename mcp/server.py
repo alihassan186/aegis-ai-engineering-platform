@@ -281,6 +281,7 @@ def _decision_payload(decision: GatewayDecision) -> dict[str, Any]:
         "action_class": None if decision.action_class is None else decision.action_class.value,
         "result": decision.result,
         "error": decision.error,
+        "audit_id": decision.audit_id,
         "isError": not decision.allowed,
         "content": [
             {

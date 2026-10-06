@@ -9,6 +9,7 @@ import sys
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
+from aegis.application.audit.append_audit import AppendAudit
 from aegis.application.evidence.record_evidence import RecordEvidence
 from aegis.application.investigation.consume_opened import ConsumeOpenedIncident
 from aegis.application.investigation.record_progress import RecordInvestigationProgress
@@ -20,6 +21,7 @@ from aegis.domain.events.envelope import DomainEvent
 from aegis.infrastructure.database.session import start_database, stop_database
 from aegis.infrastructure.messaging.sqs_consumer import SqsInvestigationConsumer
 from aegis.infrastructure.notifications.log_notifier import LogNotifier
+from aegis.infrastructure.repositories.audit_repository import SqlAlchemyAuditRepository
 from aegis.infrastructure.repositories.evidence_repository import SqlAlchemyEvidenceRepository
 from aegis.infrastructure.repositories.incident_repository import SqlAlchemyIncidentRepository
 from aegis.infrastructure.repositories.investigation_repository import (
@@ -119,6 +121,8 @@ async def _handle_opened(
                 SqlAlchemyInvestigationProgressRepository(session)
             ),
             notify=NotifyInvestigation(SqlAlchemyNotificationRepository(session), LogNotifier()),
+            record_audit=AppendAudit(),
+            audit_repository=SqlAlchemyAuditRepository(session),
         )
         await consume.execute(event)
         await session.commit()

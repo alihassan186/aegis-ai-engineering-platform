@@ -11,11 +11,17 @@ import logging
 from dataclasses import dataclass
 from uuid import UUID
 
+from aegis.application.audit.append_audit import AppendAudit
 from aegis.application.evidence.record_evidence import RecordEvidence
 from aegis.application.investigation.record_progress import RecordInvestigationProgress
 from aegis.application.notifications.notify import NotifyInvestigation, notify_best_effort
 from aegis.application.rca.record_rca import RecordRca
-from aegis.core.protocols import IncidentRepository, InvestigationRunner, ProcessedEventStore
+from aegis.core.protocols import (
+    AuditRepository,
+    IncidentRepository,
+    InvestigationRunner,
+    ProcessedEventStore,
+)
 from aegis.domain.events.envelope import INCIDENT_OPENED_V1, DomainEvent
 from aegis.domain.incidents.entity import Incident
 from aegis.domain.incidents.enums import IncidentState
@@ -44,6 +50,8 @@ class ConsumeOpenedIncident:
         record_rca: RecordRca | None = None,
         record_progress: RecordInvestigationProgress | None = None,
         notify: NotifyInvestigation | None = None,
+        record_audit: AppendAudit | None = None,
+        audit_repository: AuditRepository | None = None,
     ) -> None:
         self._repository = repository
         self._processed_events = processed_events
@@ -52,6 +60,8 @@ class ConsumeOpenedIncident:
         self._record_rca = record_rca
         self._record_progress = record_progress
         self._notify = notify
+        self._record_audit = record_audit
+        self._audit_repository = audit_repository
 
     async def execute(self, event: DomainEvent) -> ConsumeOpenedResult:
         extra = {
@@ -103,6 +113,7 @@ class ConsumeOpenedIncident:
                     correlation_id=event.correlation_id,
                 )
                 await self._persist_collected_evidence()
+                await self._persist_recorded_audit()
                 await self._persist_recorded_rca(incident)
                 await self._persist_recorded_progress(incident)
         else:
@@ -118,6 +129,15 @@ class ConsumeOpenedIncident:
             transitioned=transitioned,
             already_processed=False,
         )
+
+    async def _persist_recorded_audit(self) -> None:
+        if self._record_audit is None or self._audit_repository is None or self._runner is None:
+            return
+        drain = getattr(self._runner, "drain_recorded_audit", None)
+        if drain is None:
+            return
+        for item in drain():
+            await self._record_audit.persist(self._audit_repository, item)
 
     async def _persist_collected_evidence(self) -> None:
         if self._record_evidence is None or self._runner is None:

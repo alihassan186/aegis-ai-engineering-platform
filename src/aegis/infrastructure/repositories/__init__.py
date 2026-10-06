@@ -1,5 +1,6 @@
 """Persistence adapters. Application code depends on protocols, not these classes."""
 
+from aegis.infrastructure.repositories.audit_repository import SqlAlchemyAuditRepository
 from aegis.infrastructure.repositories.evidence_repository import SqlAlchemyEvidenceRepository
 from aegis.infrastructure.repositories.incident_repository import SqlAlchemyIncidentRepository
 from aegis.infrastructure.repositories.investigation_repository import (
@@ -13,6 +14,7 @@ from aegis.infrastructure.repositories.policy_repository import SqlAlchemyPolicy
 from aegis.infrastructure.repositories.rca_repository import SqlAlchemyRcaRepository
 
 __all__ = [
+    "SqlAlchemyAuditRepository",
     "SqlAlchemyEvidenceRepository",
     "SqlAlchemyIncidentRepository",
     "SqlAlchemyInvestigationProgressRepository",

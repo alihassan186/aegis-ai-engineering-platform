@@ -11,6 +11,7 @@ from datetime import datetime
 from typing import Any, Protocol, runtime_checkable
 from uuid import UUID
 
+from aegis.domain.audit.entity import AuditEntry
 from aegis.domain.events.envelope import DomainEvent
 from aegis.domain.evidence.entity import Evidence
 from aegis.domain.gateway.decision import GatewayDecision
@@ -266,6 +267,18 @@ class EvidenceRepository(Protocol):
     async def add(self, evidence: Evidence) -> Evidence: ...
 
     async def list_by_incident(self, incident_id: UUID) -> list[Evidence]: ...
+
+
+class AuditRepository(Protocol):
+    """Append-only compliance log (FR-100). No update or delete."""
+
+    async def append(self, entry: AuditEntry) -> AuditEntry: ...
+
+    async def get(self, audit_id: UUID) -> AuditEntry | None: ...
+
+    async def list_by_incident(self, incident_id: str) -> list[AuditEntry]: ...
+
+    async def latest_hash(self) -> str: ...
 
 
 class PolicyRepository(Protocol):

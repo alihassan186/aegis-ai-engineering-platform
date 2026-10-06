@@ -6,6 +6,7 @@ import ast
 from pathlib import Path
 
 from aegis.core.protocols import (
+    AuditRepository,
     CodeSearch,
     Embedder,
     EventPublisher,
@@ -162,3 +163,7 @@ def test_tool_gateway_is_a_protocol() -> None:
 
 def test_policy_repository_is_a_protocol() -> None:
     assert getattr(PolicyRepository, "_is_protocol", False)
+
+
+def test_audit_repository_is_a_protocol() -> None:
+    assert getattr(AuditRepository, "_is_protocol", False)

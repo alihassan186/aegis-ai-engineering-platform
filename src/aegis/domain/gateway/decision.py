@@ -47,6 +47,7 @@ class GatewayDecision:
         tool_name: str,
         agent_id: str,
         incident_id: str,
+        audit_id: str | None = None,
     ) -> GatewayDecision:
         return cls(
             allowed=True,
@@ -58,6 +59,7 @@ class GatewayDecision:
             tool_name=tool_name,
             agent_id=agent_id,
             incident_id=incident_id,
+            audit_id=audit_id,
         )
 
     @classmethod
@@ -71,6 +73,7 @@ class GatewayDecision:
         incident_id: str,
         requires_approval: bool = False,
         error: str | None = None,
+        audit_id: str | None = None,
     ) -> GatewayDecision:
         verdict = GatewayVerdict.PENDING if requires_approval else GatewayVerdict.DENY
         return cls(
@@ -83,6 +86,22 @@ class GatewayDecision:
             tool_name=tool_name,
             agent_id=agent_id,
             incident_id=incident_id,
+            audit_id=audit_id,
+        )
+
+    def with_audit_id(self, audit_id: str) -> GatewayDecision:
+        return GatewayDecision(
+            allowed=self._allowed,
+            reason=self._reason,
+            requires_approval=self._requires_approval,
+            verdict=self._verdict,
+            action_class=self._action_class,
+            result=self._result,
+            error=self._error,
+            audit_id=audit_id,
+            tool_name=self._tool_name,
+            agent_id=self._agent_id,
+            incident_id=self._incident_id,
         )
 
     @property

@@ -12,11 +12,13 @@ import logging
 from collections.abc import Callable, Mapping, Sequence
 from typing import Any
 
+from aegis.application.audit.append_audit import AppendAudit
 from aegis.application.gateway.classify import classify
 from aegis.application.policy.cache import snapshot_policy_rules
 from aegis.application.policy.evaluate import evaluate_policy
 from aegis.application.policy.seed import seed_read_rules
 from aegis.application.security.redact import redact_for_llm, redact_mapping
+from aegis.domain.audit.entity import AuditEntry
 from aegis.domain.auth.agent_identity import AgentIdentity, agent_may_invoke, parse_agent_identity
 from aegis.domain.gateway.decision import GatewayDecision
 from aegis.domain.gateway.enums import ActionClass
@@ -38,10 +40,12 @@ class InvokeTool:
         *,
         policy_rules: Sequence[PolicyRule] | None = None,
         bound_agent_id: str | AgentIdentity | None = None,
+        audit: AppendAudit | None = None,
     ) -> None:
         self._tools = dict(tools or {})
         self._policy_rules = None if policy_rules is None else tuple(policy_rules)
         self._bound_agent_id = _optional_identity(bound_agent_id)
+        self._audit = audit or AppendAudit()
 
     def bind(self, agent_id: str | AgentIdentity) -> InvokeTool:
         """Return a gateway whose identity is closed over by a node (FR-074)."""
@@ -50,6 +54,7 @@ class InvokeTool:
             tools=self._tools,
             policy_rules=self._policy_rules,
             bound_agent_id=identity,
+            audit=self._audit,
         )
 
     @property
@@ -60,19 +65,26 @@ class InvokeTool:
         action_class = classify(request.tool_name)
         _ = request.claimed_action_class  # ignored — model cannot self-authorize
         decision = self._decide(request, action_class)
+        entry = self._audit.record_decision(request, decision)
+        decision = decision.with_audit_id(str(entry.id))
         logger.info(
-            "guardrail %s tool=%s reason=%s",
+            "guardrail %s tool=%s reason=%s audit_id=%s",
             "allow" if decision.allowed else "deny",
             request.tool_name,
             decision.reason,
+            decision.audit_id,
             extra={
                 "incident_id": request.incident_id,
                 "agent_id": decision.agent_id,
                 "tool_name": request.tool_name,
                 "reason": decision.reason,
+                "audit_id": decision.audit_id,
             },
         )
         return decision
+
+    def drain_audit(self) -> list[AuditEntry]:
+        return self._audit.drain()
 
     def execute(self, request: ToolInvokeRequest) -> GatewayDecision:
         return self.invoke(request)

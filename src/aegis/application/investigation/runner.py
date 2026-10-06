@@ -10,10 +10,12 @@ from aegis.application.evidence.record_evidence import (
     CollectingEvidenceRecorder,
     incident_id_from_state,
 )
+from aegis.application.gateway.bind_ports import invoke_tool_for_ports
 from aegis.application.investigation.collect import SpecialistPorts
 from aegis.application.investigation.rca import report_from_payload
 from aegis.application.investigation.record_progress import progress_from_graph_result
 from aegis.application.investigation.run import invoke_investigation
+from aegis.domain.audit.entity import AuditEntry
 from aegis.domain.evidence.entity import Evidence
 from aegis.domain.investigation.progress import InvestigationProgress
 from aegis.domain.rca.entity import RcaReport
@@ -32,13 +34,14 @@ class LangGraphInvestigationRunner:
         self._checkpointer = checkpointer or InMemorySaver()
         self._recorded: list[Evidence] = []
         resolved = ports or SpecialistPorts.memory()
-        if resolved.recorder is None:
+        if resolved.recorder is None or resolved.gateway is None:
             resolved = SpecialistPorts(
                 observability=resolved.observability,
                 code_search=resolved.code_search,
                 retrieve=resolved.retrieve,
-                recorder=CollectingEvidenceRecorder(self._recorded),
+                recorder=resolved.recorder or CollectingEvidenceRecorder(self._recorded),
                 llm=resolved.llm,
+                gateway=resolved.gateway or invoke_tool_for_ports(resolved),
             )
         self._ports = resolved
         self._rca_reports: list[RcaReport] = []
@@ -76,6 +79,12 @@ class LangGraphInvestigationRunner:
         logger.info("investigation graph returned status=%s", status, extra=extra)
         self._capture_rca(result)
         self._capture_progress(result, incident_id)
+
+    def drain_recorded_audit(self) -> list[AuditEntry]:
+        gateway = self._ports.gateway
+        if gateway is None:
+            return []
+        return list(gateway.drain_audit())
 
     def drain_recorded_evidence(self) -> list[Evidence]:
         """Evidence minted during the last ``start``. Cleared after the read."""

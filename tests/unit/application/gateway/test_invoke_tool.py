@@ -48,7 +48,7 @@ def test_read_tool_allow_returns_result() -> None:
     assert decision.reason == "allowed:read"
     assert decision.requires_approval is False
     assert decision.result == "runbook excerpt"
-    assert decision.audit_id is None
+    assert decision.audit_id is not None
     assert seen == [{"query": "latency"}]
 
 

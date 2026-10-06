@@ -35,7 +35,9 @@ class IncidentModel(Base):
     severity: Mapped[str] = mapped_column(String(32), nullable=False)
     affected_service: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
     owner_id: Mapped[UUID | None] = mapped_column(Uuid, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, index=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, index=True
+    )
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     fingerprint: Mapped[str | None] = mapped_column(String(512), nullable=True)
