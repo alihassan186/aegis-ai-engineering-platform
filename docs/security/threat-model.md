@@ -111,7 +111,7 @@ Out of scope: threats to target production applications under investigation (cov
 
 | ID | Threat | Surface | Mitigation | Status |
 |---|---|---|---|---|
-| THR-014 | Agent infinite loop consumes Bedrock quota | [5] Gateway | Step limit per investigation; token budget; timeout | Planned v0.5 |
+| THR-014 | Agent infinite loop consumes Bedrock quota | [5] Gateway | Hop cap (MAX_HOPS) plus per-agent/per-tool rate limits (FR-063). Memory counters locally; Redis in 6.x. | Partial v0.6 (5.7) |
 | THR-015 | Webhook flood creates excessive incidents | [2] Webhook | Rate limiting; deduplication; queue backpressure | Planned v0.3 |
 | THR-016 | Large document ingestion overwhelms OpenSearch | [3] RAG | Ingestion rate limits; async processing; size limits | Planned v0.4 |
 

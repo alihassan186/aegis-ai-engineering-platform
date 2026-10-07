@@ -4110,9 +4110,9 @@ AEGIS_SKIP_DOTENV=1 uv run pytest tests/unit/application/gateway/test_rate_limit
 
 **Done checklist:**
 
-- [ ] Per-tool / per-agent limits
-- [ ] Deny + audit on exceed
-- [ ] Limits in settings
+- [x] Per-tool / per-agent limits
+- [x] Deny + audit on exceed
+- [x] Limits in settings
 
 **Learn / interview:**
 

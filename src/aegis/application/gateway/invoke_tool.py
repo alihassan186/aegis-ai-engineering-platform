@@ -14,6 +14,7 @@ from typing import Any
 
 from aegis.application.audit.append_audit import AppendAudit
 from aegis.application.gateway.classify import classify
+from aegis.application.gateway.rate_limit import RateLimiter
 from aegis.application.policy.cache import snapshot_policy_rules
 from aegis.application.policy.evaluate import evaluate_policy
 from aegis.application.policy.seed import seed_read_rules
@@ -41,11 +42,13 @@ class InvokeTool:
         policy_rules: Sequence[PolicyRule] | None = None,
         bound_agent_id: str | AgentIdentity | None = None,
         audit: AppendAudit | None = None,
+        rate_limiter: RateLimiter | None = None,
     ) -> None:
         self._tools = dict(tools or {})
         self._policy_rules = None if policy_rules is None else tuple(policy_rules)
         self._bound_agent_id = _optional_identity(bound_agent_id)
         self._audit = audit or AppendAudit()
+        self._rate_limiter = rate_limiter or RateLimiter()
 
     def bind(self, agent_id: str | AgentIdentity) -> InvokeTool:
         """Return a gateway whose identity is closed over by a node (FR-074)."""
@@ -55,6 +58,7 @@ class InvokeTool:
             policy_rules=self._policy_rules,
             bound_agent_id=identity,
             audit=self._audit,
+            rate_limiter=self._rate_limiter,
         )
 
     @property
@@ -173,6 +177,17 @@ class InvokeTool:
         if runner is None:
             return GatewayDecision.deny(
                 reason="denied:not_registered",
+                action_class=resolved,
+                **common,
+            )
+        paced = self._rate_limiter.allow(
+            agent_id=agent_id,
+            tool_name=request.tool_name,
+            incident_id=request.incident_id,
+        )
+        if not paced.allowed:
+            return GatewayDecision.deny(
+                reason=paced.reason,
                 action_class=resolved,
                 **common,
             )

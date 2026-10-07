@@ -2,6 +2,7 @@
 
 from aegis.application.gateway.classify import classify
 from aegis.application.gateway.invoke_tool import InvokeTool
+from aegis.application.gateway.rate_limit import RateLimiter
 from aegis.application.gateway.registry import READ_TOOL_NAMES, WRITE_TOOL_NAMES, action_class_for
 from aegis.domain.gateway.request import ToolInvokeRequest
 
@@ -9,6 +10,7 @@ __all__ = [
     "READ_TOOL_NAMES",
     "WRITE_TOOL_NAMES",
     "InvokeTool",
+    "RateLimiter",
     "ToolInvokeRequest",
     "action_class_for",
     "classify",

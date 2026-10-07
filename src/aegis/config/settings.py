@@ -58,6 +58,10 @@ class Settings:
     notification_queue_name: str = "notification"
     simulator_base_url: str = "http://127.0.0.1:8001"
     llm: str = "fake"
+    tool_rate_window_seconds: int = 60
+    tool_rate_per_tool_incident: int = 30
+    tool_rate_per_agent: int = 90
+    tool_rate_fail_closed: bool = False
 
     @classmethod
     def from_env(cls) -> Settings:
@@ -94,6 +98,25 @@ class Settings:
             os.getenv("AEGIS_SIMULATOR_URL", "").strip().rstrip("/") or "http://127.0.0.1:8001"
         )
         llm = _parse_llm_name(os.getenv("AEGIS_LLM"))
+        tool_rate_window_seconds = _parse_positive_int(
+            os.getenv("AEGIS_TOOL_RATE_WINDOW_SECONDS"),
+            default=60,
+        )
+        tool_rate_per_tool_incident = _parse_positive_int(
+            os.getenv("AEGIS_TOOL_RATE_PER_TOOL_INCIDENT"),
+            default=30,
+        )
+        tool_rate_per_agent = _parse_positive_int(
+            os.getenv("AEGIS_TOOL_RATE_PER_AGENT"),
+            default=90,
+        )
+        fail_closed_raw = os.getenv("AEGIS_TOOL_RATE_FAIL_CLOSED", "").strip().lower()
+        if fail_closed_raw in {"1", "true", "yes", "on"}:
+            tool_rate_fail_closed = True
+        elif fail_closed_raw in {"0", "false", "no", "off"}:
+            tool_rate_fail_closed = False
+        else:
+            tool_rate_fail_closed = environment == "production"
 
         if environment == "production" and not database_url:
             raise ValueError("AEGIS_DATABASE_URL is required when AEGIS_ENV=production (NFR-060).")
@@ -122,6 +145,10 @@ class Settings:
             notification_queue_name=notification_queue_name,
             simulator_base_url=simulator_base_url,
             llm=llm,
+            tool_rate_window_seconds=tool_rate_window_seconds,
+            tool_rate_per_tool_incident=tool_rate_per_tool_incident,
+            tool_rate_per_agent=tool_rate_per_agent,
+            tool_rate_fail_closed=tool_rate_fail_closed,
         )
 
 
