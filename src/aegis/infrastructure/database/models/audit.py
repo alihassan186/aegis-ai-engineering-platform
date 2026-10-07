@@ -6,7 +6,7 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID
 
-from sqlalchemy import DateTime, Index, String, Uuid
+from sqlalchemy import Boolean, DateTime, Index, String, Uuid
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -33,3 +33,9 @@ class AuditLogModel(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     prev_hash: Mapped[str] = mapped_column(String(64), nullable=False)
     row_hash: Mapped[str] = mapped_column(String(64), nullable=False, unique=True)
+    policy_version: Mapped[str] = mapped_column(
+        String(64), nullable=False, default="", server_default=""
+    )
+    deny_all: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default="false"
+    )

@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import datetime
 from uuid import UUID
 
-from sqlalchemy import Boolean, DateTime, String, UniqueConstraint, Uuid
+from sqlalchemy import Boolean, DateTime, Integer, String, UniqueConstraint, Uuid
 from sqlalchemy.orm import Mapped, mapped_column
 
 from aegis.infrastructure.database.base import Base
@@ -28,6 +28,7 @@ class PolicyRuleModel(Base):
     scope: Mapped[str] = mapped_column(String(255), nullable=False)
     allowed: Mapped[bool] = mapped_column(Boolean, nullable=False)
     reason: Mapped[str] = mapped_column(String(255), nullable=False, default="")
+    version: Mapped[int] = mapped_column(Integer, nullable=False, default=1, server_default="1")
     created_by: Mapped[str] = mapped_column(String(128), nullable=False)
     updated_by: Mapped[str] = mapped_column(String(128), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)

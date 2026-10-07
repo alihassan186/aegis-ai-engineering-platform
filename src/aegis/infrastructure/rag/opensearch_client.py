@@ -9,6 +9,7 @@ from collections.abc import Mapping, Sequence
 from typing import Any
 
 from aegis.core.protocols import KnowledgeHit
+from aegis.infrastructure.http_safe import open_no_redirect
 from aegis.infrastructure.rag.cluster import KNOWLEDGE_INDEX
 from aegis.infrastructure.rag.embedder import EMBEDDING_DIMENSION
 from aegis.infrastructure.rag.mappings import knowledge_index_body
@@ -172,7 +173,7 @@ class OpenSearchKnowledgeStore:
         url = f"{self._base}/{KNOWLEDGE_INDEX}"
         request = urllib.request.Request(url, method="GET")
         try:
-            with urllib.request.urlopen(request, timeout=self._timeout) as response:
+            with open_no_redirect(request, timeout=self._timeout) as response:
                 payload = json.loads(response.read().decode("utf-8"))
         except urllib.error.HTTPError as exc:
             body = exc.read().decode("utf-8", errors="replace")
@@ -208,7 +209,7 @@ class OpenSearchKnowledgeStore:
             headers["Content-Type"] = content_type
         request = urllib.request.Request(url, data=data, method=method, headers=headers)
         try:
-            with urllib.request.urlopen(request, timeout=self._timeout) as response:
+            with open_no_redirect(request, timeout=self._timeout) as response:
                 raw = response.read().decode("utf-8")
         except urllib.error.HTTPError as exc:
             detail = exc.read().decode("utf-8", errors="replace")[:2000]

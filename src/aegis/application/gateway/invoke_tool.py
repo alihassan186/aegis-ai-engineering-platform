@@ -4,6 +4,10 @@ Synchronous. Same worker. Not a microservice. Allow/deny comes from POLICY_RULE
 rows (or the in-process seed when the cache is cold). Destructive is still a
 code hard-stop. High-risk write is not executed in v0.6 (Phase 8).
 Agent identity is bound by the worker, never taken from tool parameters.
+
+Step 5.9: every allowed result carries an untrusted-data envelope.
+Step 5.11: ``AEGIS_GUARDRAIL_DENY_ALL`` denies every call before any other check, and
+every decision is stamped with the ``policy_version`` that made it.
 """
 
 from __future__ import annotations
@@ -15,10 +19,12 @@ from typing import Any
 from aegis.application.audit.append_audit import AppendAudit
 from aegis.application.gateway.classify import classify
 from aegis.application.gateway.rate_limit import RateLimiter
-from aegis.application.policy.cache import snapshot_policy_rules
+from aegis.application.gateway.untrusted import build_envelope, redact_result
+from aegis.application.policy.cache import snapshot_policy_rules, snapshot_policy_version
 from aegis.application.policy.evaluate import evaluate_policy
 from aegis.application.policy.seed import seed_read_rules
-from aegis.application.security.redact import redact_for_llm, redact_mapping
+from aegis.application.policy.version import policy_version_for
+from aegis.config.settings import guardrail_deny_all_enabled
 from aegis.domain.audit.entity import AuditEntry
 from aegis.domain.auth.agent_identity import AgentIdentity, agent_may_invoke, parse_agent_identity
 from aegis.domain.gateway.decision import GatewayDecision
@@ -43,7 +49,9 @@ class InvokeTool:
         bound_agent_id: str | AgentIdentity | None = None,
         audit: AppendAudit | None = None,
         rate_limiter: RateLimiter | None = None,
+        deny_all: Callable[[], bool] | None = None,
     ) -> None:
+        self._deny_all = deny_all or guardrail_deny_all_enabled
         self._tools = dict(tools or {})
         self._policy_rules = None if policy_rules is None else tuple(policy_rules)
         self._bound_agent_id = _optional_identity(bound_agent_id)
@@ -59,6 +67,7 @@ class InvokeTool:
             bound_agent_id=identity,
             audit=self._audit,
             rate_limiter=self._rate_limiter,
+            deny_all=self._deny_all,
         )
 
     @property
@@ -68,7 +77,12 @@ class InvokeTool:
     def invoke(self, request: ToolInvokeRequest) -> GatewayDecision:
         action_class = classify(request.tool_name)
         _ = request.claimed_action_class  # ignored — model cannot self-authorize
-        decision = self._decide(request, action_class)
+        deny_all = bool(self._deny_all())
+        decision = self._decide(request, action_class, deny_all=deny_all)
+        decision = decision.with_governance(
+            policy_version=self._policy_version(),
+            deny_all=deny_all,
+        )
         entry = self._audit.record_decision(request, decision)
         decision = decision.with_audit_id(str(entry.id))
         logger.info(
@@ -101,6 +115,14 @@ class InvokeTool:
             return cached
         return seed_read_rules()
 
+    def _policy_version(self) -> str:
+        if self._policy_rules is not None:
+            return policy_version_for(self._policy_rules)
+        cached = snapshot_policy_version()
+        if cached is not None:
+            return cached
+        return policy_version_for(seed_read_rules())
+
     def _caller_identity(self, request: ToolInvokeRequest) -> str:
         """Bound identity wins. ``parameters['agent_id']`` is never consulted."""
         if self._bound_agent_id is not None:
@@ -111,6 +133,8 @@ class InvokeTool:
         self,
         request: ToolInvokeRequest,
         action_class: ActionClass | None,
+        *,
+        deny_all: bool = False,
     ) -> GatewayDecision:
         agent_id = self._caller_identity(request)
         parameters = _tool_parameters(request)
@@ -119,6 +143,13 @@ class InvokeTool:
             "agent_id": agent_id,
             "incident_id": request.incident_id,
         }
+        if deny_all:
+            # Break-glass (5.11): env only. Never a tool parameter, comment, or prompt.
+            return GatewayDecision.deny(
+                reason="denied:kill_switch",
+                action_class=action_class,
+                **common,
+            )
         if parse_agent_identity(agent_id) is None:
             return GatewayDecision.deny(
                 reason="denied:unknown_agent",
@@ -202,10 +233,30 @@ class InvokeTool:
                 action_class=resolved,
                 **common,
             )
+        except Exception as exc:  # fail closed, and still audit (5.10)
+            logger.warning(
+                "tool runner failed tool=%s error=%s",
+                request.tool_name,
+                type(exc).__name__,
+            )
+            return GatewayDecision.deny(
+                reason="denied:tool_error",
+                action_class=resolved,
+                **common,
+            )
+        truncated = bool(getattr(raw, "truncated", False))
+        result = redact_result(raw)
+        envelope = build_envelope(
+            tool_name=request.tool_name,
+            incident_id=request.incident_id,
+            result=result,
+            truncated=truncated,
+        )
         return GatewayDecision.allow(
             reason="allowed:read",
             action_class=resolved,
-            result=_redact_result(raw),
+            result=result,
+            envelope=envelope.as_dict(),
             **common,
         )
 
@@ -231,15 +282,3 @@ def _tool_parameters(request: ToolInvokeRequest) -> dict[str, Any]:
     params.pop("agent_id", None)
     params.pop("action_class", None)
     return params
-
-
-def _redact_result(value: Any) -> Any:
-    if isinstance(value, str):
-        return redact_for_llm(value)
-    if isinstance(value, Mapping):
-        redacted, _count = redact_mapping(value)
-        return redacted
-    if isinstance(value, list):
-        redacted, _count = redact_mapping(value)
-        return redacted
-    return value

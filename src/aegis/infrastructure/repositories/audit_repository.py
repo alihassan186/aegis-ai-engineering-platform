@@ -57,6 +57,8 @@ def _to_orm(entry: AuditEntry) -> AuditLogModel:
         created_at=entry.created_at,
         prev_hash=entry.prev_hash,
         row_hash=entry.row_hash,
+        policy_version=entry.policy_version,
+        deny_all=entry.deny_all,
     )
 
 
@@ -74,4 +76,6 @@ def _to_domain(row: AuditLogModel) -> AuditEntry:
         created_at=row.created_at,
         prev_hash=row.prev_hash,
         row_hash=row.row_hash,
+        policy_version=row.policy_version,
+        deny_all=row.deny_all,
     )

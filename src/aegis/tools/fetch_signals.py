@@ -9,7 +9,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from aegis.core.protocols import ObservabilitySource
 from aegis.tools._limits import SIGNAL_CAP
-from aegis.tools._params import parse_params
+from aegis.tools._params import Scenario, Service, parse_params
 from aegis.tools.timeout import run_with_timeout
 
 ToolFn = Callable[[Mapping[str, Any]], Any]
@@ -18,8 +18,8 @@ ToolFn = Callable[[Mapping[str, Any]], Any]
 class FetchSignalsParams(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    service: str = Field(default="", max_length=255)
-    scenario: str = Field(default="", max_length=128)
+    service: Service = ""
+    scenario: Scenario = ""
     limit: int = Field(default=SIGNAL_CAP, ge=1)
 
 

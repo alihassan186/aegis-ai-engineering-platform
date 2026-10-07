@@ -114,7 +114,12 @@ def evidence_from_collected_item(incident_id: UUID, item: Mapping[str, Any]) -> 
                 kind=kind,
                 content_ref=f"simulator:{service}:{kind.value}:{stamp}",
                 summary=_cap(str(item.get("summary") or "")),
-                metadata={"tool": "observability", "service": service},
+                metadata={
+                    "tool": "observability",
+                    "service": service,
+                    "untrusted": True,
+                    "audit_id": item.get("audit_id"),
+                },
                 collected_at=_parse_collected_at(item.get("timestamp")),
             )
         )
@@ -132,6 +137,8 @@ def evidence_from_collected_item(incident_id: UUID, item: Mapping[str, Any]) -> 
                     "tool": "retrieve",
                     "citation": dict(citation),
                     "query": item.get("query"),
+                    "untrusted": True,
+                    "audit_id": item.get("audit_id"),
                 },
                 collected_at=_parse_collected_at(item.get("timestamp")),
             )
@@ -151,6 +158,8 @@ def evidence_from_collected_item(incident_id: UUID, item: Mapping[str, Any]) -> 
                     "version": item.get("version"),
                     "path": path,
                     "service": item.get("service"),
+                    "untrusted": True,
+                    "audit_id": item.get("audit_id"),
                 },
                 collected_at=_parse_collected_at(item.get("timestamp")),
             )

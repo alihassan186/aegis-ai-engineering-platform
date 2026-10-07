@@ -39,6 +39,7 @@ class PolicyRuleBody(BaseModel):
     scope: str
     allowed: bool
     reason: str
+    version: int
     created_by: str
     updated_by: str
     created_at: datetime
@@ -62,6 +63,7 @@ def policy_body_from_entity(rule: PolicyRule) -> PolicyRuleBody:
         scope=rule.scope,
         allowed=rule.allowed,
         reason=rule.reason,
+        version=rule.version,
         created_by=rule.created_by,
         updated_by=rule.updated_by,
         created_at=rule.created_at,

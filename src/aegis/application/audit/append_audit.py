@@ -53,6 +53,8 @@ class AppendAudit:
         input: Mapping[str, Any],
         output: Mapping[str, Any] | None = None,
         action_class: str | None = None,
+        policy_version: str = "",
+        deny_all: bool = False,
     ) -> AuditEntry:
         """Async persist path (worker flush / integration tests)."""
         prev = await repository.latest_hash()
@@ -66,6 +68,8 @@ class AppendAudit:
             incident_id=incident_id,
             action_class=action_class,
             prev_hash=prev or GENESIS_HASH,
+            policy_version=policy_version,
+            deny_all=deny_all,
         )
         return await repository.append(entry)
 
@@ -100,14 +104,27 @@ class AppendAudit:
             incident_id=decision.incident_id or request.incident_id,
             action_class=None if decision.action_class is None else decision.action_class.value,
             prev_hash=prev_hash,
+            policy_version=decision.policy_version,
+            deny_all=decision.deny_all,
         )
 
 
 def _redact_json(value: Any) -> dict[str, Any]:
-    redacted, _count = redact_mapping(value)
+    redacted, _count = redact_mapping(_strip_nul(value))
     if isinstance(redacted, Mapping):
         return dict(redacted)
     return {"value": redacted}
+
+
+def _strip_nul(value: Any) -> Any:
+    """Postgres JSONB rejects NUL. A hostile parameter must not break the audit write."""
+    if isinstance(value, str):
+        return value.replace("\x00", "")
+    if isinstance(value, Mapping):
+        return {_strip_nul(key): _strip_nul(item) for key, item in value.items()}
+    if isinstance(value, list | tuple):
+        return [_strip_nul(item) for item in value]
+    return value
 
 
 def _wrap_output(value: Any) -> dict[str, Any]:

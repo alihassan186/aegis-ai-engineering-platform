@@ -5,10 +5,10 @@ from __future__ import annotations
 from collections.abc import Callable, Mapping
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict
 
 from aegis.core.protocols import CodeSearch
-from aegis.tools._params import parse_params
+from aegis.tools._params import Scenario, Service, parse_params
 from aegis.tools.timeout import run_with_timeout
 
 ToolFn = Callable[[Mapping[str, Any]], Any]
@@ -17,8 +17,8 @@ ToolFn = Callable[[Mapping[str, Any]], Any]
 class SearchCodeParams(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    service: str = Field(default="", max_length=255)
-    scenario: str = Field(default="", max_length=128)
+    service: Service = ""
+    scenario: Scenario = ""
 
 
 def make_search_code(search: CodeSearch) -> ToolFn:

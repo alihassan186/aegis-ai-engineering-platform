@@ -36,6 +36,7 @@ from aegis.core.protocols import (
     ObservabilitySource,
 )
 from aegis.domain.auth.agent_identity import AgentIdentity
+from aegis.domain.gateway.decision import GatewayDecision
 from aegis.domain.gateway.request import ToolInvokeRequest
 from aegis.tools.fetch_signals import make_fetch_signals
 from aegis.tools.list_deploys import make_list_deploys
@@ -224,7 +225,10 @@ def collect_observability(
             "log": [f"observability denied: {decision.reason}"],
         }
     signals = list(decision.result or [])
-    items = [_obs_item(signal) for signal in signals[:OBS_MAX_ITEMS]]
+    items = _tag_untrusted(
+        [_obs_item(signal) for signal in signals[:OBS_MAX_ITEMS]],
+        decision,
+    )
     if not items:
         return {
             "failed_steps": ["observability"],
@@ -280,7 +284,7 @@ def collect_knowledge(
             "log": [f"knowledge denied: {reason}"],
         }
     hits = list(decision.result or [])
-    items = [_knowledge_item(hit) for hit in hits]
+    items = _tag_untrusted([_knowledge_item(hit) for hit in hits], decision)
     if not items:
         return {
             "failed_steps": ["knowledge"],
@@ -335,7 +339,7 @@ def collect_code(
     deploys = list(deploys_decision.result or [])
     hits = list(hits_decision.result or [])
     merged = _dedupe_code_hits([*deploys, *hits])
-    items = [_code_item(hit) for hit in merged]
+    items = _tag_untrusted([_code_item(hit) for hit in merged], hits_decision)
     if not items:
         return {"failed_steps": ["code"], "log": ["code failed: empty"]}
     _record_collected(state, items, recorder)
@@ -343,6 +347,18 @@ def collect_code(
         "evidence": items,
         "log": [f"code collected {len(items)} hits including deploy history"],
     }
+
+
+def _tag_untrusted(
+    items: list[dict[str, object]],
+    decision: GatewayDecision,
+) -> list[dict[str, object]]:
+    """Step 5.9: evidence is tagged data from an audited call, not a raw port dump."""
+    for item in items:
+        item["untrusted"] = True
+        item["tool"] = decision.tool_name
+        item["audit_id"] = decision.audit_id
+    return items
 
 
 def _record_collected(

@@ -63,7 +63,11 @@ class PolicyRule:
         updated_by: str,
         created_at: datetime,
         updated_at: datetime,
+        version: int = 1,
     ) -> None:
+        if version < 1:
+            raise ValidationError("version must be at least 1.")
+        self._version = int(version)
         self._id = id
         self._tool_name = _require_token(tool_name, "tool_name", max_length=_MAX_TOOL)
         self._action_class = action_class
@@ -132,6 +136,7 @@ class PolicyRule:
             updated_by=who,
             created_at=self._created_at,
             updated_at=updated_at or _utc_now(),
+            version=self._version + 1,
         )
 
     def snapshot(self) -> dict[str, Any]:
@@ -144,11 +149,17 @@ class PolicyRule:
             "reason": self._reason,
             "created_by": self._created_by,
             "updated_by": self._updated_by,
+            "version": self._version,
         }
 
     @property
     def id(self) -> UUID:
         return self._id
+
+    @property
+    def version(self) -> int:
+        """Per-rule edit counter. Bumped on every admin ``replace`` (5.11)."""
+        return self._version
 
     @property
     def tool_name(self) -> str:

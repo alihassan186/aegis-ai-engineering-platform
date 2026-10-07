@@ -9,6 +9,13 @@ from pathlib import Path
 _ENVIRONMENT_NAMES = {"development", "test", "production"}
 _ASYNC_POSTGRES_PREFIX = "postgresql+asyncpg://"
 _REPO_ROOT = Path(__file__).resolve().parents[3]
+_TRUTHY = {"1", "true", "yes", "on"}
+DEFAULT_TOOL_ALLOWED_HOSTS: tuple[str, ...] = (
+    "127.0.0.1:8001",
+    "localhost:8001",
+    "127.0.0.1:9200",
+    "localhost:9200",
+)
 
 
 def _load_dotenv_file() -> None:
@@ -62,6 +69,13 @@ class Settings:
     tool_rate_per_tool_incident: int = 30
     tool_rate_per_agent: int = 90
     tool_rate_fail_closed: bool = False
+    tool_timeout_seconds: float = 10.0
+    tool_max_output_bytes: int = 32768
+    tool_max_param_bytes: int = 16384
+    tool_breaker_threshold: int = 3
+    tool_breaker_cooldown_seconds: float = 30.0
+    tool_allowed_hosts: tuple[str, ...] = DEFAULT_TOOL_ALLOWED_HOSTS
+    guardrail_deny_all: bool = False
 
     @classmethod
     def from_env(cls) -> Settings:
@@ -117,6 +131,27 @@ class Settings:
             tool_rate_fail_closed = False
         else:
             tool_rate_fail_closed = environment == "production"
+        tool_timeout_seconds = _parse_positive_float(
+            os.getenv("AEGIS_TOOL_TIMEOUT_SECONDS"),
+            default=10.0,
+        )
+        tool_max_output_bytes = _parse_positive_int(
+            os.getenv("AEGIS_TOOL_MAX_OUTPUT_BYTES"),
+            default=32768,
+        )
+        tool_max_param_bytes = _parse_positive_int(
+            os.getenv("AEGIS_TOOL_MAX_PARAM_BYTES"),
+            default=16384,
+        )
+        tool_breaker_threshold = _parse_positive_int(
+            os.getenv("AEGIS_TOOL_BREAKER_THRESHOLD"),
+            default=3,
+        )
+        tool_breaker_cooldown_seconds = _parse_positive_float(
+            os.getenv("AEGIS_TOOL_BREAKER_COOLDOWN_SECONDS"),
+            default=30.0,
+        )
+        tool_allowed_hosts = _parse_host_list(os.getenv("AEGIS_TOOL_ALLOWED_HOSTS"))
 
         if environment == "production" and not database_url:
             raise ValueError("AEGIS_DATABASE_URL is required when AEGIS_ENV=production (NFR-060).")
@@ -149,11 +184,28 @@ class Settings:
             tool_rate_per_tool_incident=tool_rate_per_tool_incident,
             tool_rate_per_agent=tool_rate_per_agent,
             tool_rate_fail_closed=tool_rate_fail_closed,
+            tool_timeout_seconds=tool_timeout_seconds,
+            tool_max_output_bytes=tool_max_output_bytes,
+            tool_max_param_bytes=tool_max_param_bytes,
+            tool_breaker_threshold=tool_breaker_threshold,
+            tool_breaker_cooldown_seconds=tool_breaker_cooldown_seconds,
+            tool_allowed_hosts=tool_allowed_hosts,
+            guardrail_deny_all=guardrail_deny_all_enabled(),
         )
 
 
 def get_settings() -> Settings:
     return Settings.from_env()
+
+
+def guardrail_deny_all_enabled() -> bool:
+    """Kill switch (Step 5.11). Read from the environment on every call.
+
+    Deliberately not cached: flipping ``AEGIS_GUARDRAIL_DENY_ALL`` takes effect
+    on the next ``invoke`` without a deploy. It is an operator env var only. It
+    is never read from tool parameters, incident comments, or the LLM prompt.
+    """
+    return os.getenv("AEGIS_GUARDRAIL_DENY_ALL", "").strip().lower() in _TRUTHY
 
 
 def _parse_positive_int(raw: str | None, *, default: int) -> int:
@@ -164,6 +216,26 @@ def _parse_positive_int(raw: str | None, *, default: int) -> int:
     except ValueError:
         return default
     return value if value > 0 else default
+
+
+def _parse_positive_float(raw: str | None, *, default: float) -> float:
+    if raw is None or not raw.strip():
+        return default
+    try:
+        value = float(raw)
+    except ValueError:
+        return default
+    return value if value > 0 else default
+
+
+def _parse_host_list(raw: str | None) -> tuple[str, ...]:
+    """Comma separated ``host:port`` allowlist for tool HTTP adapters (5.10)."""
+    if raw is None or not raw.strip():
+        return DEFAULT_TOOL_ALLOWED_HOSTS
+    hosts = tuple(
+        item.strip().lower() for item in raw.split(",") if item.strip()
+    )
+    return hosts or DEFAULT_TOOL_ALLOWED_HOSTS
 
 
 def _parse_embedder_name(raw: str | None) -> str:

@@ -10,7 +10,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from aegis.application.rag.allowlist import is_allowlisted
 from aegis.application.rag.retrieve import RetrieveFilters, RetrieveHit, RetrieveResult
 from aegis.tools._limits import KNOWLEDGE_CAP
-from aegis.tools._params import parse_params
+from aegis.tools._params import Scenario, Service, parse_params
 from aegis.tools.timeout import run_with_timeout
 
 ToolFn = Callable[[Mapping[str, Any]], Any]
@@ -31,8 +31,8 @@ class RetrieveKnowledgeParams(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     query: str = Field(default="", max_length=2000)
-    service: str = Field(default="", max_length=255)
-    scenario: str = Field(default="", max_length=128)
+    service: Service = ""
+    scenario: Scenario = ""
 
 
 def make_retrieve_knowledge(retrieve: KnowledgeRetrieve) -> ToolFn:

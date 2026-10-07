@@ -13,6 +13,7 @@ from datetime import datetime, timezone
 from typing import Any
 
 from aegis.core.protocols import ObservabilitySignal
+from aegis.infrastructure.http_safe import open_no_redirect
 
 _KIND_MAP = {"log": "log", "metric": "metric", "span": "trace", "trace": "trace"}
 _MAX_ITEMS = 20
@@ -67,7 +68,7 @@ class SimulatorObservabilityClient:
     def _request(self, method: str, path: str) -> dict[str, Any]:
         request = urllib.request.Request(f"{self._base}{path}", method=method)
         try:
-            with urllib.request.urlopen(request, timeout=self._timeout) as response:
+            with open_no_redirect(request, timeout=self._timeout) as response:
                 body = response.read().decode("utf-8")
         except urllib.error.HTTPError as exc:
             raise ConnectionError(f"simulator HTTP {exc.code} for {path}") from exc

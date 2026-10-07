@@ -21,6 +21,7 @@ _MAX_ACTOR = 128
 _MAX_ACTION = 128
 _MAX_REASON = 255
 _MAX_INCIDENT = 64
+_MAX_POLICY_VERSION = 64
 
 
 def _utc_now() -> datetime:
@@ -67,7 +68,15 @@ class AuditEntry:
         created_at: datetime,
         prev_hash: str,
         row_hash: str,
+        policy_version: str = "",
+        deny_all: bool = False,
     ) -> None:
+        self._policy_version = policy_version.strip()
+        if len(self._policy_version) > _MAX_POLICY_VERSION:
+            raise ValidationError(
+                f"policy_version must be at most {_MAX_POLICY_VERSION} characters."
+            )
+        self._deny_all = bool(deny_all)
         self._id = id
         self._actor = _require_token(actor, "actor", max_length=_MAX_ACTOR)
         self._action = _require_token(action, "action", max_length=_MAX_ACTION)
@@ -100,6 +109,8 @@ class AuditEntry:
         prev_hash: str = GENESIS_HASH,
         entry_id: UUID | None = None,
         created_at: datetime | None = None,
+        policy_version: str = "",
+        deny_all: bool = False,
     ) -> AuditEntry:
         verdict = decision if isinstance(decision, GatewayVerdict) else GatewayVerdict(decision)
         resolved_class = None
@@ -110,7 +121,7 @@ class AuditEntry:
         entry_id = entry_id or uuid4()
         created_at = created_at or _utc_now()
         chain_prev = prev_hash.strip() or GENESIS_HASH
-        payload = {
+        payload: dict[str, Any] = {
             "id": str(entry_id),
             "actor": actor.strip(),
             "action": action.strip(),
@@ -122,6 +133,12 @@ class AuditEntry:
             "action_class": None if resolved_class is None else resolved_class.value,
             "created_at": created_at.isoformat(),
         }
+        # 5.11: only hashed when set, so rows written before the columns existed
+        # still recompute to the same digest.
+        if policy_version.strip():
+            payload["policy_version"] = policy_version.strip()
+        if deny_all:
+            payload["deny_all"] = True
         return cls(
             id=entry_id,
             actor=actor,
@@ -135,6 +152,8 @@ class AuditEntry:
             created_at=created_at,
             prev_hash=chain_prev,
             row_hash=compute_row_hash(payload=payload, prev_hash=chain_prev),
+            policy_version=policy_version,
+            deny_all=deny_all,
         )
 
     @property
@@ -184,3 +203,13 @@ class AuditEntry:
     @property
     def row_hash(self) -> str:
         return self._row_hash
+
+    @property
+    def policy_version(self) -> str:
+        """Rule-set version that made this decision (5.11). Empty on pre-5.11 rows."""
+        return self._policy_version
+
+    @property
+    def deny_all(self) -> bool:
+        """Kill switch state at decision time (5.11)."""
+        return self._deny_all

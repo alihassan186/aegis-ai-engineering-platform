@@ -51,6 +51,7 @@ class SqlAlchemyPolicyRepository:
         row.scope = rule.scope
         row.allowed = rule.allowed
         row.reason = rule.reason
+        row.version = rule.version
         row.updated_by = rule.updated_by
         row.updated_at = rule.updated_at
         try:
@@ -91,6 +92,7 @@ def _to_orm(rule: PolicyRule) -> PolicyRuleModel:
         scope=rule.scope,
         allowed=rule.allowed,
         reason=rule.reason,
+        version=rule.version,
         created_by=rule.created_by,
         updated_by=rule.updated_by,
         created_at=rule.created_at,
@@ -106,6 +108,7 @@ def _to_domain(row: PolicyRuleModel) -> PolicyRule:
         scope=row.scope,
         allowed=row.allowed,
         reason=row.reason,
+        version=row.version,
         created_by=row.created_by,
         updated_by=row.updated_by,
         created_at=row.created_at,

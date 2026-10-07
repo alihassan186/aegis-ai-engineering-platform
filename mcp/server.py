@@ -282,6 +282,8 @@ def _decision_payload(decision: GatewayDecision) -> dict[str, Any]:
         "result": decision.result,
         "error": decision.error,
         "audit_id": decision.audit_id,
+        "policy_version": decision.policy_version,
+        "untrusted": decision.untrusted,
         "isError": not decision.allowed,
         "content": [
             {
@@ -293,6 +295,10 @@ def _decision_payload(decision: GatewayDecision) -> dict[str, Any]:
 
 
 def _result_text(decision: GatewayDecision) -> str:
+    """Prefer the 5.9 envelope text: redacted, directive lines dropped, still untrusted data."""
+    envelope = decision.envelope
+    if envelope is not None:
+        return str(envelope.get("text") or "")
     result = decision.result
     if result is None:
         return decision.reason
