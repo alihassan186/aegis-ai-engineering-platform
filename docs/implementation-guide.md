@@ -4178,10 +4178,10 @@ AEGIS_SKIP_DOTENV=1 uv run pytest tests/security/test_prompt_injection_tools.py 
 
 **Done checklist:**
 
-- [ ] Injection cannot register/execute destructive tools
-- [ ] Abuse params rejected
-- [ ] Audit contains the deny
-- [ ] Optional `docs/releases/v0.6.md`
+- [x] Injection cannot register/execute destructive tools
+- [x] Abuse params rejected
+- [x] Audit contains the deny
+- [x] Optional `docs/releases/v0.6.md`
 
 **Learn / interview:**
 
@@ -4252,10 +4252,10 @@ AEGIS_SKIP_DOTENV=1 uv run pytest tests/unit/application/gateway/test_untrusted.
 
 **Done checklist:**
 
-- [ ] Tool/RAG results tagged untrusted
-- [ ] No execute-from-text path
-- [ ] Redact still applied
-- [ ] RISK-003 still residual
+- [x] Tool/RAG results tagged untrusted
+- [x] No execute-from-text path
+- [x] Redact still applied
+- [x] RISK-003 still residual
 
 **Learn / interview:**
 
@@ -4330,10 +4330,10 @@ AEGIS_SKIP_DOTENV=1 uv run pytest tests/unit/application/gateway/test_limits.py 
 
 **Done checklist:**
 
-- [ ] Timeout + output cap in settings
-- [ ] Extra params rejected
-- [ ] HTTP host allowlist
-- [ ] Circuit breaker fail-closed
+- [x] Timeout + output cap in settings
+- [x] Extra params rejected
+- [x] HTTP host allowlist
+- [x] Circuit breaker fail-closed
 
 **Learn / interview:**
 
@@ -4406,10 +4406,10 @@ AEGIS_SKIP_DOTENV=1 uv run pytest tests/unit/application/gateway/test_kill_switc
 
 **Done checklist:**
 
-- [ ] Env kill switch denies all tools
-- [ ] Policy version on audit
-- [ ] `.env.example` documents the flag
-- [ ] Still no write tools / no CDK
+- [x] Env kill switch denies all tools
+- [x] Policy version on audit
+- [x] `.env.example` documents the flag
+- [x] Still no write tools / no CDK
 
 **Learn / interview:**
 
@@ -4423,15 +4423,15 @@ AEGIS_SKIP_DOTENV=1 uv run pytest tests/unit/application/gateway/test_kill_switc
 
 **Phase 5 exit gate (before Phase 6):**
 
-- [ ] All specialist I/O goes through the gateway
-- [ ] Policy default deny; destructive impossible
-- [ ] Agent identities scoped
-- [ ] Audit append-only
-- [ ] Rate limits + security tests green
-- [ ] Tool/RAG results tagged untrusted (5.9)
-- [ ] Timeouts, caps, host allowlist, circuit breaker (5.10)
-- [ ] Kill switch + policy version on audit (5.11)
-- [ ] No ECS/RDS/CDK in this phase
+- [x] All specialist I/O goes through the gateway
+- [x] Policy default deny; destructive impossible
+- [x] Agent identities scoped
+- [x] Audit append-only
+- [x] Rate limits + security tests green
+- [x] Tool/RAG results tagged untrusted (5.9)
+- [x] Timeouts, caps, host allowlist, circuit breaker (5.10)
+- [x] Kill switch + policy version on audit (5.11)
+- [x] No ECS/RDS/CDK in this phase
 - [ ] You can draw platform overview §10 from memory
 
 When this list is ticked, start [Step 6.1 — AWS CDK project](#step-61--aws-cdk-project-in-infrastructurecdk).

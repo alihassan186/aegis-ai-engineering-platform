@@ -88,7 +88,7 @@ Out of scope: threats to target production applications under investigation (cov
 |---|---|---|---|---|
 | THR-004 | Attacker modifies audit logs to hide actions | [9] Audit | Append-only ``audit_log``; UPDATE/DELETE trigger; no repository update API; hash chain; no admin edit route | Mitigated v0.6 (5.6) |
 | THR-005 | Attacker modifies incident data to mislead investigation | [1] API | RBAC; input validation; audit on all writes | Planned v0.2 |
-| THR-006 | Poisoned document in RAG index manipulates agent | [3] RAG | Document provenance tracking; ingestion review; treat as untrusted | Planned v0.4 |
+| THR-006 | Poisoned document in RAG index manipulates agent | [3] RAG | Document provenance tracking; ingestion review; treat as untrusted. v0.6: every tool/RAG result is tagged `untrusted`, directive-looking lines are dropped from the RCA prompt, nothing executes from text (5.9). Poisoned corpus review stays manual | Partial v0.6 (5.8, 5.9) |
 
 ### Repudiation
 
@@ -119,7 +119,7 @@ Out of scope: threats to target production applications under investigation (cov
 
 | ID | Threat | Surface | Mitigation | Status |
 |---|---|---|---|---|
-| THR-017 | Agent escalates from read to write via prompt injection | [4][6] LLM→Action | Tool gateway enforces action class independently of LLM output | Planned v0.6 |
+| THR-017 | Agent escalates from read to write via prompt injection | [4][6] LLM→Action | Tool gateway enforces action class independently of LLM output. Security tests assert the registry spy never runs a write (5.8); kill switch `AEGIS_GUARDRAIL_DENY_ALL` (5.11) | Mitigated v0.6 for actions (5.1-5.3, 5.8, 5.11). Injection itself stays residual (RISK-003) |
 | THR-018 | LLM output directly triggers production write without approval | [6] Action path | Structured output validation; approval gate; no direct execution | Planned v0.9 |
 | THR-019 | Compromised GitHub token used to push malicious code | [7] GitHub | Scoped token (repo read + PR create only); PR requires human merge | Planned v0.6 |
 | THR-020 | Viewer role approves high-risk remediation | [1] API | RBAC enforced at approval endpoint; role check server-side | Planned v0.9 |
